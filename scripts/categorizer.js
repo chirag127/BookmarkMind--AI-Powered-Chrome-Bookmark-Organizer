@@ -164,6 +164,9 @@ class Categorizer {
    * @returns {Promise<Object>} Organization results
    */
   async _organizeBookmarks(categorizations, bookmarks, progressCallback) {
+    console.log('🛡️  FOLDER PROTECTION: Starting bookmark organization');
+    console.log('🛡️  PROTECTION RULE: Only MOVE bookmarks TO folders, never empty existing folders');
+
     const results = {
       success: 0,
       errors: 0,
@@ -196,7 +199,8 @@ class Categorizer {
         // Find or create folder for category in the appropriate root
         const folderId = await this.bookmarkService.findOrCreateFolderByPath(categorization.category, rootFolderId);
 
-        // Move bookmark to folder
+        // Move bookmark to folder (PROTECTION: Only moving TO folders, not emptying)
+        console.log(`🛡️  PROTECTED MOVE: "${bookmark.title}" → "${categorization.category}"`);
         await this.bookmarkService.moveBookmark(bookmark.id, folderId);
 
         results.success++;

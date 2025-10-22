@@ -67,7 +67,8 @@ async function initializeExtension() {
       maxCategories: 50,
       lastSortTime: 0,
       autoSort: false,
-      batchSize: 50
+      batchSize: 50,
+      cleanupEmptyFolders: false
     };
 
     // Check if settings already exist

@@ -142,7 +142,7 @@ class OptionsController {
       categories: ['Work', 'Personal', 'Shopping', 'Entertainment', 'News', 'Social', 'Learning', 'Other'],
       lastSortTime: 0,
       batchSize: 50,
-      cleanupEmptyFolders: true
+      cleanupEmptyFolders: false
     };
   }
 

@@ -39,7 +39,7 @@ class AIProcessor {
         console.log('Generated categories:', dynamicCategories);
 
         const results = [];
-        const batchSize = 25; // Reduced batch size for hierarchical processing
+        const batchSize = 10; // Very small batch size for reliable hierarchical processing
 
         for (let i = 0; i < bookmarks.length; i += batchSize) {
             const batch = bookmarks.slice(i, i + batchSize);
@@ -49,10 +49,10 @@ class AIProcessor {
             console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} bookmarks)`);
 
             try {
-                // Add timeout for each batch (increased for hierarchical processing)
+                // Add timeout for each batch (very long timeout for hierarchical processing)
                 const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Batch timeout after 120 seconds')), 120000); // Increased to 2 minutes
+                    setTimeout(() => reject(new Error('Batch timeout after 10 minutes')), 600000); // 10 minutes timeout
                 });
 
                 const batchResults = await Promise.race([batchPromise, timeoutPromise]);
@@ -62,8 +62,8 @@ class AIProcessor {
 
                 // Longer delay between batches for hierarchical processing
                 if (i + batchSize < bookmarks.length) {
-                    console.log(`Waiting 5 seconds before next batch...`);
-                    await this._delay(5000); // Increased delay for hierarchical processing
+                    console.log(`Waiting 10 seconds before next batch...`);
+                    await this._delay(10000); // Long delay to avoid rate limiting
                 }
             } catch (error) {
                 console.error(`❌ Error processing batch ${batchNumber}/${totalBatches}:`, error);
