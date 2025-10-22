@@ -39,7 +39,7 @@ class AIProcessor {
         console.log('Generated categories:', dynamicCategories);
 
         const results = [];
-        const batchSize = 50; // Process in batches to avoid API limits
+        const batchSize = 25; // Reduced batch size for hierarchical processing
 
         for (let i = 0; i < bookmarks.length; i += batchSize) {
             const batch = bookmarks.slice(i, i + batchSize);
@@ -49,10 +49,10 @@ class AIProcessor {
             console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} bookmarks)`);
 
             try {
-                // Add timeout for each batch
+                // Add timeout for each batch (increased for hierarchical processing)
                 const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Batch timeout after 30 seconds')), 30000);
+                    setTimeout(() => reject(new Error('Batch timeout after 120 seconds')), 120000); // Increased to 2 minutes
                 });
 
                 const batchResults = await Promise.race([batchPromise, timeoutPromise]);
@@ -60,20 +60,49 @@ class AIProcessor {
 
                 console.log(`✅ Batch ${batchNumber}/${totalBatches} completed successfully`);
 
-                // Small delay between batches to respect rate limits
+                // Longer delay between batches for hierarchical processing
                 if (i + batchSize < bookmarks.length) {
-                    console.log(`Waiting 2 seconds before next batch...`);
-                    await this._delay(2000); // Increased delay to be safer
+                    console.log(`Waiting 5 seconds before next batch...`);
+                    await this._delay(5000); // Increased delay for hierarchical processing
                 }
             } catch (error) {
                 console.error(`❌ Error processing batch ${batchNumber}/${totalBatches}:`, error);
 
-                // Add fallback categorization for failed batch
+                // Add fallback categorization for failed batch using generated categories
                 batch.forEach((bookmark, index) => {
+                    // Try to assign a relevant category based on bookmark content
+                    let fallbackCategory = 'Other';
+
+                    if (bookmark.title && bookmark.url) {
+                        const title = bookmark.title.toLowerCase();
+                        const url = bookmark.url.toLowerCase();
+
+                        // Simple keyword matching to assign to generated categories
+                        for (const category of dynamicCategories) {
+                            if (category === 'Other') continue;
+
+                            const categoryLower = category.toLowerCase();
+                            const categoryParts = categoryLower.split(' > ');
+
+                            // Check if any part of the category matches the bookmark
+                            const matches = categoryParts.some(part =>
+                                title.includes(part) || url.includes(part) ||
+                                part.includes('ai') && (title.includes('ai') || url.includes('ai')) ||
+                                part.includes('development') && (title.includes('dev') || url.includes('github')) ||
+                                part.includes('learning') && (title.includes('course') || url.includes('learn'))
+                            );
+
+                            if (matches) {
+                                fallbackCategory = category;
+                                break;
+                            }
+                        }
+                    }
+
                     results.push({
                         id: i + index,
                         bookmarkId: bookmark.id,
-                        category: 'Other',
+                        category: fallbackCategory,
                         confidence: 0.1
                     });
                 });
