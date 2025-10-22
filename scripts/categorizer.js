@@ -24,9 +24,10 @@ class Categorizer {
   /**
    * Main categorization process
    * @param {Function} progressCallback - Progress update callback
+   * @param {boolean} forceReorganize - Whether to reorganize all bookmarks
    * @returns {Promise<Object>} Results summary
    */
-  async categorizeAllBookmarks(progressCallback) {
+  async categorizeAllBookmarks(progressCallback, forceReorganize = false) {
     if (this.isProcessing) {
       throw new Error('Categorization already in progress');
     }
@@ -62,7 +63,6 @@ class Categorizer {
 
       // Filter bookmarks that need categorization
       // Check if user wants to force re-organization
-      const forceReorganize = progressCallback?.forceReorganize || false;
 
       let uncategorizedBookmarks;
 
@@ -92,16 +92,42 @@ class Categorizer {
         return { processed: bookmarks.length, categorized: 0, errors: 0, message: 'All bookmarks are already organized!' };
       }
 
+      // For large collections, warn user and potentially limit processing
+      if (uncategorizedBookmarks.length > 500) {
+        console.warn(`Large collection detected: ${uncategorizedBookmarks.length} bookmarks. This may take 10+ minutes.`);
+
+        // Optionally limit to first 500 bookmarks for testing
+        if (uncategorizedBookmarks.length > 1000) {
+          console.log('Limiting to first 500 bookmarks to prevent timeout. Use smaller batches for full processing.');
+          uncategorizedBookmarks = uncategorizedBookmarks.slice(0, 500);
+        }
+      }
+
       // Get learning data
       const learningData = await this._getLearningData();
 
       // Categorize bookmarks using AI
+      console.log('Categorizer: Starting AI categorization...');
       progressCallback?.({ stage: 'categorizing', progress: 30 });
-      const categorizations = await this.aiProcessor.categorizeBookmarks(
+
+      // Add timeout for the entire AI categorization process
+      const categorizationPromise = this.aiProcessor.categorizeBookmarks(
         uncategorizedBookmarks,
         settings.categories,
         learningData
       );
+
+      const timeoutMinutes = Math.ceil(uncategorizedBookmarks.length / 50) * 2; // 2 minutes per batch
+      const timeoutMs = Math.max(120000, timeoutMinutes * 60000); // At least 2 minutes
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`AI categorization timeout after ${Math.ceil(timeoutMs / 60000)} minutes. Try with fewer bookmarks or check your internet connection.`)), timeoutMs);
+      });
+
+      console.log(`Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks (estimated ${Math.ceil(uncategorizedBookmarks.length / 50)} batches, timeout: ${Math.ceil(timeoutMs / 60000)} minutes)`);
+
+      const categorizations = await Promise.race([categorizationPromise, timeoutPromise]);
+
+      console.log(`Categorizer: AI categorization completed, got ${categorizations.length} results`);
 
       // Organize bookmarks into folders
       progressCallback?.({ stage: 'organizing', progress: 70 });

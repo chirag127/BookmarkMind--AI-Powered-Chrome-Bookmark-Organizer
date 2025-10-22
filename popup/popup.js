@@ -34,6 +34,7 @@ class PopupController {
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
+    this.forceReorganizeBtn = document.getElementById('forceReorganizeBtn');
     this.exportBtn = document.getElementById('exportBtn');
     this.settingsBtn = document.getElementById('settingsBtn');
     this.helpLink = document.getElementById('helpLink');
@@ -73,6 +74,7 @@ class PopupController {
    */
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
     this.exportBtn.addEventListener('click', () => this.exportBookmarks());
     this.settingsBtn.addEventListener('click', () => this.openSettings());
     this.helpLink.addEventListener('click', (e) => {
@@ -242,9 +244,10 @@ class PopupController {
 
     // Update sort button text based on uncategorized count
     const uncategorizedCount = this.stats.uncategorized || 0;
+    const totalBookmarks = this.stats.totalBookmarks || 0;
     console.log('Popup stats:', this.stats); // Debug logging
 
-    if (uncategorizedCount === 0) {
+    if (uncategorizedCount === 0 && totalBookmarks > 0) {
       this.sortBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" fill="currentColor"/>
@@ -252,32 +255,48 @@ class PopupController {
         All Organized!
       `;
       this.sortBtn.disabled = true;
-    } else {
+
+      // Show the force reorganize button when all bookmarks are organized
+      if (this.forceReorganizeBtn) {
+        this.forceReorganizeBtn.style.display = 'flex';
+      }
+    } else if (uncategorizedCount > 0) {
       this.sortBtn.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 18H9V16H3V18ZM3 6V8H21V6H3ZM3 13H15V11H3V13Z" fill="currentColor"/>
         </svg>
         Sort ${uncategorizedCount} Bookmarks
       `;
-      this.sortBtn.disabled = false; // Make sure button is enabled when there are bookmarks
+      this.sortBtn.disabled = false;
+
+      // Hide the force reorganize button when there are uncategorized bookmarks
+      if (this.forceReorganizeBtn) {
+        this.forceReorganizeBtn.style.display = 'none';
+      }
+    } else {
+      // No bookmarks at all
+      this.sortBtn.disabled = true;
+      if (this.forceReorganizeBtn) {
+        this.forceReorganizeBtn.style.display = 'none';
+      }
     }
   }
 
   /**
    * Start bookmark categorization process
    */
-  async startCategorization() {
+  async startCategorization(forceReorganize = false) {
     if (this.isProcessing) return;
 
     this.isProcessing = true;
     this.showProgress();
 
     try {
-      console.log('Popup: Starting categorization...');
+      console.log('Popup: Starting categorization...', { forceReorganize });
 
       const response = await chrome.runtime.sendMessage({
         action: 'startCategorization',
-        data: {}
+        data: { forceReorganize }
       });
 
       console.log('Popup: Categorization response:', response);

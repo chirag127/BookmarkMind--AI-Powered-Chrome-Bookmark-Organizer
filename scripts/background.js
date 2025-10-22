@@ -128,19 +128,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     switch (message.action) {
       case 'startCategorization':
-        handleCategorization(message.data, sendResponse);
+        await handleCategorization(message.data, sendResponse);
         break;
 
       case 'testApiKey':
-        handleApiKeyTest(message.data, sendResponse);
+        await handleApiKeyTest(message.data, sendResponse);
         break;
 
       case 'getStats':
-        handleGetStats(sendResponse);
+        await handleGetStats(sendResponse);
         break;
 
       case 'exportBookmarks':
-        handleExportBookmarks(sendResponse);
+        await handleExportBookmarks(sendResponse);
         break;
 
       case 'ping':
@@ -219,14 +219,18 @@ async function handleCategorization(data, sendResponse) {
     console.log('Starting categorization process...');
     const results = await categorizer.categorizeAllBookmarks((progress) => {
       console.log('Progress update:', progress);
-      // Send progress updates to popup
-      chrome.runtime.sendMessage({
-        action: 'categorizationProgress',
-        data: progress
-      }).catch(() => {
-        // Ignore errors if popup is closed
-      });
-    });
+      // Send progress updates to popup (with better error handling)
+      try {
+        chrome.runtime.sendMessage({
+          action: 'categorizationProgress',
+          data: progress
+        }).catch((error) => {
+          console.log('Progress message failed (popup likely closed):', error.message);
+        });
+      } catch (error) {
+        console.log('Progress callback error:', error.message);
+      }
+    }, data.forceReorganize);
 
     console.log('Categorization completed:', results);
 

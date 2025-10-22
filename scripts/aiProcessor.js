@@ -38,18 +38,31 @@ class AIProcessor {
 
         for (let i = 0; i < bookmarks.length; i += batchSize) {
             const batch = bookmarks.slice(i, i + batchSize);
-            console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(bookmarks.length / batchSize)}`);
+            const batchNumber = Math.floor(i / batchSize) + 1;
+            const totalBatches = Math.ceil(bookmarks.length / batchSize);
+
+            console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} bookmarks)`);
 
             try {
-                const batchResults = await this._processBatch(batch, categories, learningData);
+                // Add timeout for each batch
+                const batchPromise = this._processBatch(batch, categories, learningData);
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Batch timeout after 30 seconds')), 30000);
+                });
+
+                const batchResults = await Promise.race([batchPromise, timeoutPromise]);
                 results.push(...batchResults);
+
+                console.log(`✅ Batch ${batchNumber}/${totalBatches} completed successfully`);
 
                 // Small delay between batches to respect rate limits
                 if (i + batchSize < bookmarks.length) {
-                    await this._delay(1000);
+                    console.log(`Waiting 2 seconds before next batch...`);
+                    await this._delay(2000); // Increased delay to be safer
                 }
             } catch (error) {
-                console.error(`Error processing batch ${i}-${i + batchSize}:`, error);
+                console.error(`❌ Error processing batch ${batchNumber}/${totalBatches}:`, error);
+
                 // Add fallback categorization for failed batch
                 batch.forEach((bookmark, index) => {
                     results.push({
@@ -59,6 +72,8 @@ class AIProcessor {
                         confidence: 0.1
                     });
                 });
+
+                console.log(`⚠️ Batch ${batchNumber} failed, using fallback categorization`);
             }
         }
 
