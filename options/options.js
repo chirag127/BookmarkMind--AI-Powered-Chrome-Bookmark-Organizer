@@ -242,14 +242,17 @@ class OptionsController {
     const hasValue = value.length > 0;
     const isPlaceholder = value.startsWith('••••');
 
-    // Enable buttons if we have a real value (not placeholder) and it looks like an API key
-    const shouldEnable = hasValue && !isPlaceholder && (value.startsWith('AIza') || value.length > 20);
+    // Validate API key format
+    const isValidFormat = value.startsWith('AIza') && value.length >= 35;
+    const shouldEnable = hasValue && !isPlaceholder && isValidFormat;
 
     this.testApiKeyBtn.disabled = !shouldEnable;
     this.saveApiKeyBtn.disabled = !shouldEnable;
 
-    // Clear status when user starts typing a new key
-    if (!isPlaceholder && hasValue) {
+    // Show format hint if user is typing but format is wrong
+    if (hasValue && !isPlaceholder && !isValidFormat) {
+      this.showApiKeyStatus('API key should start with "AIza" and be ~39 characters long', 'error');
+    } else if (!isPlaceholder && hasValue && isValidFormat) {
       this.hideApiKeyStatus();
     }
 
@@ -258,6 +261,7 @@ class OptionsController {
       valueLength: value.length,
       hasValue,
       isPlaceholder,
+      isValidFormat,
       shouldEnable,
       startsWithAIza: value.startsWith('AIza')
     });

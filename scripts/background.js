@@ -3,6 +3,29 @@
  * Handles extension lifecycle and background processing
  */
 
+// Import required modules using importScripts for Manifest V3
+try {
+  importScripts(
+    'bookmarkService.js',
+    'aiProcessor.js',
+    'categorizer.js',
+    'folderManager.js'
+  );
+  console.log('Background scripts loaded successfully');
+
+  // Verify classes are available
+  console.log('Available classes:', {
+    BookmarkService: typeof BookmarkService !== 'undefined',
+    AIProcessor: typeof AIProcessor !== 'undefined',
+    Categorizer: typeof Categorizer !== 'undefined',
+    FolderManager: typeof FolderManager !== 'undefined'
+  });
+
+} catch (error) {
+  console.error('Failed to load background scripts:', error);
+  console.log('Will create instances dynamically if needed');
+}
+
 // Initialize extension on startup
 chrome.runtime.onStartup.addListener(() => {
   console.log('BookmarkMind extension started');
@@ -67,9 +90,39 @@ async function initializeExtension() {
   }
 }
 
+// Ensure classes are loaded before handling messages
+async function ensureClassesLoaded() {
+  if (typeof Categorizer === 'undefined' ||
+    typeof BookmarkService === 'undefined' ||
+    typeof AIProcessor === 'undefined' ||
+    typeof FolderManager === 'undefined') {
+
+    console.log('Classes not loaded, attempting to reload...');
+    try {
+      importScripts(
+        'bookmarkService.js',
+        'aiProcessor.js',
+        'categorizer.js',
+        'folderManager.js'
+      );
+      console.log('Classes reloaded successfully');
+    } catch (error) {
+      console.error('Failed to reload classes:', error);
+      throw new Error('Extension classes not available. Please reload the extension.');
+    }
+  }
+}
+
 // Handle messages from popup and options pages
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   console.log('Background received message:', message);
+
+  try {
+    await ensureClassesLoaded();
+  } catch (error) {
+    sendResponse({ success: false, error: error.message });
+    return;
+  }
 
   switch (message.action) {
     case 'startCategorization':
@@ -99,15 +152,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleCategorization(data, sendResponse) {
   try {
-    // Import required modules (they're loaded as content scripts)
-    const categorizer = new Categorizer();
+    console.log('Starting categorization process...');
 
-    // Initialize with current settings
+    // Check if Categorizer class is available
+    if (typeof Categorizer === 'undefined') {
+      throw new Error('Categorizer class not loaded. Please reload the extension.');
+    }
+    console.log('✓ Categorizer class available');
+
+    // Check if other required classes are available
+    if (typeof BookmarkService === 'undefined') {
+      throw new Error('BookmarkService class not loaded. Please reload the extension.');
+    }
+    if (typeof AIProcessor === 'undefined') {
+      throw new Error('AIProcessor class not loaded. Please reload the extension.');
+    }
+    if (typeof FolderManager === 'undefined') {
+      throw new Error('FolderManager class not loaded. Please reload the extension.');
+    }
+    console.log('✓ All required classes available');
+
+    // Test Chrome APIs
+    if (!chrome.bookmarks) {
+      throw new Error('Chrome bookmarks API not available');
+    }
+    if (!chrome.storage) {
+      throw new Error('Chrome storage API not available');
+    }
+    console.log('✓ Chrome APIs available');
+
+    // Create categorizer instance
+    console.log('Creating categorizer instance...');
+    const categorizer = new Categorizer();
+    console.log('✓ Categorizer instance created');
+
+    // Get and validate settings
+    console.log('Loading settings...');
     const settings = await chrome.storage.sync.get(['bookmarkMindSettings']);
+    console.log('Settings loaded:', settings);
+
+    if (!settings.bookmarkMindSettings) {
+      throw new Error('Extension settings not found. Please configure the extension first.');
+    }
+
+    if (!settings.bookmarkMindSettings.apiKey) {
+      throw new Error('API key not configured. Please set up your Gemini API key in settings.');
+    }
+    console.log('✓ Settings validated');
+
+    // Initialize categorizer
+    console.log('Initializing categorizer...');
     await categorizer.initialize(settings.bookmarkMindSettings);
+    console.log('✓ Categorizer initialized');
 
     // Start categorization with progress updates
+    console.log('Starting categorization process...');
     const results = await categorizer.categorizeAllBookmarks((progress) => {
+      console.log('Progress update:', progress);
       // Send progress updates to popup
       chrome.runtime.sendMessage({
         action: 'categorizationProgress',
@@ -116,6 +217,8 @@ async function handleCategorization(data, sendResponse) {
         // Ignore errors if popup is closed
       });
     });
+
+    console.log('Categorization completed:', results);
 
     // Update last sort time
     const updatedSettings = {
@@ -128,6 +231,7 @@ async function handleCategorization(data, sendResponse) {
 
   } catch (error) {
     console.error('Categorization error:', error);
+    console.error('Error stack:', error.stack);
     sendResponse({
       success: false,
       error: error.message || 'Categorization failed'
@@ -140,6 +244,11 @@ async function handleCategorization(data, sendResponse) {
  */
 async function handleApiKeyTest(data, sendResponse) {
   try {
+    // Check if AIProcessor class is available
+    if (typeof AIProcessor === 'undefined') {
+      throw new Error('AIProcessor class not loaded. Please reload the extension.');
+    }
+
     const aiProcessor = new AIProcessor();
     aiProcessor.setApiKey(data.apiKey);
 
@@ -175,6 +284,11 @@ async function handleGetStats(sendResponse) {
       return;
     }
 
+    // Check if Categorizer class is available
+    if (typeof Categorizer === 'undefined') {
+      throw new Error('Categorizer class not loaded. Please reload the extension.');
+    }
+
     const categorizer = new Categorizer();
     const stats = await categorizer.getStats();
 
@@ -195,6 +309,11 @@ async function handleGetStats(sendResponse) {
  */
 async function handleExportBookmarks(sendResponse) {
   try {
+    // Check if FolderManager class is available
+    if (typeof FolderManager === 'undefined') {
+      throw new Error('FolderManager class not loaded. Please reload the extension.');
+    }
+
     const folderManager = new FolderManager();
     const exportData = await folderManager.exportOrganization();
 

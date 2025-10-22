@@ -34,21 +34,29 @@ class Categorizer {
     this.isProcessing = true;
 
     try {
+      console.log('Categorizer: Starting categorization...');
       progressCallback?.({ stage: 'starting', progress: 0 });
 
       // Get user settings
+      console.log('Categorizer: Getting settings...');
       const settings = await this._getSettings();
+      console.log('Categorizer: Settings loaded:', { hasApiKey: !!settings.apiKey, categories: settings.categories?.length });
+
       if (!settings.apiKey) {
         throw new Error('API key not configured. Please set up your Gemini API key in settings.');
       }
 
+      console.log('Categorizer: Setting API key...');
       this.aiProcessor.setApiKey(settings.apiKey);
 
       // Get all bookmarks
+      console.log('Categorizer: Loading bookmarks...');
       progressCallback?.({ stage: 'loading', progress: 10 });
       const bookmarks = await this.bookmarkService.getAllBookmarks();
+      console.log(`Categorizer: Loaded ${bookmarks.length} bookmarks`);
 
       if (bookmarks.length === 0) {
+        console.log('Categorizer: No bookmarks found');
         return { processed: 0, categorized: 0, errors: 0 };
       }
 
@@ -274,5 +282,8 @@ class Categorizer {
 if (typeof window !== 'undefined') {
   window.Categorizer = Categorizer;
 }
-// ES6 export for modules
-export { Categorizer };
+
+// For service worker context (global scope)
+if (typeof self !== 'undefined' && typeof window === 'undefined') {
+  self.Categorizer = Categorizer;
+}

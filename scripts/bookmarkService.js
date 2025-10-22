@@ -260,5 +260,9 @@ class BookmarkService {
 if (typeof window !== 'undefined') {
   window.BookmarkService = BookmarkService;
 }
-// ES6 export for modules
-export { BookmarkService };
+
+// For service worker context (global scope)
+if (typeof self !== 'undefined' && typeof window === 'undefined') {
+  self.BookmarkService = BookmarkService;
+}
+self.BookmarkService = BookmarkService;

@@ -21,7 +21,7 @@ class FolderManager {
         const folderId = await this._createCategoryFolder(category);
         folderMap[category] = folderId;
       } catch (error) {
-        console.error creating folder for category ${category}:`, error);
+        console.error(`Error creating folder for category ${category}:`, error);
       }
     }
 
@@ -275,4 +275,11 @@ class FolderManager {
 }
 
 // Export for use in other modules
-window.FolderManager = FolderManager;
+if (typeof window !== 'undefined') {
+  window.FolderManager = FolderManager;
+}
+
+// For service worker context (global scope)
+if (typeof self !== 'undefined' && typeof window === 'undefined') {
+  self.FolderManager = FolderManager;
+}

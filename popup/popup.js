@@ -40,6 +40,11 @@ class PopupController {
     this.debugBtn = document.getElementById('debugBtn');
     this.debugResults = document.getElementById('debugResults');
 
+    // Status elements
+    this.extensionStatus = document.getElementById('extensionStatus');
+    this.statusDot = this.extensionStatus?.querySelector('.status-dot');
+    this.statusText = this.extensionStatus?.querySelector('.status-text');
+
     // Stats
     this.totalBookmarks = document.getElementById('totalBookmarks');
     this.uncategorized = document.getElementById('uncategorized');
@@ -75,6 +80,12 @@ class PopupController {
       this.showHelp();
     });
     this.debugBtn.addEventListener('click', () => this.runDebugTest());
+
+    // Test categorization button
+    this.testCategorizationBtn = document.getElementById('testCategorizationBtn');
+    if (this.testCategorizationBtn) {
+      this.testCategorizationBtn.addEventListener('click', () => this.testCategorization());
+    }
 
     // Listen for progress updates from background script
     chrome.runtime.onMessage.addListener((message) => {
@@ -194,6 +205,9 @@ class PopupController {
     // Update stats display
     this.totalBookmarks.textContent = this.stats.totalBookmarks || 0;
     this.uncategorized.textContent = this.stats.uncategorized || 0;
+
+    // Update extension status
+    this.updateExtensionStatus();
 
     // Update last sort time
     if (this.settings.lastSortTime) {
@@ -333,6 +347,32 @@ class PopupController {
 Need an API key? Visit: https://makersuite.google.com/app/apikey`;
 
     alert(helpText);
+  }
+
+  /**
+   * Test categorization process
+   */
+  async testCategorization() {
+    console.log('Testing categorization process...');
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'startCategorization',
+        data: {}
+      });
+
+      console.log('Categorization test result:', response);
+
+      if (response.success) {
+        this.showResults(response.data);
+      } else {
+        console.error('Categorization test failed:', response.error);
+        alert(`Categorization failed: ${response.error}`);
+      }
+    } catch (error) {
+      console.error('Categorization test error:', error);
+      alert(`Test error: ${error.message}`);
+    }
   }
 
   /**
@@ -518,6 +558,31 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         </svg>
       `;
     }, 5000);
+  }
+
+  /**
+   * Update extension status indicator
+   */
+  updateExtensionStatus() {
+    if (!this.statusDot || !this.statusText) return;
+
+    const totalBookmarks = this.stats.totalBookmarks || 0;
+    const uncategorized = this.stats.uncategorized || 0;
+    const hasApiKey = this.settings.apiKey;
+
+    if (totalBookmarks === 0) {
+      this.statusDot.className = 'status-dot error';
+      this.statusText.textContent = 'No bookmarks detected';
+    } else if (!hasApiKey) {
+      this.statusDot.className = 'status-dot warning';
+      this.statusText.textContent = 'API key required';
+    } else if (uncategorized === 0) {
+      this.statusDot.className = 'status-dot success';
+      this.statusText.textContent = 'All bookmarks organized';
+    } else {
+      this.statusDot.className = 'status-dot success';
+      this.statusText.textContent = `Ready to organize ${uncategorized} bookmarks`;
+    }
   }
 
   /**

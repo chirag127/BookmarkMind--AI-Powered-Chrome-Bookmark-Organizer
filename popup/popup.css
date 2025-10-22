@@ -317,6 +317,37 @@ body {
   text-decoration: underline;
 }
 
+/* Extension Status */
+.extension-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa0a6;
+}
+
+.status-dot.success {
+  background: #34a853;
+}
+
+.status-dot.error {
+  background: #ea4335;
+}
+
+.status-dot.warning {
+  background: #fbbc04;
+}
+
 /* Debug Section */
 .debug-results {
   margin-top: 10px;

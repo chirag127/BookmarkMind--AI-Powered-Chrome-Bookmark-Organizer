@@ -87,7 +87,7 @@ class AIProcessor {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`
+                'x-goog-api-key': this.apiKey
             },
             body: JSON.stringify(requestBody)
         });
@@ -97,13 +97,15 @@ class AIProcessor {
             console.error('API Error:', response.status, errorText);
 
             if (response.status === 401) {
-                throw new Error('Invalid API key. Please check your Gemini API key in settings.');
+                throw new Error('Invalid API key. Please check your Gemini API key in settings. Make sure it starts with "AIza" and is from Google AI Studio.');
             } else if (response.status === 429) {
                 throw new Error('API rate limit exceeded. Please try again later.');
             } else if (response.status === 403) {
-                throw new Error('API access denied. Please check your API key permissions.');
+                throw new Error('API access denied. Please check your API key permissions and ensure Gemini API is enabled.');
+            } else if (response.status === 400) {
+                throw new Error('Bad request. Please check your API key format and try again.');
             } else {
-                throw new Error(`API request failed: ${response.status}`);
+                throw new Error(`API request failed: ${response.status}. ${errorText}`);
             }
         }
 
@@ -227,16 +229,37 @@ class AIProcessor {
             return false;
         }
 
-        try {
-            const testBookmarks = [{
-                id: 'test',
-                title: 'Google',
-                url: 'https://google.com'
-            }];
+        // Basic format validation
+        if (!this.apiKey.startsWith('AIza') || this.apiKey.length < 35) {
+            console.error('API key format invalid. Should start with "AIza" and be ~39 characters long.');
+            return false;
+        }
 
-            const categories = ['Search', 'Other'];
-            await this._processBatch(testBookmarks, categories, {});
-            return true;
+        try {
+            // Simple test request
+            const testResponse = await fetch(this.baseUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': this.apiKey
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: 'Hello, this is a test message.'
+                        }]
+                    }]
+                })
+            });
+
+            if (testResponse.ok) {
+                console.log('API key test successful');
+                return true;
+            } else {
+                const errorText = await testResponse.text();
+                console.error('API key test failed:', testResponse.status, errorText);
+                return false;
+            }
         } catch (error) {
             console.error('API key test failed:', error);
             return false;
@@ -257,5 +280,9 @@ class AIProcessor {
 if (typeof window !== 'undefined') {
     window.AIProcessor = AIProcessor;
 }
-// ES6 export for modules
-export { AIProcessor };
+
+// For service worker context (global scope)
+if (typeof self !== 'undefined' && typeof window === 'undefined') {
+    self.AIProcessor = AIProcessor;
+}
+self.AIProcessor = AIProcessor;
