@@ -186,17 +186,12 @@ class Categorizer {
       }
 
       try {
-        // Determine the appropriate root folder for organization
-        // Prefer Bookmarks Bar, but use original location if it's Other/Mobile bookmarks
-        let rootFolderId = '1'; // Default to Bookmarks Bar
+        // FORCE ALL hierarchical folders to be created in Bookmarks Bar ONLY
+        const rootFolderId = '1'; // ALWAYS use Bookmarks Bar for hierarchical organization
 
-        if (bookmark.parentId === '2') {
-          rootFolderId = '2'; // Keep in Other Bookmarks
-        } else if (bookmark.parentId === '3') {
-          rootFolderId = '3'; // Keep in Mobile Bookmarks
-        }
+        console.log(`📁 Creating hierarchical folder in Bookmarks Bar: "${categorization.category}"`);
 
-        // Find or create folder for category in the appropriate root
+        // Find or create folder for category in Bookmarks Bar ONLY
         const folderId = await this.bookmarkService.findOrCreateFolderByPath(categorization.category, rootFolderId);
 
         // Move bookmark to folder (PROTECTION: Only moving TO folders, not emptying)
