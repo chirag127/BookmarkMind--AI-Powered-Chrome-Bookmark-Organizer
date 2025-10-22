@@ -87,6 +87,12 @@ class PopupController {
       this.testCategorizationBtn.addEventListener('click', () => this.testCategorization());
     }
 
+    // Test communication button
+    this.testCommBtn = document.getElementById('testCommBtn');
+    if (this.testCommBtn) {
+      this.testCommBtn.addEventListener('click', () => this.testCommunication());
+    }
+
     // Listen for progress updates from background script
     chrome.runtime.onMessage.addListener((message) => {
       if (message.action === 'categorizationProgress') {
@@ -267,19 +273,30 @@ class PopupController {
     this.showProgress();
 
     try {
+      console.log('Popup: Starting categorization...');
+
       const response = await chrome.runtime.sendMessage({
         action: 'startCategorization',
         data: {}
       });
 
-      if (response.success) {
+      console.log('Popup: Categorization response:', response);
+
+      if (response && response.success) {
         this.showResults(response.data);
       } else {
-        this.showError(response.error || 'Categorization failed');
+        const errorMsg = response?.error || 'Categorization failed - no response';
+        console.error('Popup: Categorization failed:', errorMsg);
+        this.showError(errorMsg);
       }
     } catch (error) {
-      console.error('Categorization error:', error);
-      this.showError('Failed to start categorization');
+      console.error('Popup: Categorization error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      this.showError(`Failed to start categorization: ${error.message}`);
     } finally {
       this.isProcessing = false;
     }
@@ -347,6 +364,40 @@ class PopupController {
 Need an API key? Visit: https://makersuite.google.com/app/apikey`;
 
     alert(helpText);
+  }
+
+  /**
+   * Test communication with background script
+   */
+  async testCommunication() {
+    console.log('Testing communication with background script...');
+
+    try {
+      // Test 1: Ping
+      console.log('1. Testing ping...');
+      const pingResponse = await chrome.runtime.sendMessage({ action: 'ping' });
+      console.log('Ping response:', pingResponse);
+
+      if (!pingResponse) {
+        alert('❌ Background script not responding. Please reload the extension.');
+        return;
+      }
+
+      // Test 2: Stats
+      console.log('2. Testing stats...');
+      const statsResponse = await chrome.runtime.sendMessage({ action: 'getStats' });
+      console.log('Stats response:', statsResponse);
+
+      if (statsResponse && statsResponse.success) {
+        alert('✅ Communication working! Background script is responding.');
+      } else {
+        alert(`❌ Stats failed: ${statsResponse?.error || 'No response'}`);
+      }
+
+    } catch (error) {
+      console.error('Communication test error:', error);
+      alert(`❌ Communication failed: ${error.message}`);
+    }
   }
 
   /**

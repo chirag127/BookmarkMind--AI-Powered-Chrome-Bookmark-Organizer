@@ -61,17 +61,27 @@ class Categorizer {
       }
 
       // Filter bookmarks that need categorization
-      // Include bookmarks from: Bookmarks Bar (1), Other Bookmarks (2), Mobile Bookmarks (3)
-      // Exclude bookmarks already in organized subfolders
-      const uncategorizedBookmarks = bookmarks.filter(bookmark => {
-        const isInMainFolders = ['1', '2', '3'].includes(bookmark.parentId);
-        const isInRootLevel = bookmark.currentFolderName &&
-          ['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(bookmark.currentFolderName);
+      // Check if user wants to force re-organization
+      const forceReorganize = progressCallback?.forceReorganize || false;
 
-        return isInMainFolders || isInRootLevel;
-      });
+      let uncategorizedBookmarks;
 
-      console.log(`Found ${uncategorizedBookmarks.length} uncategorized bookmarks out of ${bookmarks.length} total`);
+      if (forceReorganize) {
+        // Re-organize ALL bookmarks, including those already in folders
+        uncategorizedBookmarks = bookmarks;
+        console.log('Force re-organize mode: Processing ALL bookmarks');
+      } else {
+        // Only process bookmarks in main folders (not in subfolders)
+        uncategorizedBookmarks = bookmarks.filter(bookmark => {
+          const isInMainFolders = ['1', '2', '3'].includes(bookmark.parentId);
+          const isInRootLevel = bookmark.currentFolderName &&
+            ['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(bookmark.currentFolderName);
+
+          return isInMainFolders || isInRootLevel;
+        });
+      }
+
+      console.log(`Found ${uncategorizedBookmarks.length} bookmarks to process out of ${bookmarks.length} total`);
       console.log('Bookmark distribution:', {
         bookmarksBar: uncategorizedBookmarks.filter(b => b.parentId === '1').length,
         otherBookmarks: uncategorizedBookmarks.filter(b => b.parentId === '2').length,

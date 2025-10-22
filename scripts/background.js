@@ -114,37 +114,47 @@ async function ensureClassesLoaded() {
 }
 
 // Handle messages from popup and options pages
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received message:', message);
 
-  try {
-    await ensureClassesLoaded();
-  } catch (error) {
-    sendResponse({ success: false, error: error.message });
-    return;
-  }
+  // Handle async operations properly
+  (async () => {
+    try {
+      await ensureClassesLoaded();
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+      return;
+    }
 
-  switch (message.action) {
-    case 'startCategorization':
-      handleCategorization(message.data, sendResponse);
-      return true; // Keep message channel open for async response
+    switch (message.action) {
+      case 'startCategorization':
+        handleCategorization(message.data, sendResponse);
+        break;
 
-    case 'testApiKey':
-      handleApiKeyTest(message.data, sendResponse);
-      return true;
+      case 'testApiKey':
+        handleApiKeyTest(message.data, sendResponse);
+        break;
 
-    case 'getStats':
-      handleGetStats(sendResponse);
-      return true;
+      case 'getStats':
+        handleGetStats(sendResponse);
+        break;
 
-    case 'exportBookmarks':
-      handleExportBookmarks(sendResponse);
-      return true;
+      case 'exportBookmarks':
+        handleExportBookmarks(sendResponse);
+        break;
 
-    default:
-      console.warn('Unknown message action:', message.action);
-      sendResponse({ success: false, error: 'Unknown action' });
-  }
+      case 'ping':
+        // Simple heartbeat check
+        sendResponse({ success: true, message: 'Background script is running' });
+        break;
+
+      default:
+        console.warn('Unknown message action:', message.action);
+        sendResponse({ success: false, error: 'Unknown action' });
+    }
+  })();
+
+  return true; // Keep message channel open for async response
 });
 
 /**

@@ -324,19 +324,33 @@ class OptionsController {
     this.testApiKeyBtn.disabled = true;
 
     try {
-      const response = await chrome.runtime.sendMessage({
+      console.log('Testing API key:', apiKey.substring(0, 10) + '...');
+
+      // Add timeout to prevent hanging
+      const messagePromise = chrome.runtime.sendMessage({
         action: 'testApiKey',
         data: { apiKey }
       });
 
-      if (response.success && response.valid) {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API key test timeout after 15 seconds')), 15000);
+      });
+
+      const response = await Promise.race([messagePromise, timeoutPromise]);
+
+      console.log('API key test response:', response);
+
+      if (response && response.success && response.valid) {
         this.showApiKeyStatus('API key is valid!', 'success');
+      } else if (response && !response.success) {
+        console.error('API key test failed:', response.error);
+        this.showApiKeyStatus(`Test failed: ${response.error}`, 'error');
       } else {
         this.showApiKeyStatus('Invalid API key. Please check your key.', 'error');
       }
     } catch (error) {
       console.error('API key test error:', error);
-      this.showApiKeyStatus('Failed to test API key. Please try again.', 'error');
+      this.showApiKeyStatus(`Failed to test API key: ${error.message}`, 'error');
     } finally {
       this.testApiKeyBtn.disabled = false;
     }
