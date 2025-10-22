@@ -106,14 +106,14 @@ class Categorizer {
       // Get learning data
       const learningData = await this._getLearningData();
 
-      // Categorize bookmarks using AI
-      console.log('Categorizer: Starting AI categorization...');
+      // Categorize bookmarks using AI with dynamic category generation
+      console.log('Categorizer: Starting AI categorization with dynamic categories...');
       progressCallback?.({ stage: 'categorizing', progress: 30 });
 
       // Add timeout for the entire AI categorization process
       const categorizationPromise = this.aiProcessor.categorizeBookmarks(
         uncategorizedBookmarks,
-        settings.categories,
+        settings.categories, // Use as suggested categories
         learningData
       );
 
@@ -125,9 +125,14 @@ class Categorizer {
 
       console.log(`Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks (estimated ${Math.ceil(uncategorizedBookmarks.length / 50)} batches, timeout: ${Math.ceil(timeoutMs / 60000)} minutes)`);
 
-      const categorizations = await Promise.race([categorizationPromise, timeoutPromise]);
+      const categorizationData = await Promise.race([categorizationPromise, timeoutPromise]);
 
-      console.log(`Categorizer: AI categorization completed, got ${categorizations.length} results`);
+      console.log(`Categorizer: AI categorization completed`);
+      console.log(`Generated categories:`, categorizationData.categories);
+      console.log(`Categorization results:`, categorizationData.results.length);
+
+      const categorizations = categorizationData.results;
+      const generatedCategories = categorizationData.categories;
 
       // Organize bookmarks into folders
       progressCallback?.({ stage: 'organizing', progress: 70 });
@@ -139,7 +144,8 @@ class Categorizer {
         processed: uncategorizedBookmarks.length,
         categorized: results.success,
         errors: results.errors,
-        categories: results.categoriesUsed
+        categories: results.categoriesUsed,
+        generatedCategories: generatedCategories
       };
 
     } catch (error) {

@@ -61,6 +61,10 @@ async function initializeExtension() {
         'Learning',
         'Other'
       ],
+      hierarchicalMode: true,
+      maxCategoryDepth: 4,
+      minCategories: 15,
+      maxCategories: 50,
       lastSortTime: 0,
       autoSort: false,
       batchSize: 50
@@ -234,10 +238,11 @@ async function handleCategorization(data, sendResponse) {
 
     console.log('Categorization completed:', results);
 
-    // Update last sort time
+    // Update last sort time and save generated categories
     const updatedSettings = {
       ...settings.bookmarkMindSettings,
-      lastSortTime: Date.now()
+      lastSortTime: Date.now(),
+      lastGeneratedCategories: results.generatedCategories || []
     };
     await chrome.storage.sync.set({ bookmarkMindSettings: updatedSettings });
 

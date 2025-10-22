@@ -568,7 +568,29 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       this.resultsMessage.textContent = results.message;
     } else {
       this.resultsTitle.textContent = 'Bookmarks Organized!';
-      this.resultsMessage.textContent = `Successfully organized ${results.categorized} bookmarks into ${results.categories?.size || 0} categories.`;
+      const categoryCount = results.categories?.size || results.generatedCategories?.length || 0;
+      this.resultsMessage.textContent = `Successfully organized ${results.categorized} bookmarks into ${categoryCount} AI-generated categories.`;
+
+      // Show generated hierarchical categories if available
+      if (results.generatedCategories && results.generatedCategories.length > 0) {
+        const hierarchicalCategories = results.generatedCategories.filter(cat => cat !== 'Other');
+        const topLevelCategories = [...new Set(hierarchicalCategories.map(cat => cat.split(' > ')[0]))];
+
+        this.resultsMessage.textContent += `\n\nGenerated ${hierarchicalCategories.length} hierarchical categories across ${topLevelCategories.length} main areas:`;
+        this.resultsMessage.textContent += `\n${topLevelCategories.join(', ')}`;
+
+        // Show depth analysis
+        const depthCounts = {};
+        hierarchicalCategories.forEach(cat => {
+          const depth = cat.split(' > ').length;
+          depthCounts[depth] = (depthCounts[depth] || 0) + 1;
+        });
+
+        const depthInfo = Object.entries(depthCounts)
+          .map(([depth, count]) => `${count} at ${depth} levels`)
+          .join(', ');
+        this.resultsMessage.textContent += `\n(${depthInfo})`;
+      }
     }
 
     this.processedCount.textContent = results.processed || 0;

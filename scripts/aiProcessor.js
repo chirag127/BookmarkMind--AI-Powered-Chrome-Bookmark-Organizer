@@ -18,20 +18,25 @@ class AIProcessor {
     }
 
     /**
-     * Categorize bookmarks using Gemini API
+     * Categorize bookmarks using Gemini API with dynamic category generation
      * @param {Array} bookmarks - Array of bookmark objects
-     * @param {Array} categories - Available categories
+     * @param {Array} suggestedCategories - Suggested categories (optional)
      * @param {Object} learningData - Previous user corrections
-     * @returns {Promise<Array>} Array of categorization results
+     * @returns {Promise<Object>} Object with categories and categorization results
      */
-    async categorizeBookmarks(bookmarks, categories, learningData = {}) {
+    async categorizeBookmarks(bookmarks, suggestedCategories = [], learningData = {}) {
         if (!this.apiKey) {
             throw new Error('API key not set');
         }
 
         if (!bookmarks || bookmarks.length === 0) {
-            return [];
+            return { categories: [], results: [] };
         }
+
+        // First, analyze bookmarks to generate dynamic categories
+        console.log('Generating dynamic categories from bookmarks...');
+        const dynamicCategories = await this._generateDynamicCategories(bookmarks, suggestedCategories, learningData);
+        console.log('Generated categories:', dynamicCategories);
 
         const results = [];
         const batchSize = 50; // Process in batches to avoid API limits
@@ -45,7 +50,7 @@ class AIProcessor {
 
             try {
                 // Add timeout for each batch
-                const batchPromise = this._processBatch(batch, categories, learningData);
+                const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
                 const timeoutPromise = new Promise((_, reject) => {
                     setTimeout(() => reject(new Error('Batch timeout after 30 seconds')), 30000);
                 });
@@ -77,7 +82,223 @@ class AIProcessor {
             }
         }
 
-        return results;
+        return {
+            categories: dynamicCategories,
+            results: results
+        };
+    }
+
+    /**
+     * Generate dynamic hierarchical categories based on bookmark analysis
+     * @param {Array} bookmarks - All bookmarks to analyze
+     * @param {Array} suggestedCategories - Optional suggested categories
+     * @param {Object} learningData - Learning data
+     * @returns {Promise<Array>} Generated hierarchical categories
+     */
+    async _generateDynamicCategories(bookmarks, suggestedCategories = [], learningData = {}) {
+        // Take a sample of bookmarks for category generation (max 150 for better analysis)
+        const sampleBookmarks = bookmarks.slice(0, Math.min(150, bookmarks.length));
+
+        // Get user preferences for hierarchical categories
+        const settings = await this._getSettings();
+        const maxDepth = settings.maxCategoryDepth || 4;
+        const minCategories = settings.minCategories || 15;
+        const maxCategories = settings.maxCategories || 50;
+        const hierarchicalMode = settings.hierarchicalMode !== false; // Default to true
+
+        let prompt = `**Role:** Advanced Hierarchical Bookmark Category Generator
+**Task:** Analyze the following bookmarks and create a comprehensive hierarchical category system with multiple levels of granularity.
+
+**HIERARCHICAL CATEGORY REQUIREMENTS:**
+- Create ${minCategories}-${maxCategories} hierarchical categories with 2-${maxDepth} levels deep
+- Use format: "Parent > Child > Grandchild > Great-grandchild"
+- Examples: "Work > Development > Frontend > React", "Learning > Programming > JavaScript > Frameworks"
+- Be extremely specific and granular - hundreds of categories are encouraged
+- Consider domain expertise, content type, and usage patterns
+- Include both broad categories and very specific subcategories
+- Maximum depth: ${maxDepth} levels (e.g., Level1 > Level2 > Level3 > Level4)
+
+**Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
+
+        sampleBookmarks.forEach((bookmark, index) => {
+            const title = bookmark.title || 'Untitled';
+            const url = bookmark.url || '';
+            const currentFolder = bookmark.currentFolderName || 'Root';
+            let domain = 'unknown';
+            try {
+                if (url) {
+                    domain = new URL(url).hostname.replace('www.', '');
+                }
+            } catch (e) {
+                domain = 'invalid-url';
+            }
+
+            prompt += `\n${index + 1}. "${title}" (${domain}) - Currently in: ${currentFolder}`;
+        });
+
+        prompt += `\n\n**Suggested Categories (optional reference):** ${suggestedCategories.join(', ')}
+
+**Learning Data:** Based on user preferences:`;
+
+        if (Object.keys(learningData).length > 0) {
+            for (const [pattern, category] of Object.entries(learningData)) {
+                prompt += `\n- "${pattern}" → "${category}"`;
+            }
+        } else {
+            prompt += '\n- No previous learning data available';
+        }
+
+        prompt += `\n\n**HIERARCHICAL CATEGORY INSTRUCTIONS:**
+- Analyze bookmark titles, domains, current folders, and content patterns
+- Create hierarchical categories with 2-4 levels using " > " separator
+- Generate 15-25 main category trees, each with multiple subcategories
+- Be extremely granular - create hundreds of specific subcategories
+- Categories should be:
+  * Very specific and detailed (e.g., "Work > Development > Frontend > React > Hooks")
+  * Organized by domain expertise and content type
+  * Based on actual bookmark content and usage patterns
+  * Include both broad and ultra-specific categories
+
+**CATEGORY EXAMPLES:**
+- "Work > Development > Frontend > JavaScript > React"
+- "Work > Development > Backend > APIs > REST"
+- "Work > Development > DevOps > Docker > Containers"
+- "Learning > Programming > Languages > Python > Data Science"
+- "Learning > Design > UI-UX > Figma > Prototyping"
+- "Personal > Finance > Investment > Stocks > Analysis"
+- "Personal > Health > Fitness > Workouts > Strength Training"
+- "Entertainment > Gaming > PC Games > Strategy > RTS"
+- "Shopping > Tech > Computers > Laptops > Gaming"
+- "News > Technology > AI > Machine Learning > LLMs"
+- "Tools > Productivity > Project Management > Agile > Scrum"
+- "Reference > Documentation > APIs > Web APIs > REST"
+
+**OUTPUT FORMAT:**
+Return a JSON array of hierarchical category paths, like:
+[
+  "Work > Development > Frontend > React",
+  "Work > Development > Backend > Node.js",
+  "Learning > Programming > Python > Data Science",
+  "Personal > Finance > Investment > Stocks",
+  "Entertainment > Gaming > PC Games",
+  "Other"
+]
+
+**IMPORTANT:**
+- Use " > " (space-greater-than-space) as the separator
+- Create very specific subcategories based on the actual bookmarks you see
+- Generate 15-25 category trees minimum
+- Always include "Other" as the last category
+- Be as granular as possible - hundreds of categories are encouraged
+
+Return only the JSON array, no additional text or formatting.`;
+
+        try {
+            const requestBody = {
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }]
+            };
+
+            const response = await fetch(this.baseUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': this.apiKey
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                console.error('Category generation failed, using fallback categories');
+                return this._getFallbackCategories(suggestedCategories);
+            }
+
+            const data = await response.json();
+            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!responseText) {
+                console.error('Invalid category generation response, using fallback');
+                return this._getFallbackCategories(suggestedCategories);
+            }
+
+            // Parse the generated categories
+            const cleanText = responseText.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
+
+            if (jsonMatch) {
+                const categories = JSON.parse(jsonMatch[0]);
+                if (Array.isArray(categories) && categories.length > 0) {
+                    // Ensure "Other" is always included
+                    if (!categories.includes('Other')) {
+                        categories.push('Other');
+                    }
+                    console.log('Successfully generated dynamic categories:', categories);
+                    return categories;
+                }
+            }
+
+            console.error('Failed to parse generated categories, using fallback');
+            return this._getFallbackCategories(suggestedCategories);
+
+        } catch (error) {
+            console.error('Error generating categories:', error);
+            return this._getFallbackCategories(suggestedCategories);
+        }
+    }
+
+    /**
+     * Get fallback hierarchical categories when dynamic generation fails
+     * @param {Array} suggestedCategories - Suggested categories
+     * @returns {Array} Fallback hierarchical categories
+     */
+    _getFallbackCategories(suggestedCategories = []) {
+        if (suggestedCategories.length > 0) {
+            return [...suggestedCategories, 'Other'];
+        }
+
+        return [
+            'Work > Development > Frontend > JavaScript',
+            'Work > Development > Frontend > CSS',
+            'Work > Development > Backend > APIs',
+            'Work > Development > DevOps > Tools',
+            'Work > Design > UI-UX > Resources',
+            'Work > Design > Graphics > Tools',
+            'Work > Business > Marketing > Digital',
+            'Work > Business > Finance > Tools',
+            'Learning > Programming > Languages > JavaScript',
+            'Learning > Programming > Languages > Python',
+            'Learning > Programming > Frameworks > React',
+            'Learning > Design > Tutorials > UI-UX',
+            'Learning > Technology > AI > Machine Learning',
+            'Learning > Business > Entrepreneurship > Startups',
+            'Personal > Finance > Investment > Stocks',
+            'Personal > Finance > Banking > Tools',
+            'Personal > Health > Fitness > Workouts',
+            'Personal > Travel > Planning > Destinations',
+            'Entertainment > Gaming > PC Games > Strategy',
+            'Entertainment > Gaming > Mobile Games > Casual',
+            'Entertainment > Media > Streaming > Movies',
+            'Entertainment > Media > Music > Platforms',
+            'Shopping > Technology > Computers > Hardware',
+            'Shopping > Technology > Software > Tools',
+            'Shopping > Lifestyle > Fashion > Clothing',
+            'Shopping > Home > Furniture > Decor',
+            'News > Technology > Industry > Updates',
+            'News > Business > Markets > Analysis',
+            'News > World > Politics > Current Events',
+            'Tools > Productivity > Project Management > Agile',
+            'Tools > Productivity > Note Taking > Apps',
+            'Tools > Development > Code Editors > Extensions',
+            'Tools > Design > Graphics > Software',
+            'Reference > Documentation > APIs > Web Services',
+            'Reference > Tutorials > Programming > Guides',
+            'Social > Networking > Professional > LinkedIn',
+            'Social > Communication > Messaging > Apps',
+            'Other'
+        ];
     }
 
     /**
@@ -147,11 +368,13 @@ class AIProcessor {
 
 **User Categories:** ${categories.join(', ')}
 
-**Instructions:**
-- Consider the bookmark's current folder location as a hint for categorization
-- If a bookmark is already in a meaningful folder (like "Work" or "Shopping"), consider keeping it in a similar category
-- Use URL domain, title content, and current folder context for better categorization
-- Prioritize user's custom categories over generic ones
+**HIERARCHICAL CATEGORIZATION INSTRUCTIONS:**
+- Assign each bookmark to the most specific hierarchical category possible
+- Consider current folder location, URL domain, title content, and page context
+- Use the full hierarchical path (e.g., "Work > Development > Frontend > React")
+- Be as granular as possible - prefer deeper, more specific categories
+- If current folder suggests a category tree, use similar hierarchical structure
+- Create new subcategories when needed for better organization
 
 **Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
 
@@ -169,20 +392,38 @@ class AIProcessor {
         bookmarks.forEach((bookmark, index) => {
             const title = bookmark.title || 'Untitled';
             const url = bookmark.url || '';
-            const currentFolder = bookmark.currentFolderName || 'Unknown';
+            const currentFolder = bookmark.currentFolderName || 'Root';
             const folderPath = bookmark.currentFolder || 'Root';
+            let domain = 'unknown';
+            try {
+                if (url) {
+                    domain = new URL(url).hostname.replace('www.', '');
+                }
+            } catch (e) {
+                domain = 'invalid-url';
+            }
 
-            prompt += `\n${index + 1}. Title: "${title}" URL: "${url}" Current Folder: "${currentFolder}" Path: "${folderPath}"`;
+            prompt += `\n${index + 1}. Title: "${title}" | Domain: "${domain}" | URL: "${url}" | Current Location: "${currentFolder}" (${folderPath})`;
         });
 
-        prompt += `\n\n**Output Requirements:**
+        prompt += `\n\n**HIERARCHICAL OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
-- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (assigned category), and 'confidence' (0.0-1.0)
-- Use only categories from the user's list above
+- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), and 'confidence' (0.0-1.0)
+- Use hierarchical categories from the generated list above
+- Category must be the full path (e.g., "Work > Development > Frontend > React")
+- Be as specific as possible - use the deepest appropriate category level
 - If uncertain, use 'Other' category
-- Consider URL domain, title content, AND current folder location for better categorization
-- If current folder suggests a category (e.g., bookmark in "Work" folder), prefer work-related categories
-- Return only the JSON array, no additional text or formatting`;
+- Consider URL domain, title content, AND current folder location for granular categorization
+- Prefer deeper, more specific categories over shallow ones
+
+**EXAMPLE OUTPUT:**
+[
+  {"id": 1, "category": "Work > Development > Frontend > React", "confidence": 0.9},
+  {"id": 2, "category": "Learning > Programming > Python > Data Science", "confidence": 0.8},
+  {"id": 3, "category": "Personal > Finance > Investment > Stocks", "confidence": 0.7}
+]
+
+Return only the JSON array, no additional text or formatting`;
 
         return prompt;
     }
@@ -278,6 +519,27 @@ class AIProcessor {
         } catch (error) {
             console.error('API key test failed:', error);
             return false;
+        }
+    }
+
+    /**
+     * Get user settings
+     * @returns {Promise<Object>} User settings
+     */
+    async _getSettings() {
+        const defaultSettings = {
+            hierarchicalMode: true,
+            maxCategoryDepth: 4,
+            minCategories: 15,
+            maxCategories: 50
+        };
+
+        try {
+            const result = await chrome.storage.sync.get(['bookmarkMindSettings']);
+            return { ...defaultSettings, ...result.bookmarkMindSettings };
+        } catch (error) {
+            console.error('Error getting settings:', error);
+            return defaultSettings;
         }
     }
 

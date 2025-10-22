@@ -140,25 +140,39 @@ class BookmarkService {
   }
 
   /**
-   * Find or create a folder by path (e.g., "Work/Projects/Current")
-   * @param {string} path - Folder path separated by '/'
+   * Find or create a folder by hierarchical path (e.g., "Work > Development > Frontend")
+   * @param {string} path - Folder path separated by " > " or "/"
    * @param {string} rootParentId - Root parent ID (default: bookmarks bar)
    * @returns {Promise<string>} Folder ID
    */
   async findOrCreateFolderByPath(path, rootParentId = '1') {
-    const parts = path.split('/').filter(part => part.trim());
+    // Support both " > " (new format) and "/" (legacy format) separators
+    const separator = path.includes(' > ') ? ' > ' : '/';
+    const parts = path.split(separator).filter(part => part.trim());
     let currentParentId = rootParentId;
 
-    for (const part of parts) {
+    console.log(`Creating hierarchical folder path: ${path} (${parts.length} levels)`);
+    console.log(`Folder hierarchy: ${parts.join(' → ')}`);
+
+    let currentPath = '';
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].trim();
+      currentPath += (i === 0 ? '' : ' > ') + part;
+
       const existingFolder = await this._findFolderByName(part, currentParentId);
 
       if (existingFolder) {
+        console.log(`✓ Found existing folder: ${part} (${existingFolder.id})`);
         currentParentId = existingFolder.id;
       } else {
+        console.log(`+ Creating new folder: ${part} in parent ${currentParentId}`);
         const newFolder = await this.createFolder(part, currentParentId);
         currentParentId = newFolder.id;
+        console.log(`✓ Created folder: ${part} (${newFolder.id})`);
       }
     }
+
+    console.log(`✅ Hierarchical path complete: ${path} → ${currentParentId}`);
 
     return currentParentId;
   }
