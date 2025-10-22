@@ -1,0 +1,53 @@
+{
+    "name": "bookmarkmind",
+    "version": "1.0.0",
+    "description": "AI-powered Chrome bookmark organizer using Google Gemini API",
+    "main": "manifest.json",
+    "scripts": {
+        "build": "echo 'No build process needed - pure vanilla JS extension'",
+        "test": "echo 'Tests not implemented yet'",
+        "lint": "echo 'Linting not configured yet'",
+        "package": "zip -r bookmarkmind-v1.0.0.zip . -x '*.git*' 'node_modules/*' '*.zip' '*.md' 'package*.json' 'create_simple_icons.html' 'icons/create_icons.py'"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bookmarkmind/bookmarkmind.git"
+    },
+    "keywords": [
+        "chrome-extension",
+        "bookmarks",
+        "ai",
+        "organization",
+        "gemini",
+        "productivity",
+        "browser",
+        "automation"
+    ],
+    "author": "BookmarkMind Team",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/bookmarkmind/bookmarkmind/issues"
+    },
+    "homepage": "https://github.com/bookmarkmind/bookmarkmind#readme",
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "devDependencies": {},
+    "dependencies": {},
+    "extensionInfo": {
+        "manifestVersion": 3,
+        "targetBrowsers": [
+            "Chrome 88+",
+            "Edge 88+",
+            "Brave",
+            "Opera"
+        ],
+        "permissions": [
+            "bookmarks",
+            "storage"
+        ],
+        "apiIntegrations": [
+            "Google Gemini API"
+        ]
+    }
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Bookmark Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        .info { background: #d1ecf1; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>BookmarkMind - Simple Bookmark Test</h1>
+    <button onclick="testBasicBookmarks()">Test Basic Bookmark Access</button>
+    <button onclick="testExtensionStats()">Test Extension Stats</button>
+    <div id="results"></div>
+
+    <script>
+        async function testBasicBookmarks() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="info">Testing basic bookmark access...</div>';
+
+            try {
+                // Test 1: Basic Chrome API access
+                console.log('Testing chrome.bookmarks API...');
+                const tree = await chrome.bookmarks.getTree();
+
+                results.innerHTML += `<div class="success">✓ Chrome bookmarks API accessible</div>`;
+
+                // Test 2: Extract all bookmarks manually
+                const allBookmarks = [];
+                function extractAll(node) {
+                    if (node.url) {
+                        allBookmarks.push({
+                            id: node.id,
+                            title: node.title,
+                            url: node.url,
+                            parentId: node.parentId
+                        });
+                    }
+                    if (node.children) {
+                        node.children.forEach(extractAll);
+                    }
+                }
+
+                extractAll(tree[0]);
+
+                results.innerHTML += `<div class="success">✓ Found ${allBookmarks.length} total bookmarks</div>`;
+
+                // Test 3: Show distribution
+                const distribution = {
+                    bookmarksBar: allBookmarks.filter(b => b.parentId === '1').length,
+                    otherBookmarks: allBookmarks.filter(b => b.parentId === '2').length,
+                    mobileBookmarks: allBookmarks.filter(b => b.parentId === '3').length,
+                    inSubfolders: allBookmarks.filter(b => !['1', '2', '3'].includes(b.parentId)).length
+                };
+
+                results.innerHTML += `
+                    <div class="info">
+                        <strong>Bookmark Distribution:</strong><br>
+                        Bookmarks Bar: ${distribution.bookmarksBar}<br>
+                        Other Bookmarks: ${distribution.otherBookmarks}<br>
+                        Mobile Bookmarks: ${distribution.mobileBookmarks}<br>
+                        In Subfolders: ${distribution.inSubfolders}<br>
+                        <strong>Total Uncategorized: ${distribution.bookmarksBar + distribution.otherBookmarks + distribution.mobileBookmarks}</strong>
+                    </div>
+                `;
+
+                // Test 4: Show first few bookmarks
+                if (allBookmarks.length > 0) {
+                    const sampleBookmarks = allBookmarks.slice(0, 5);
+                    let sampleHtml = '<div class="info"><strong>Sample Bookmarks:</strong><pre>';
+                    sampleBookmarks.forEach((b, i) => {
+                        sampleHtml += `${i+1}. ${b.title} (${b.url}) - Parent: ${b.parentId}\n`;
+                    });
+                    sampleHtml += '</pre></div>';
+                    results.innerHTML += sampleHtml;
+                }
+
+                // Test 5: Show full tree structure (first level)
+                let treeHtml = '<div class="info"><strong>Bookmark Tree Structure:</strong><pre>';
+                tree[0].children?.forEach(child => {
+                    treeHtml += `${child.title} (ID: ${child.id}) - ${child.children?.length || 0} children\n`;
+                });
+                treeHtml += '</pre></div>';
+                results.innerHTML += treeHtml;
+
+            } catch (error) {
+                results.innerHTML += `<div class="error">✗ Error: ${error.message}</div>`;
+                console.error('Bookmark test error:', error);
+            }
+        }
+
+        async function testExtensionStats() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="info">Testing extension stats...</div>';
+
+            try {
+                const response = await chrome.runtime.sendMessage({ action: 'getStats' });
+
+                if (response.success) {
+                    results.innerHTML += `
+                        <div class="success">
+                            <strong>Extension Stats:</strong>
+                            <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `<div class="error">Stats Error: ${response.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML += `<div class="error">Extension Stats Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run basic test
+        setTimeout(testBasicBookmarks, 500);
+    </script>
+</body>
+</html>

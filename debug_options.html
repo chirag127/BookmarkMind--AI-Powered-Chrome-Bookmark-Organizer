@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug BookmarkMind Options</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        inputadding: 10px; width: 300px; margin: 5px; }
+        button { padding: 10px 15px; margin: 5px; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>BookmarkMind Options Debug</h1>
+
+    <div class="debug-section">
+        <h3>API Key Testing</h3>
+        <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
+        <br>
+        <button id="clearBtn">Clear</button>
+        <button id="toggleBtn">Show/Hide</button>
+        <button id="testBtn" disabled>Test API Key</button>
+        <button id="saveBtn" disabled>Save API Key</button>
+
+        <div id="status" class="status info">
+            Enter an API key to enable buttons
+        </div>
+
+        <div id="debugInfo" style="font-family: monospace; font-size: 12px; margin-top: 10px;">
+            Debug info will appear here...
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Test Cases</h3>
+        <button onclick="testCase('empty')">Test: Empty</button>
+        <button onclick="testCase('short')">Test: Short Text</button>
+        <button onclick="testCase('valid')">Test: Valid API Key</button>
+        <button onclick="testCase('masked')">Test: Masked Key</button>
+    </div>
+
+    <script>
+        const apiKeyInput = document.getElementById('apiKey');
+        const clearBtn = document.getElementById('clearBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const testBtn = document.getElementById('testBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const status = document.getElementById('status');
+        const debugInfo = document.getElementById('debugInfo');
+
+        let isVisible = false;
+        let storedKey = '';
+
+        function updateDebugInfo() {
+            const value = apiKeyInput.value.trim();
+            const info = {
+                value: value.substring(0, 10) + (value.length > 10 ? '...' : ''),
+                length: value.length,
+                isPlaceholder: value.startsWith('••••'),
+                startsWithAIza: value.startsWith('AIza'),
+                hasStoredKey: storedKey.length > 0,
+                isVisible: isVisible
+            };
+
+            debugInfo.innerHTML = JSON.stringify(info, null, 2);
+        }
+
+        function updateButtonStates() {
+            const value = apiKeyInput.value.trim();
+            const isPlaceholder = value.startsWith('••••');
+            const hasRealValue = value.length > 0 && !isPlaceholder;
+            const looksLikeApiKey = value.startsWith('AIza') || value.length > 20;
+
+            const shouldEnable = hasRealValue && looksLikeApiKey;
+
+            testBtn.disabled = !shouldEnable;
+            saveBtn.disabled = !shouldEnable;
+
+            if (shouldEnable) {
+                status.className = 'status success';
+                status.textContent = 'API key looks valid - buttons enabled';
+            } else if (hasRealValue) {
+                status.className = 'status error';
+                status.textContent = 'API key format invalid - should start with AIza or be longer';
+            } else {
+                status.className = 'status info';
+                status.textContent = 'Enter an API key to enable buttons';
+            }
+
+            updateDebugInfo();
+        }
+
+        function testCase(type) {
+            switch(type) {
+                case 'empty':
+                    apiKeyInput.value = '';
+                    break;
+                case 'short':
+                    apiKeyInput.value = 'abc123';
+                    break;
+                case 'valid':
+                    apiKeyInput.value = 'AIzaSyDummyKeyForTesting1234567890';
+                    break;
+                case 'masked':
+                    storedKey = 'AIzaSyRealKeyStoredInMemory1234567890';
+                    apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+                    break;
+            }
+            updateButtonStates();
+        }
+
+        // Event listeners
+        apiKeyInput.addEventListener('input', updateButtonStates);
+
+        clearBtn.addEventListener('click', () => {
+            apiKeyInput.value = '';
+            storedKey = '';
+            isVisible = false;
+            apiKeyInput.type = 'password';
+            updateButtonStates();
+        });
+
+        toggleBtn.addEventListener('click', () => {
+            if (isVisible) {
+                if (storedKey) {
+                    apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+                }
+                apiKeyInput.type = 'password';
+            } else {
+                if (storedKey) {
+                    apiKeyInput.value = storedKey;
+                }
+                apiKeyInput.type = 'text';
+            }
+            isVisible = !isVisible;
+            updateButtonStates();
+        });
+
+        testBtn.addEventListener('click', () => {
+            status.className = 'status info';
+            status.textContent = 'Testing API key...';
+
+            // Simulate API test
+            setTimeout(() => {
+                status.className = 'status success';
+                status.textContent = 'API key test successful!';
+            }, 1000);
+        });
+
+        saveBtn.addEventListener('click', () => {
+            storedKey = apiKeyInput.value.trim();
+            status.className = 'status success';
+            status.textContent = 'API key saved!';
+
+            // Show masked version after save
+            setTimeout(() => {
+                apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+                apiKeyInput.type = 'password';
+                isVisible = false;
+                updateButtonStates();
+            }, 1000);
+        });
+
+        // Initialize
+        updateButtonStates();
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BookmarkMind Extension Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        code { background: #f8f9fa; padding: 2px 4px; border-radius: 3px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>📚 BookmarkMind Extension Test & Setup</h1>
+
+    <div class="step info">
+        <h3>🔍 Current Status</h3>
+        <p>This page helps diagnose and fix BookmarkMind extension issues.</p>
+        <p><strong>Issue:</strong> Extension shows "0 bookmarks" or sort button is disabled</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 1: Verify Extension Installation</h3>
+        <p>First, let's check if the extension is properly loaded:</p>
+        <ol>
+            <li>Go to <code>chrome://extensions/</code></li>
+            <li>Enable "Developer mode" (toggle in top right)</li>
+            <li>Look for "BookmarkMind - AI Bookmark Organizer"</li>
+            <li>It should be enabled (toggle switch on)</li>
+            <li>No red error messages should be visible</li>
+        </ol>
+        <button onclick="window.open('chrome://extensions/', '_blank')">Open Extensions Page</button>
+    </div>
+
+    <div class="step">
+        <h3>Step 2: Check Your Bookmarks</h3>
+        <p>The extension looks for bookmarks in these locations:</p>
+        <ol>
+            <li>Go to <code>chrome://bookmarks/</code></li>
+            <li>Check if you have bookmarks in:
+                <ul>
+                    <li><strong>Bookmarks bar</strong> (top level)</li>
+                    <li><strong>Other bookmarks</strong> (top level)</li>
+                    <li><strong>Mobile bookmarks</strong> (if you sync with mobile)</li>
+                </ul>
+            </li>
+            <li>Bookmarks in subfolders won't be counted as "uncategorized"</li>
+        </ol>
+        <button onclick="window.open('chrome://bookmarks/', '_blank')">Open Bookmarks Manager</button>
+    </div>
+
+    <div class="step">
+        <h3>Step 3: Test Extension Popup</h3>
+        <p>Now test the extension popup:</p>
+        <ol>
+            <li>Click the BookmarkMind icon in your browser toolbar</li>
+            <li>If you don't see it, click the puzzle piece (🧩) and pin BookmarkMind</li>
+            <li>The popup should show your bookmark count</li>
+            <li>If it shows "0 bookmarks", look for a "Test Bookmark Access" button</li>
+        </ol>
+        <div id="popupTest" class="warning">
+            <strong>⚠️ Cannot test popup from this page</strong><br>
+            You must click the actual extension icon in your browser toolbar.
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>Step 4: Check Browser Console</h3>
+        <p>If the extension still doesn't work:</p>
+        <ol>
+            <li>Right-click on the extension popup → "Inspect"</li>
+            <li>Go to the "Console" tab</li>
+            <li>Look for error messages or logs</li>
+            <li>You should see messages like "Found X bookmarks"</li>
+        </ol>
+        <pre>Expected console output:
+✓ Found 25 bookmarks
+✓ Bookmark distribution by folder: {bookmarksBar: 15, otherBookmarks: 10, ...}
+✓ Stats loaded successfully: {totalBookmarks: 25, uncategorized: 25}</pre>
+    </div>
+
+    <div class="step">
+        <h3>Step 5: Fix Common Issues</h3>
+
+        <h4>🔧 Issue: Extension shows errors in chrome://extensions/</h4>
+        <p><strong>Solution:</strong></p>
+        <ol>
+            <li>Remove the extension (click "Remove")</li>
+            <li>Download/extract the extension files again</li>
+            <li>Click "Load unpacked" and select the folder</li>
+            <li>Make sure you select the folder containing <code>manifest.json</code></li>
+        </ol>
+
+        <h4>🔧 Issue: No bookmarks detected but you have many</h4>
+        <p><strong>Solution:</strong></p>
+        <ol>
+            <li>Move a few bookmarks to the "Bookmarks bar" (drag and drop)</li>
+            <li>Refresh the extension popup</li>
+            <li>The extension only processes bookmarks in main folders, not subfolders</li>
+        </ol>
+
+        <h4>🔧 Issue: Permission denied errors</h4>
+        <p><strong>Solution:</strong></p>
+        <ol>
+            <li>Go to <code>chrome://extensions/</code></li>
+            <li>Click "Details" on BookmarkMind</li>
+            <li>Scroll to "Permissions"</li>
+            <li>Ensure "Allow" is selected for "Read and change your bookmarks"</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>Step 6: Create Test Bookmarks</h3>
+        <p>If you have no bookmarks to test with:</p>
+        <button onclick="createTestBookmarks()">Create Test Bookmarks</button>
+        <div id="testBookmarkResult"></div>
+    </div>
+
+    <div class="step success">
+        <h3>✅ Success Checklist</h3>
+        <p>The extension is working correctly when:</p>
+        <ul>
+            <li>✅ Extension loads without errors in chrome://extensions/</li>
+            <li>✅ Popup shows correct bookmark count (not 0 or -)</li>
+            <li>✅ "Sort Bookmarks Now" button is enabled (not grayed out)</li>
+            <li>✅ Console shows "Found X bookmarks" messages</li>
+            <li>✅ You can configure API key in settings</li>
+        </ul>
+    </div>
+
+    <div class="step info">
+        <h3>📞 Still Need Help?</h3>
+        <p>If none of these steps work:</p>
+        <ol>
+            <li>Check the <code>BOOKMARK_DETECTION_DEBUG.md</code> file</li>
+            <li>Try the extension in an Incognito window</li>
+            <li>Test with a fresh Chrome profile</li>
+            <li>Report the issue with your Chrome version and console logs</li>
+        </ol>
+    </div>
+
+    <script>
+        function createTestBookmarks() {
+            const result = document.getElementById('testBookmarkResult');
+            result.innerHTML = `
+                <div class="info" style="margin-top: 10px;">
+                    <strong>To create test bookmarks:</strong><br>
+                    1. Press Ctrl+D (or Cmd+D on Mac) to bookmark this page<br>
+                    2. Bookmark a few more pages (Google, GitHub, etc.)<br>
+                    3. Make sure they're saved to "Bookmarks bar"<br>
+                    4. Refresh the BookmarkMind popup<br><br>
+                    <em>Note: This page can't create bookmarks directly due to browser security.</em>
+                </div>
+            `;
+        }
+
+        // Show current browser info
+        document.addEventListener('DOMContentLoaded', () => {
+            const info = `
+                <div class="info">
+                    <strong>Browser Info:</strong><br>
+                    User Agent: ${navigator.userAgent}<br>
+                    Chrome Extension APIs Available: ${typeof chrome !== 'undefined' ? 'Yes' : 'No'}<br>
+                    Current URL: ${window.location.href}
+                </div>
+            `;
+            document.body.insertAdjacentHTML('afterbegin', info);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+# BookmarkMind .gitignore
+
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (if added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+*.zip
+*.crx
+*.pem
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Test files
+coverage/
+*.test.js
+test-results/
+
+# Temporary files
+temp/
+tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Chrome extension development
+key.pem
+*.crx
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Icon generation artifacts
+icons/*.py
+create_simple_icons.html

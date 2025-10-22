@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug BookmarkMind Bookmark Detection</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+        .bookmark-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .stats {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 15px;
+            main: 5px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>BookmarkMind Bookmark Detection Debug</h1>
+
+    <div class="section">
+        <h3>Test Bookmark Detection</h3>
+        <button onclick="testBookmarkDetection()">Load All Bookmarks</button>
+        <button onclick="testStats()">Get Stats</button>
+        <button onclick="clearResults()">Clear Results</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Mock Chrome APIs for testing (if not in extension context)
+        if (typeof chrome === 'undefined') {
+            window.chrome = {
+                bookmarks: {
+                    getTree: () => Promise.resolve([{
+                        id: '0',
+                        title: 'Root',
+                        children: [
+                            {
+                                id: '1',
+                                title: 'Bookmarks Bar',
+                                children: [
+                                    { id: '10', title: 'Google', url: 'https://google.com', parentId: '1' },
+                                    { id: '11', title: 'GitHub', url: 'https://github.com', parentId: '1' }
+                                ]
+                            },
+                            {
+                                id: '2',
+                                title: 'Other Bookmarks',
+                                children: [
+                                    { id: '20', title: 'Amazon', url: 'https://amazon.com', parentId: '2' },
+                                    { id: '21', title: 'Netflix', url: 'https://netflix.com', parentId: '2' }
+                                ]
+                            },
+                            {
+                                id: '3',
+                                title: 'Mobile Bookmarks',
+                                children: [
+                                    { id: '30', title: 'YouTube', url: 'https://youtube.com', parentId: '3' }
+                                ]
+                            }
+                        ]
+                    }])
+                }
+            };
+        }
+
+        async function testBookmarkDetection() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Loading bookmarks...</p>';
+
+            try {
+                // Test the BookmarkService if available
+                if (typeof BookmarkService !== 'undefined') {
+                    const service = new BookmarkService();
+                    const bookmarks = await service.getAllBookmarks();
+
+                    displayBookmarkResults(bookmarks);
+                } else {
+                    // Fallback: direct Chrome API test
+                    const tree = await chrome.bookmarks.getTree();
+                    const bookmarks = [];
+                    extractBookmarks(tree[0], bookmarks);
+
+                    displayBookmarkResults(bookmarks);
+                }
+
+            } catch (error) {
+                results.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                console.error('Bookmark detection error:', error);
+            }
+        }
+
+        function extractBookmarks(node, bookmarks, currentPath = '') {
+            if (node.url) {
+                bookmarks.push({
+                    id: node.id,
+                    title: node.title || 'Untitled',
+                    url: node.url,
+                    parentId: node.parentId,
+                    currentFolder: currentPath || 'Root',
+                    currentFolderName: getFolderName(node.parentId)
+                });
+            }
+
+            if (node.children) {
+                const nodePath = currentPath ? `${currentPath}/${node.title}` : node.title;
+                node.children.forEach(child => {
+                    extractBookmarks(child, bookmarks, nodePath);
+                });
+            }
+        }
+
+        function getFolderName(folderId) {
+            const folderNames = {
+                '0': 'Root',
+                '1': 'Bookmarks Bar',
+                '2': 'Other Bookmarks',
+                '3': 'Mobile Bookmarks'
+            };
+            return folderNames[folderId] || 'Custom Folder';
+        }
+
+        function displayBookmarkResults(bookmarks) {
+            const results = document.getElementById('results');
+
+            // Calculate stats
+            const stats = {
+                total: bookmarks.length,
+                bookmarksBar: bookmarks.filter(b => b.parentId === '1').length,
+                otherBookmarks: bookmarks.filter(b => b.parentId === '2').length,
+                mobileBookmarks: bookmarks.filter(b => b.parentId === '3').length,
+                uncategorized: bookmarks.filter(b =>
+                    ['1', '2', '3'].includes(b.parentId) &&
+                    ['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(b.currentFolderName)
+                ).length
+            };
+
+            let html = `
+                <div class="stats success">
+                    <h4>Bookmark Statistics</h4>
+                    <p><strong>Total Bookmarks:</strong> ${stats.total}</p>
+                    <p><strong>Bookmarks Bar:</strong> ${stats.bookmarksBar}</p>
+                    <p><strong>Other Bookmarks:</strong> ${stats.otherBookmarks}</p>
+                    <p><strong>Mobile Bookmarks:</strong> ${stats.mobileBookmarks}</p>
+                    <p><strong>Uncategorized (will be processed):</strong> ${stats.uncategorized}</p>
+                </div>
+
+                <h4>All Bookmarks:</h4>
+            `;
+
+            bookmarks.forEach((bookmark, index) => {
+                const willProcess = ['1', '2', '3'].includes(bookmark.parentId) &&
+                    ['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(bookmark.currentFolderName);
+
+                html += `
+                    <div class="bookmark-item" style="background: ${willProcess ? '#e8f5e8' : '#fff3e0'}">
+                        <strong>${index + 1}. ${bookmark.title}</strong><br>
+                        URL: ${bookmark.url}<br>
+                        Parent ID: ${bookmark.parentId} (${bookmark.currentFolderName})<br>
+                        Path: ${bookmark.currentFolder}<br>
+                        <em>Will process: ${willProcess ? 'YES' : 'NO'}</em>
+                    </div>
+                `;
+            });
+
+            results.innerHTML = html;
+        }
+
+        async function testStats() {
+            const results = document.getElementById('results');
+
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    // Test via extension background script
+                    const response = await chrome.runtime.sendMessage({ action: 'getStats' });
+
+                    if (response.success) {
+                        results.innerHTML = `
+                            <div class="stats success">
+                                <h4>Extension Stats</h4>
+                                <pre>${JSON.stringify(response.data, null, 2)}</pre>
+                            </div>
+                        `;
+                    } else {
+                        results.innerHTML = `<div class="error">Stats Error: ${response.error}</div>`;
+                    }
+                } else {
+                    results.innerHTML = `<div class="error">Not running in extension context</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">Stats test error: ${error.message}</div>`;
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-run test if in extension context
+        if (typeof chrome !== 'undefined' && chrome.bookmarks) {
+            setTimeout(testBookmarkDetection, 1000);
+        }
+    </script>
+</body>
+</html>
