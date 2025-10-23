@@ -346,6 +346,63 @@ class AIProcessor {
     }
 
     /**
+     * Get existing folder structure to avoid creating duplicates
+     * @returns {Promise<Array>} Array of existing folder paths
+     */
+    async _getExistingFolderStructure() {
+        try {
+            const existingFolders = [];
+
+            // Get all bookmark folders from Bookmarks Bar (ID: 1)
+            await this._collectFolderPaths('1', '', existingFolders);
+
+            // Also check Other Bookmarks (ID: 2) if it has organized folders
+            await this._collectFolderPaths('2', '', existingFolders);
+
+            // Filter out default Chrome folders and empty paths
+            const filteredFolders = existingFolders.filter(folder =>
+                folder &&
+                folder !== 'Bookmarks Bar' &&
+                folder !== 'Other Bookmarks' &&
+                folder !== 'Mobile Bookmarks' &&
+                !folder.includes('Recently Added') &&
+                folder.length > 0
+            );
+
+            console.log(`📁 Found ${filteredFolders.length} existing folders:`, filteredFolders);
+            return filteredFolders;
+
+        } catch (error) {
+            console.error('Error getting existing folder structure:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Recursively collect folder paths
+     * @param {string} parentId - Parent folder ID
+     * @param {string} currentPath - Current path being built
+     * @param {Array} folderPaths - Array to collect paths
+     */
+    async _collectFolderPaths(parentId, currentPath, folderPaths) {
+        try {
+            const children = await chrome.bookmarks.getChildren(parentId);
+
+            for (const child of children) {
+                if (!child.url) { // It's a folder
+                    const folderPath = currentPath ? `${currentPath} > ${child.title}` : child.title;
+                    folderPaths.push(folderPath);
+
+                    // Recursively collect subfolders
+                    await this._collectFolderPaths(child.id, folderPath, folderPaths);
+                }
+            }
+        } catch (error) {
+            console.error(`Error collecting folder paths for parent ${parentId}:`, error);
+        }
+    }
+
+    /**
      * Generate dynamic hierarchical categories based on bookmark analysis
      * @param {Array} bookmarks - All bookmarks to analyze
      * @param {Array} suggestedCategories - Optional suggested categories
@@ -355,6 +412,9 @@ class AIProcessor {
     async _generateDynamicCategories(bookmarks, suggestedCategories = [], learningData = {}) {
         // Take a sample of bookmarks for category generation (max 150 for better analysis)
         const sampleBookmarks = bookmarks.slice(0, Math.min(150, bookmarks.length));
+
+        // Get existing folder structure to avoid duplicates
+        const existingFolders = await this._getExistingFolderStructure();
 
         // Get user preferences for hierarchical categories
         const settings = await this._getSettings();
@@ -366,6 +426,15 @@ class AIProcessor {
         let prompt = `**Role:** Advanced Hierarchical Bookmark Category Generator
 **Task:** Analyze the following bookmarks and create a comprehensive hierarchical category system with multiple levels of granularity.
 
+**EXISTING FOLDER STRUCTURE (REUSE THESE AS MUCH AS POSSIBLE):**
+${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
+
+**CRITICAL INSTRUCTIONS:**
+- **PRIORITIZE EXISTING FOLDERS:** Use the existing folder structure above whenever possible
+- **AVOID DUPLICATES:** Do not create similar folders to existing ones (e.g., if "Development" exists, don't create "Programming" or "Coding")
+- **EXTEND EXISTING:** Add subcategories to existing folders rather than creating new top-level categories
+- **CONSISTENCY:** Match the naming style and hierarchy of existing folders
+
 **HIERARCHICAL CATEGORY REQUIREMENTS:**
 - Create ${minCategories}-${maxCategories} hierarchical categories with 2-${maxDepth} levels deep
 - Use format: "Parent > Child > Grandchild > Great-grandchild"
@@ -374,6 +443,7 @@ class AIProcessor {
 - Consider domain expertise, content type, and usage patterns
 - Include both broad categories and very specific subcategories
 - Maximum depth: ${maxDepth} levels (e.g., Level1 > Level2 > Level3 > Level4)
+- **REUSE EXISTING FOLDERS FIRST, then extend with new subcategories**
 
 **Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
 
@@ -606,7 +676,7 @@ Return only the JSON array, no additional text or formatting.`;
      * @returns {Promise<Array>} Batch results
      */
     async _processBatch(batch, categories, learningData) {
-        const prompt = this._buildPrompt(batch, categories, learningData);
+        const prompt = await this._buildPrompt(batch, categories, learningData);
 
         const requestBody = {
             contents: [{
@@ -665,19 +735,29 @@ Return only the JSON array, no additional text or formatting.`;
      * @param {Object} learningData - Learning data
      * @returns {string} Formatted prompt
      */
-    _buildPrompt(bookmarks, categories, learningData) {
+    async _buildPrompt(bookmarks, categories, learningData) {
+        // Get existing folder structure to include in prompt
+        const existingFolders = await this._getExistingFolderStructure();
+
         let prompt = `**Role:** Bookmark categorization assistant
 **Task:** Analyze the following bookmarks and assign each to the most appropriate category from the user's category list.
 
+**EXISTING FOLDER STRUCTURE (PRIORITIZE THESE):**
+${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
+
 **User Categories:** ${categories.join(', ')}
 
-**HIERARCHICAL CATEGORIZATION INSTRUCTIONS:**
-- Assign each bookmark to the most specific hierarchical category possible
+**CRITICAL CATEGORIZATION INSTRUCTIONS:**
+- **FIRST PRIORITY:** Use existing folders from the structure above whenever possible
+- **AVOID DUPLICATES:** Do not create categories similar to existing folders
+- **EXTEND EXISTING:** If a bookmark fits an existing folder, use it or extend it with subcategories
+- **CONSISTENCY:** Match the naming style and hierarchy of existing folders
+- **SPECIFICITY:** Assign to the most specific hierarchical category possible
 - Consider current folder location, URL domain, title content, and page context
 - Use the full hierarchical path (e.g., "Work > Development > Frontend > React")
 - Be as granular as possible - prefer deeper, more specific categories
 - If current folder suggests a category tree, use similar hierarchical structure
-- Create new subcategories when needed for better organization
+- Only create new categories if no existing folder is suitable
 
 **Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
 
@@ -835,7 +915,7 @@ Return only the JSON array, no additional text or formatting`;
     async _processWithAgentRouter(batch, categories, learningData) {
         console.log('🌐 Using AgentRouter fallback API...');
 
-        const prompt = this._buildPrompt(batch, categories, learningData);
+        const prompt = await this._buildPrompt(batch, categories, learningData);
 
         const requestBody = {
             model: this.fallbackModel,
