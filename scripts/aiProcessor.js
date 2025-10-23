@@ -53,6 +53,11 @@ class AIProcessor {
         // Don't create folder structure upfront - create folders only when bookmarks are actually moved to them
         console.log('🏗️  Folder structure will be created on-demand as bookmarks are categorized...');
 
+        // Get batch size from user settings first
+        const settings = await this._getSettings();
+        const batchSize = settings.batchSize || 50; // Default to 50 if not set
+        console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
+
         const results = [];
 
         // Process bookmarks in configurable BATCHES and MOVE IMMEDIATELY after each batch categorization
@@ -69,11 +74,6 @@ class AIProcessor {
 
         let successfulMoves = 0;
         let failedMoves = 0;
-
-        // Get batch size from user settings
-        const settings = await this._getSettings();
-        const batchSize = settings.batchSize || 50; // Default to 50 if not set
-        console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
 
         // Process bookmarks in batches
         for (let i = 0; i < bookmarks.length; i += batchSize) {
