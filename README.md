@@ -142,12 +142,6 @@ _Extension will be available on the Chrome Web Store after review process_
 
 ![Settings Page](https://via.placeholder.com/600x400/161b22/f0f6fc?text=Settings+Configuration)
 
-### Organized Bookmarks
-
-![Organized Bookmarks](https://via.placeholder.com/500x350/161b22/f0f6fc?text=Hierarchical+Organization)
-
-_Note: Replace placeholder images with actual screenshots_
-
 ## 🙌 Contributing
 
 We welcome contributions from the community! Here's how you can help:

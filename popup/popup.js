@@ -34,6 +34,7 @@ class PopupController {
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
+    this.deleteEmptyFoldersBtn = document.getElementById('deleteEmptyFoldersBtn');
     this.removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
     this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
     this.forceReorganizeBtn = document.getElementById('forceReorganizeBtn');
@@ -76,6 +77,7 @@ class PopupController {
    */
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.deleteEmptyFoldersBtn.addEventListener('click', () => this.deleteEmptyFolders());
     this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
     this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
@@ -287,6 +289,201 @@ class PopupController {
   }
 
   /**
+   * Delete empty folders that don't contain any bookmarks
+   */
+  async deleteEmptyFolders() {
+    if (this.isProcessing) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      'This will scan all bookmark folders and delete empty ones.\n\n' +
+      'Empty folders are those that contain no bookmarks or only other empty folders.\n\n' +
+      'This action cannot be undone automatically.\n\n' +
+      'Are you sure you want to continue?'
+    );
+
+    if (!confirmed) return;
+
+    this.isProcessing = true;
+    this.showProgress();
+    this.updateProgress('Scanning for empty folders...', 0);
+
+    try {
+      console.log('Popup: Starting empty folder deletion...');
+
+      // Get all bookmark folders
+      const bookmarkTree = await chrome.bookmarks.getTree();
+      const allFolders = [];
+
+      // Collect all folders from all locations
+      const collectFoldersFromTree = (nodes, parentTitle = '') => {
+        for (const node of nodes) {
+          if (!node.url) { // It's a folder
+            // Skip root folders (Bookmarks Bar, Other Bookmarks, Mobile Bookmarks)
+            if (!['1', '2', '3'].includes(node.id)) {
+              allFolders.push({
+                id: node.id,
+                title: node.title,
+                parentId: node.parentId,
+                parentTitle: parentTitle,
+                children: node.children || []
+              });
+            }
+          }
+          if (node.children) {
+            collectFoldersFromTree(node.children, node.title);
+          }
+        }
+      };
+
+      collectFoldersFromTree(bookmarkTree);
+
+      console.log(`Found ${allFolders.length} folders to analyze`);
+      this.updateProgress(`Analyzing ${allFolders.length} folders...`, 10);
+
+      if (allFolders.length === 0) {
+        this.showResults({
+          processed: 0,
+          deleted: 0,
+          message: 'No folders found to analyze.'
+        });
+        return;
+      }
+
+      // Check which folders are empty (recursively)
+      const emptyFolders = [];
+      const folderContents = new Map();
+
+      // First pass: get contents of all folders
+      for (let i = 0; i < allFolders.length; i++) {
+        const folder = allFolders[i];
+        const progress = Math.round(10 + (i / allFolders.length) * 40);
+
+        this.updateProgress(`Checking "${folder.title}"... (${i + 1}/${allFolders.length})`, progress);
+
+        try {
+          const children = await chrome.bookmarks.getChildren(folder.id);
+          folderContents.set(folder.id, children);
+
+          // Count bookmarks (not folders) in this folder
+          const bookmarkCount = children.filter(child => child.url).length;
+          const subfolderCount = children.filter(child => !child.url).length;
+
+          console.log(`Folder "${folder.title}": ${bookmarkCount} bookmarks, ${subfolderCount} subfolders`);
+
+        } catch (error) {
+          console.warn(`Could not access folder "${folder.title}":`, error);
+          folderContents.set(folder.id, []);
+        }
+      }
+
+      // Second pass: determine which folders are truly empty (recursively)
+      const isEmptyRecursively = (folderId, visited = new Set()) => {
+        if (visited.has(folderId)) return true; // Avoid infinite loops
+        visited.add(folderId);
+
+        const children = folderContents.get(folderId) || [];
+
+        // If has any bookmarks, not empty
+        const hasBookmarks = children.some(child => child.url);
+        if (hasBookmarks) return false;
+
+        // If has no children at all, it's empty
+        if (children.length === 0) return true;
+
+        // Check if all subfolders are empty
+        const subfolders = children.filter(child => !child.url);
+        return subfolders.every(subfolder => isEmptyRecursively(subfolder.id, new Set(visited)));
+      };
+
+      // Find all empty folders
+      for (const folder of allFolders) {
+        if (isEmptyRecursively(folder.id)) {
+          emptyFolders.push(folder);
+        }
+      }
+
+      console.log(`Found ${emptyFolders.length} empty folders`);
+
+      if (emptyFolders.length === 0) {
+        this.showResults({
+          processed: allFolders.length,
+          deleted: 0,
+          message: 'No empty folders found. All folders contain bookmarks or non-empty subfolders.'
+        });
+        return;
+      }
+
+      // Sort folders by depth (deepest first) to avoid deleting parent before child
+      emptyFolders.sort((a, b) => {
+        const depthA = a.parentTitle.split(' > ').length;
+        const depthB = b.parentTitle.split(' > ').length;
+        return depthB - depthA;
+      });
+
+      // Delete empty folders
+      let deletedCount = 0;
+      const errors = [];
+      let processedFolders = 0;
+
+      for (const folder of emptyFolders) {
+        processedFolders++;
+        const progress = Math.round(50 + (processedFolders / emptyFolders.length) * 40);
+
+        this.updateProgress(
+          `Deleting empty folder "${folder.title}"... (${processedFolders}/${emptyFolders.length})`,
+          progress
+        );
+
+        try {
+          // Double-check the folder is still empty before deleting
+          const currentChildren = await chrome.bookmarks.getChildren(folder.id);
+          const hasBookmarks = currentChildren.some(child => child.url);
+
+          if (!hasBookmarks) {
+            await chrome.bookmarks.removeTree(folder.id);
+            console.log(`Deleted empty folder: "${folder.title}" from "${folder.parentTitle}"`);
+            deletedCount++;
+          } else {
+            console.log(`Skipped folder "${folder.title}" - no longer empty`);
+          }
+
+        } catch (error) {
+          console.error(`Failed to delete folder "${folder.title}":`, error);
+          errors.push(`${folder.title}: ${error.message}`);
+        }
+
+        // Small delay to prevent overwhelming the API
+        if (processedFolders < emptyFolders.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      // Show results
+      const resultMessage = errors.length > 0
+        ? `Deleted ${deletedCount} empty folders. ${errors.length} failed to delete.`
+        : `Successfully deleted ${deletedCount} empty folders.`;
+
+      this.showResults({
+        processed: allFolders.length,
+        deleted: deletedCount,
+        errors: errors.length,
+        message: resultMessage,
+        details: errors.length > 0 ? `Errors: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}` : null
+      });
+
+      // Refresh stats after deleting folders
+      await this.loadStats();
+
+    } catch (error) {
+      console.error('Popup: Delete empty folders error:', error);
+      this.showError(`Failed to delete empty folders: ${error.message}`);
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
    * Remove duplicate URLs (same webpage with different fragments/anchors)
    */
   async removeDuplicateUrls() {
@@ -356,7 +553,7 @@ class PopupController {
         const bookmark = allBookmarks[i];
         const progress = Math.round(10 + (i / allBookmarks.length) * 40);
 
-        this.ogress(`Analyzing "${bookmark.title}"... (${i + 1}/${allBookmarks.length})`, progress);
+        this.updateProgress(`Analyzing "${bookmark.title}"... (${i + 1}/${allBookmarks.length})`, progress);
 
         try {
           // Normalize URL by removing fragments, query parameters, and trailing slashes
@@ -841,20 +1038,28 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   /**
    * Update progress display
    */
-  updateProgress(progress) {
-    const { stage, progress: percent } = progress;
+  updateProgress(progressOrText, percent) {
+    // Handle both object format and separate parameters
+    if (typeof progressOrText === 'object') {
+      const { stage, progress: progressPercent } = progressOrText;
 
-    const stageTexts = {
-      starting: 'Preparing to organize...',
-      loading: 'Loading bookmarks...',
-      categorizing: 'AI is categorizing bookmarks...',
-      organizing: 'Moving bookmarks to folders...',
-      complete: 'Organization complete!'
-    };
+      const stageTexts = {
+        starting: 'Preparing to organize...',
+        loading: 'Loading bookmarks...',
+        categorizing: 'AI is categorizing bookmarks...',
+        organizing: 'Moving bookmarks to folders...',
+        complete: 'Organization complete!'
+      };
 
-    this.progressText.textContent = stageTexts[stage] || 'Processing...';
-    this.progressPercent.textContent = `${Math.round(percent)}%`;
-    this.progressFill.style.width = `${percent}%`;
+      this.progressText.textContent = stageTexts[stage] || 'Processing...';
+      this.progressPercent.textContent = `${Math.round(progressPercent)}%`;
+      this.progressFill.style.width = `${progressPercent}%`;
+    } else {
+      // Handle direct text and percent parameters
+      this.progressText.textContent = progressOrText;
+      this.progressPercent.textContent = `${Math.round(percent)}%`;
+      this.progressFill.style.width = `${percent}%`;
+    }
   }
 
   /**
@@ -863,6 +1068,28 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   showResults(results) {
     this.progressSection.classList.add('hidden');
     this.resultsSection.classList.remove('hidden');
+
+    // Handle delete empty folders results
+    if (results.deleted !== undefined) {
+      this.resultsTitle.textContent = 'Empty Folders Deleted!';
+      this.resultsMessage.textContent = results.message;
+
+      if (results.details) {
+        this.resultsMessage.textContent += `\n\n${results.details}`;
+      }
+
+      // Update stats display
+      this.processedCount.textContent = results.processed || 0;
+      this.categorizedCount.textContent = results.deleted || 0;
+
+      // Change the label for deleted folders
+      const categorizedLabel = this.categorizedCount.nextElementSibling;
+      if (categorizedLabel) {
+        categorizedLabel.textContent = 'Deleted';
+      }
+
+      return;
+    }
 
     // Handle duplicate removal results
     if (results.removed !== undefined) {

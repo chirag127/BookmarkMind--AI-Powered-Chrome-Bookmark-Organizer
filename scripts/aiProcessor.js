@@ -50,14 +50,13 @@ class AIProcessor {
         const dynamicCategories = await this._generateDynamicCategories(bookmarks, suggestedCategories, learningData);
         console.log('Generated categories:', dynamicCategories);
 
-        // IMMEDIATELY create folder structure for all generated categories
-        console.log('🏗️  Creating folder structure for all generated categories...');
-        await this._createFolderStructure(dynamicCategories);
+        // Don't create folder structure upfront - create folders only when bookmarks are actually moved to them
+        console.log('🏗️  Folder structure will be created on-demand as bookmarks are categorized...');
 
         const results = [];
 
-        // Process bookmarks in BATCHES of 50 and MOVE IMMEDIATELY after each batch categorization
-        console.log(`🔍 Processing ${bookmarks.length} bookmarks in batches of 50 with IMMEDIATE MOVEMENT...`);
+        // Process bookmarks in configurable BATCHES and MOVE IMMEDIATELY after each batch categorization
+        console.log(`🔍 Processing ${bookmarks.length} bookmarks in batches of ${batchSize} with IMMEDIATE MOVEMENT...`);
 
         // DEBUG: Check if method exists
         console.log('🔧 DEBUG: _moveBookmarkImmediately method exists:', typeof this._moveBookmarkImmediately === 'function');
@@ -70,7 +69,11 @@ class AIProcessor {
 
         let successfulMoves = 0;
         let failedMoves = 0;
-        const batchSize = 50; // Process 50 bookmarks at a time to avoid rate limits
+
+        // Get batch size from user settings
+        const settings = await this._getSettings();
+        const batchSize = settings.batchSize || 50; // Default to 50 if not set
+        console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
 
         // Process bookmarks in batches
         for (let i = 0; i < bookmarks.length; i += batchSize) {
@@ -89,8 +92,10 @@ class AIProcessor {
                 console.log(`🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`);
 
                 const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
+                // Dynamic timeout based on batch size (6 seconds per bookmark, minimum 2 minutes)
+                const timeoutMs = Math.max(120000, batch.length * 6000);
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Batch timeout after 5 minutes')), 300000); // 5 minutes for 50 bookmarks
+                    setTimeout(() => reject(new Error(`Batch timeout after ${Math.round(timeoutMs / 1000)} seconds`)), timeoutMs);
                 });
 
                 const batchResults = await Promise.race([batchPromise, timeoutPromise]);
@@ -255,7 +260,7 @@ class AIProcessor {
         console.log(`⚠️ Fallback moved: ${failedMoves} bookmarks`);
         console.log(`📁 Categories available: ${dynamicCategories.length}`);
         console.log(`📋 Categories: ${dynamicCategories.join(', ')}`);
-        console.log(`🚀 Batch size used: 50 bookmarks per API call (rate limit friendly)`);
+        console.log(`🚀 Batch size used: ${batchSize} bookmarks per API call (configurable in options)`);
 
         // Show category distribution
         const categoryCount = {};
@@ -328,14 +333,21 @@ class AIProcessor {
     }
 
     /**
-     * Create folder directly (fallback when BookmarkService not available)
+     * Create folder directly only when needed (prevents empty folder creation)
      * @param {string} categoryPath - Category path (e.g., "Work/Projects")
      * @param {string} rootFolderId - Root folder ID
      * @returns {Promise<string>} Folder ID
      */
     async _createFolderDirect(categoryPath, rootFolderId) {
+        // Skip creating "Other" folder - bookmarks stay in root
+        if (categoryPath === 'Other') {
+            return rootFolderId;
+        }
+
         const parts = categoryPath.split(' > ').map(part => part.trim());
         let currentParentId = rootFolderId;
+
+        console.log(`📁 Creating folder structure for: "${categoryPath}"`);
 
         for (const part of parts) {
             // Check if folder already exists
@@ -343,12 +355,14 @@ class AIProcessor {
             let existingFolder = children.find(child => !child.url && child.title === part);
 
             if (!existingFolder) {
-                // Create the folder
+                // Create the folder only when we actually need it
                 existingFolder = await chrome.bookmarks.create({
                     parentId: currentParentId,
                     title: part
                 });
-                console.log(`📁 Created folder: "${part}" in parent ${currentParentId}`);
+                console.log(`📁 Created on-demand folder: "${part}" in parent ${currentParentId}`);
+            } else {
+                console.log(`📁 Using existing folder: "${part}" (ID: ${existingFolder.id})`);
             }
 
             currentParentId = existingFolder.id;
@@ -487,8 +501,8 @@ class AIProcessor {
         const maxCategories = settings.maxCategories || 100; // Increased to allow hundreds of categories
         const hierarchicalMode = settings.hierarchicalMode !== false; // Default to true
 
-        let prompt = `**Role:** Advanced Hierarchical Bookmark Category Generator
-**Task:** Analyze the following bookmarks and create a comprehensive hierarchical category system with multiple levels of granularity.
+        let prompt = `**Role:** Ultra-Granular Hierarchical Bookmark Category Generator
+**Task:** Analyze the following bookmarks and create an extremely detailed hierarchical category system with maximum granularity and specificity.
 
 **EXISTING FOLDER STRUCTURE (REUSE THESE AS MUCH AS POSSIBLE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
@@ -496,32 +510,38 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 **CRITICAL INSTRUCTIONS:**
 - **PRIORITIZE EXISTING FOLDERS:** Use the existing folder structure above whenever possible
 - **AVOID DUPLICATES:** Do not create similar folders to existing ones (e.g., if "Development" exists, don't create "Programming" or "Coding")
-- **EXTEND EXISTING:** Add subcategories to existing folders rather than creating new top-level categories
+- **EXTEND EXISTING:** Add highly specific subcategories to existing folders rather than creating new top-level categories
 - **CONSISTENCY:** Match the naming style and hierarchy of existing folders
+- **MAXIMUM GRANULARITY:** Create the most specific, detailed categories possible
 
-**HIERARCHICAL CATEGORY REQUIREMENTS:**
-- Create ${minCategories}-${maxCategories} hierarchical categories with up to ${maxDepth} levels deep
-- Use format: "Parent > Child > Grandchild > Great-grandchild" etc. based on URL/title complexity
-- Examples: "Tools & Utilities > File Management > Cloud Storage", "Development > Frontend > JavaScript > Frameworks"
-- **SMART GRANULARITY:** Create deeper hierarchies for complex domains, broader for simple ones
-- **SERVICE-LEVEL GROUPING:** Group individual services/brands together, don't create separate folders for each
-- **CONTEXTUAL DEPTH:** Use URL domain and title content to determine appropriate hierarchy depth
-- Maximum depth: ${maxDepth} levels when justified by content complexity
-- **REUSE EXISTING FOLDERS FIRST, then extend intelligently based on bookmark content**
+**ULTRA-GRANULAR HIERARCHICAL REQUIREMENTS:**
+- Create ${minCategories}-${maxCategories} extremely specific hierarchical categories with up to ${maxDepth} levels deep
+- Use format: "Parent > Child > Grandchild > Great-grandchild > Specific-Area > Ultra-Specific" etc.
+- Examples: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux"
+- **ULTRA-SPECIFIC CATEGORIZATION:** Create the deepest, most specific hierarchies possible
+- **DOMAIN EXPERTISE DEPTH:** Technical domains should have 4-7 levels of specificity
+- **CONTEXTUAL MICRO-CATEGORIZATION:** Use URL domain, path, and title content to create ultra-specific categories
+- **PROFESSIONAL GRANULARITY:** Match real-world professional categorization standards
+- **REUSE EXISTING FOLDERS FIRST, then extend with maximum specificity based on bookmark content**
 
-**SMART GRANULARITY RULES:**
-- ✅ DO: "Tools & Utilities > File Management > Cloud Storage" (good hierarchy)
-- ❌ DON'T: "Tools & Utilities > File Management > Cloud Storage > OneDrive" (OneDrive stays in Cloud Storage)
-- ✅ DO: "Development > Frontend > JavaScript > Frameworks" (justified by technical complexity)
-- ❌ DON'T: "Development > Frontend > JavaScript > Frameworks > React > Hooks > useState" (too granular)
-- ✅ DO: "AI & Machine Learning > Natural Language Processing > Large Language Models" (complex domain)
-- ❌ DON'T: "AI & Machine Learning > Natural Language Processing > Large Language Models > ChatGPT > GPT-4" (individual service)
+**ULTRA-GRANULAR CATEGORIZATION RULES:**
+- ✅ DO: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
+- ✅ DO: "Development > Backend > APIs > REST > Authentication > JWT > Token Management"
+- ✅ DO: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Image Recognition > Object Detection"
+- ✅ DO: "Design > UI-UX > Prototyping > Figma > Components > Design Systems > Atomic Design"
+- ✅ DO: "Business > Marketing > Digital Marketing > SEO > Technical SEO > Core Web Vitals"
+- ✅ DO: "Finance > Investment > Stock Analysis > Technical Analysis > Chart Patterns > Candlestick Patterns"
+- ✅ DO: "Learning > Programming > Languages > Python > Data Science > Machine Learning > Scikit-Learn"
+- ✅ DO: "Tools > Productivity > Project Management > Agile > Scrum > Sprint Planning > Estimation"
 
-**GROUPING PRINCIPLES:**
-- Group individual services/brands at the same level (OneDrive, Google Drive, Dropbox all in "Cloud Storage")
-- Create deeper hierarchies for technical/complex domains that warrant it
-- Use URL domain and title to determine if deeper categorization is justified
-- Avoid creating folders for individual products/services/brands
+**MAXIMUM SPECIFICITY PRINCIPLES:**
+- Create 4-7 levels of hierarchy for technical/professional domains
+- Use industry-standard terminology and categorization
+- Break down broad topics into highly specific subtopics
+- Consider the actual content depth when creating hierarchies
+- Group related concepts at appropriate specificity levels
+- Create categories that match how professionals actually organize information
+- Use URL paths and domain expertise to inform granular categorization
 
 **Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
 
@@ -654,45 +674,7 @@ Return only the JSON array, no additional text or formatting.`;
         }
     }
 
-    /**
-     * Create folder structure immediately for all generated categories
-     * @param {Array} categories - Generated hierarchical categories
-     */
-    async _createFolderStructure(categories) {
-        console.log(`🏗️  Creating folder structure for ${categories.length} categories...`);
 
-        // Use existing BookmarkService instance or create new one
-        if (!this.bookmarkService) {
-            if (typeof BookmarkService === 'undefined') {
-                throw new Error('BookmarkService not available for folder creation');
-            }
-            this.bookmarkService = new BookmarkService();
-        }
-        let createdCount = 0;
-        let skippedCount = 0;
-
-        for (const category of categories) {
-            if (category === 'Other') {
-                skippedCount++;
-                continue; // Skip "Other" as it's not a hierarchical category
-            }
-
-            try {
-                console.log(`📁 Creating: ${category}`);
-                const folderId = await this.bookmarkService.findOrCreateFolderByPath(category, '1');
-                console.log(`✅ Created: ${category} → ${folderId}`);
-                createdCount++;
-
-                // Small delay to avoid overwhelming the API
-                await this._delay(100);
-
-            } catch (error) {
-                console.error(`❌ Failed to create folder: ${category}`, error);
-            }
-        }
-
-        console.log(`🎉 Folder structure creation complete: ${createdCount} created, ${skippedCount} skipped`);
-    }
 
     /**
      * Get fallback hierarchical categories when dynamic generation fails
@@ -817,35 +799,39 @@ Return only the JSON array, no additional text or formatting.`;
         // Get existing folder structure to include in prompt
         const existingFolders = await this._getExistingFolderStructure();
 
-        let prompt = `**Role:** Bookmark categorization and title optimization assistant
-**Task:** Analyze the following bookmarks, assign each to the most appropriate category, and generate improved descriptive titles.
+        let prompt = `**Role:** Ultra-Granular Bookmark Categorization and Title Optimization Expert
+**Task:** Analyze the following bookmarks with maximum precision, assign each to the most specific appropriate category, and generate highly descriptive titles.
 
 **EXISTING FOLDER STRUCTURE (PRIORITIZE THESE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
 
-**User Categories:** ${categories.join(', ')}
+**Available Ultra-Granular Categories:** ${categories.join(', ')}
 
-**CRITICAL CATEGORIZATION INSTRUCTIONS:**
-- **FIRST PRIORITY:** Use existing folders from the structure above whenever possible
-- **AVOID DUPLICATES:** Do not create categories similar to existing folders
-- **SMART GRANULARITY:** Use URL domain and title content to determine appropriate hierarchy depth
-- **SERVICE-LEVEL GROUPING:** Group individual services/brands together, don't separate them
-- **CONTEXTUAL DEPTH:** Complex technical domains can have deeper hierarchies, simple services stay grouped
-- **HIERARCHY INTELLIGENCE:** Create deeper paths when justified by content complexity
-- Consider current folder location, URL domain, title content, and page context
-- Use hierarchical paths appropriate to content complexity (e.g., "Tools & Utilities > File Management > Cloud Storage")
-- Group similar services at the same level within appropriate categories
-- Create new categories only when existing structure doesn't fit the content type
+**ULTRA-GRANULAR CATEGORIZATION INSTRUCTIONS:**
+- **MAXIMUM SPECIFICITY:** Use the deepest, most specific category that accurately describes the content
+- **PROFESSIONAL PRECISION:** Match industry-standard categorization practices
+- **CONTEXTUAL ANALYSIS:** Analyze URL path, domain, title, and inferred content type for precise categorization
+- **TECHNICAL DEPTH:** For technical content, use the full depth of available hierarchical categories
+- **DOMAIN EXPERTISE:** Apply professional knowledge to categorize at the appropriate granular level
+- **AVOID SHALLOW CATEGORIZATION:** Don't use broad categories when specific ones are available
 
-**SMART GRANULARITY EXAMPLES:**
-- ✅ DO: "Tools & Utilities > File Management > Cloud Storage" (OneDrive, Google Drive, Dropbox all here)
-- ❌ DON'T: "Tools & Utilities > File Management > Cloud Storage > OneDrive > Personal"
-- ✅ DO: "Development > Frontend > JavaScript > Frameworks" (technical complexity justifies depth)
-- ❌ DON'T: "Development > Frontend > JavaScript > Frameworks > React > Components > Hooks"
-- ✅ DO: "AI & Machine Learning > Computer Vision > Image Recognition" (complex domain)
-- ❌ DON'T: "AI & Machine Learning > Computer Vision > Image Recognition > Google Vision API"
-- ✅ DO: "Shopping > Electronics" (Amazon, Best Buy, Newegg all here)
-- ❌ DON'T: "Shopping > Electronics > Amazon > Laptops > Gaming"
+**ULTRA-GRANULAR CATEGORIZATION EXAMPLES:**
+- ✅ EXCELLENT: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
+- ✅ EXCELLENT: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision > Object Detection"
+- ✅ EXCELLENT: "Design > UI-UX > Prototyping > Figma > Components > Design Systems > Atomic Design"
+- ✅ EXCELLENT: "Business > Marketing > Digital Marketing > SEO > Technical SEO > Core Web Vitals > Performance"
+- ✅ EXCELLENT: "Finance > Investment > Stock Analysis > Technical Analysis > Chart Patterns > Candlestick Analysis"
+- ✅ EXCELLENT: "Learning > Programming > Languages > Python > Data Science > Machine Learning > Scikit-Learn > Classification"
+- ❌ TOO SHALLOW: "Development > Frontend" (when "Development > Frontend > JavaScript > Frameworks > React" is available)
+- ❌ TOO SHALLOW: "AI & Machine Learning" (when "AI & Machine Learning > Deep Learning > Neural Networks" is available)
+
+**PRECISION CATEGORIZATION RULES:**
+- Use 4-7 levels of hierarchy when the content warrants such specificity
+- Analyze the actual content type, not just the domain name
+- Consider the professional context and intended use of the bookmark
+- Match the categorization depth to the content complexity and specificity
+- Use the most specific category that accurately represents the content
+- For technical documentation, tutorials, or tools, use maximum available depth
 
 **TITLE GENERATION INSTRUCTIONS:**
 - **GENERATE IMPROVED TITLES:** Create descriptive, clear titles for each bookmark
