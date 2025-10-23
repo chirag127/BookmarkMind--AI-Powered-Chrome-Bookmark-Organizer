@@ -154,6 +154,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, message: 'Background script is running' });
         break;
 
+      case 'CATEGORIZATION_ERROR':
+        // Handle categorization errors from AI processor
+        await handleCategorizationError(message, sendResponse);
+        break;
+
       default:
         console.warn('Unknown message action:', message.action);
         sendResponse({ success: false, error: 'Unknown action' });
@@ -346,6 +351,57 @@ async function handleExportBookmarks(sendResponse) {
       success: false,
       error: error.message || 'Export failed'
     });
+  }
+}
+
+/**
+ * Handle categorization error notifications
+ */
+async function handleCategorizationError(message, sendResponse) {
+  try {
+    console.error('🚨 CATEGORIZATION ERROR RECEIVED:', message);
+
+    // Log the error details
+    const errorDetails = {
+      message: message.message,
+      batch: message.batch,
+      totalBatches: message.totalBatches,
+      timestamp: new Date().toISOString()
+    };
+
+    console.error('Error details:', errorDetails);
+
+    // Forward error to popup/options page if they're listening
+    try {
+      chrome.runtime.sendMessage({
+        type: 'CATEGORIZATION_ERROR_NOTIFICATION',
+        error: errorDetails
+      });
+    } catch (forwardError) {
+      console.log('Could not forward error to popup (likely closed):', forwardError.message);
+    }
+
+    // Store error in storage for later retrieval
+    try {
+      const errorLog = await chrome.storage.local.get(['categorizationErrors']) || { categorizationErrors: [] };
+      errorLog.categorizationErrors = errorLog.categorizationErrors || [];
+      errorLog.categorizationErrors.push(errorDetails);
+
+      // Keep only last 10 errors
+      if (errorLog.categorizationErrors.length > 10) {
+        errorLog.categorizationErrors = errorLog.categorizationErrors.slice(-10);
+      }
+
+      await chrome.storage.local.set({ categorizationErrors: errorLog.categorizationErrors });
+    } catch (storageError) {
+      console.error('Failed to store error log:', storageError);
+    }
+
+    sendResponse({ success: true, message: 'Error logged' });
+
+  } catch (error) {
+    console.error('Error handling categorization error:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 

@@ -101,10 +101,12 @@ class PopupController {
       this.testCommBtn.addEventListener('click', () => this.testCommunication());
     }
 
-    // Listen for progress updates from background script
+    // Listen for progress updates and error notifications from background script
     chrome.runtime.onMessage.addListener((message) => {
       if (message.action === 'categorizationProgress') {
         this.updateProgress(message.data);
+      } else if (message.type === 'CATEGORIZATION_ERROR_NOTIFICATION') {
+        this.handleCategorizationError(message.error);
       }
     });
   }
@@ -1249,6 +1251,26 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       this.statusDot.className = 'status-dot success';
       this.statusText.textContent = `Ready to organize ${uncategorized} bookmarks`;
     }
+  }
+
+  /**
+   * Handle categorization error notifications
+   */
+  handleCategorizationError(errorDetails) {
+    console.error('🚨 Categorization error received in popup:', errorDetails);
+
+    // Show error message to user
+    const errorMessage = `Categorization failed: ${errorDetails.message}`;
+
+    if (errorDetails.batch && errorDetails.totalBatches) {
+      const batchInfo = ` (Batch ${errorDetails.batch}/${errorDetails.totalBatches})`;
+      this.showError(errorMessage + batchInfo);
+    } else {
+      this.showError(errorMessage);
+    }
+
+    // Stop processing state
+    this.isProcessing = false;
   }
 
   /**

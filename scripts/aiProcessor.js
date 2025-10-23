@@ -145,106 +145,24 @@ class AIProcessor {
             } catch (error) {
                 console.error(`❌ AI BATCH CATEGORIZATION FAILED for batch ${batchNumber}: ${error.message}`);
 
-                // SMART fallback categorization for entire batch
-                console.log(`⚠️ Using smart fallback categorization for batch ${batchNumber}...`);
+                // Show error notification to user instead of using fallback categories
+                const errorMessage = `Failed to categorize batch ${batchNumber}/${totalBatches}. ${error.message}`;
+                console.error(`🚨 CATEGORIZATION ERROR: ${errorMessage}`);
 
-                for (let j = 0; j < batch.length; j++) {
-                    const bookmark = batch[j];
-                    const globalBookmarkNumber = i + j + 1;
-                    let fallbackCategory = 'Other';
-
-                    if (bookmark.title && bookmark.url && dynamicCategories.length > 1) {
-                        const title = bookmark.title.toLowerCase();
-                        const url = bookmark.url.toLowerCase();
-
-                        // Extract domain for better matching
-                        let domain = '';
-                        try {
-                            domain = new URL(bookmark.url).hostname.replace('www.', '').toLowerCase();
-                        } catch (e) {
-                            domain = '';
-                        }
-
-                        // Smart keyword matching to assign to generated categories
-                        let bestMatch = null;
-                        let bestScore = 0;
-
-                        for (const category of dynamicCategories) {
-                            if (category === 'Other') continue;
-
-                            const categoryLower = category.toLowerCase();
-                            const categoryParts = categoryLower.split(' > ');
-                            let score = 0;
-
-                            // Check matches in title, URL, and domain
-                            categoryParts.forEach(part => {
-                                if (title.includes(part)) score += 3;
-                                if (url.includes(part)) score += 2;
-                                if (domain.includes(part)) score += 4;
-                            });
-
-                            // Bonus scoring for common patterns
-                            if (categoryLower.includes('ai') && (title.includes('ai') || domain.includes('ai') || title.includes('artificial'))) score += 5;
-                            if (categoryLower.includes('development') && (domain.includes('github') || domain.includes('stackoverflow') || title.includes('code'))) score += 5;
-                            if (categoryLower.includes('learning') && (domain.includes('course') || title.includes('tutorial') || domain.includes('edu'))) score += 5;
-                            if (categoryLower.includes('shopping') && (domain.includes('amazon') || domain.includes('shop') || title.includes('buy'))) score += 5;
-                            if (categoryLower.includes('tools') && (title.includes('tool') || title.includes('app') || domain.includes('app'))) score += 3;
-
-                            if (score > bestScore) {
-                                bestScore = score;
-                                bestMatch = category;
-                            }
-                        }
-
-                        if (bestMatch && bestScore > 0) {
-                            fallbackCategory = bestMatch;
-                        } else {
-                            // If no good match, try to use a general category from the generated list
-                            const generalCategories = dynamicCategories.filter(cat =>
-                                cat !== 'Other' &&
-                                cat.split(' > ').length <= 2 // Use broader categories
-                            );
-
-                            if (generalCategories.length > 0) {
-                                // Distribute among general categories to avoid everything going to "Other"
-                                fallbackCategory = generalCategories[j % generalCategories.length];
-                            }
-                        }
-                    }
-
-                    const fallbackResult = {
-                        id: globalBookmarkNumber,
-                        bookmarkId: bookmark.id,
-                        category: fallbackCategory,
-                        confidence: fallbackCategory === 'Other' ? 0.1 : 0.3
-                    };
-
-                    console.log(`   ${globalBookmarkNumber}. "${bookmark.title}" → "${fallbackCategory}" (fallback)`);
-
-                    // IMMEDIATELY MOVE the bookmark after fallback categorization
-                    try {
-                        // Generate a fallback title for failed AI categorization
-                        const fallbackTitle = this._generateFallbackTitle(bookmark);
-
-                        if (typeof this._moveBookmarkImmediately === 'function') {
-                            await this._moveBookmarkImmediately(bookmark, fallbackCategory, fallbackTitle, globalBookmarkNumber, bookmarks.length);
-                        } else {
-                            // Inline movement as fallback
-                            console.log(`🚚 INLINE FALLBACK MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
-                            const folderId = await this._createFolderDirect(fallbackCategory, '1');
-                            await chrome.bookmarks.update(bookmark.id, { title: fallbackTitle, url: bookmark.url });
-                            await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
-                            console.log(`✅ INLINE FALLBACK MOVEMENT COMPLETE: "${fallbackTitle}" moved to "${fallbackCategory}"`);
-                        }
-                        results.push(fallbackResult);
-                        failedMoves++;
-                    } catch (moveError) {
-                        console.error(`❌ FALLBACK MOVEMENT FAILED for bookmark ${globalBookmarkNumber}: ${moveError.message}`);
-                        // Still add to results even if movement failed
-                        results.push(fallbackResult);
-                        failedMoves++;
-                    }
+                // Send error notification to popup/options page
+                try {
+                    await chrome.runtime.sendMessage({
+                        type: 'CATEGORIZATION_ERROR',
+                        message: errorMessage,
+                        batch: batchNumber,
+                        totalBatches: totalBatches
+                    });
+                } catch (notificationError) {
+                    console.error('Failed to send error notification:', notificationError);
                 }
+
+                // Stop processing and throw error instead of continuing with fallback
+                throw new Error(`Categorization failed for batch ${batchNumber}: ${error.message}`);
             }
 
             // Delay between batches to avoid rate limiting
@@ -635,16 +553,15 @@ Return only the JSON array, no additional text or formatting.`;
             });
 
             if (!response.ok) {
-                console.error('Category generation failed, using fallback categories');
-                return this._getFallbackCategories(suggestedCategories);
+                const errorText = await response.text();
+                throw new Error(`Category generation failed: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
             const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (!responseText) {
-                console.error('Invalid category generation response, using fallback');
-                return this._getFallbackCategories(suggestedCategories);
+                throw new Error('Invalid category generation response from Gemini AI');
             }
 
             // Parse the generated categories
@@ -663,66 +580,17 @@ Return only the JSON array, no additional text or formatting.`;
                 }
             }
 
-            console.error('Failed to parse generated categories, using fallback');
-            return this._getFallbackCategories(suggestedCategories);
+            throw new Error('Failed to parse generated categories from Gemini AI response');
 
         } catch (error) {
             console.error('Error generating categories:', error);
-            return this._getFallbackCategories(suggestedCategories);
+            throw new Error(`Failed to generate categories: ${error.message}`);
         }
     }
 
 
 
-    /**
-     * Get fallback hierarchical categories when dynamic generation fails
-     * @param {Array} suggestedCategories - Suggested categories
-     * @returns {Array} Fallback hierarchical categories
-     */
-    _getFallbackCategories(suggestedCategories = []) {
-        if (suggestedCategories.length > 0) {
-            return [...suggestedCategories, 'Other'];
-        }
 
-        return [
-            'Work > Development > Frontend',
-            'Work > Development > Backend',
-            'Work > Development > DevOps',
-            'Work > Design > UI-UX',
-            'Work > Design > Graphics',
-            'Work > Business > Marketing',
-            'Work > Business > Finance',
-            'Learning > Programming > JavaScript',
-            'Learning > Programming > Python',
-            'Learning > Programming > Web Development',
-            'Learning > Design > Tutorials',
-            'Learning > Technology > AI',
-            'Learning > Business > Entrepreneurship',
-            'Personal > Finance > Investment',
-            'Personal > Finance > Banking',
-            'Personal > Health > Fitness',
-            'Personal > Travel > Planning',
-            'Entertainment > Gaming > PC Games',
-            'Entertainment > Gaming > Mobile Games',
-            'Entertainment > Media > Streaming',
-            'Entertainment > Media > Music',
-            'Shopping > Technology > Hardware',
-            'Shopping > Technology > Software',
-            'Shopping > Lifestyle > Fashion',
-            'Shopping > Home > Furniture',
-            'News > Technology',
-            'News > Business',
-            'News > World',
-            'Tools > Productivity',
-            'Tools > Development',
-            'Tools > Design',
-            'Reference > Documentation',
-            'Reference > Tutorials',
-            'Social > Networking',
-            'Social > Communication',
-            'Other'
-        ];
-    }
 
     /**
      * Process a batch of bookmarks
@@ -757,8 +625,13 @@ Return only the JSON array, no additional text or formatting.`;
 
             // Try AgentRouter fallback if available
             if (this.agentRouterApiKey && (response.status === 503 || response.status === 429 || response.status === 500)) {
-                console.log('🔄 Gemini API failed, trying AgentRouter fallback...');
-                return await this._processWithAgentRouter(batch, categories, learningData);
+                console.log('🔄 Gemini API overloaded, trying AgentRouter fallback...');
+                try {
+                    return await this._processWithAgentRouter(batch, categories, learningData);
+                } catch (agentRouterError) {
+                    console.error('❌ AgentRouter fallback also failed:', agentRouterError.message);
+                    throw new Error(`Both Gemini AI and AgentRouter APIs failed. Gemini: ${errorText}. AgentRouter: ${agentRouterError.message}`);
+                }
             }
 
             if (response.status === 401) {
@@ -769,8 +642,12 @@ Return only the JSON array, no additional text or formatting.`;
                 throw new Error('API access denied. Please check your API key permissions and ensure Gemini API is enabled.');
             } else if (response.status === 400) {
                 throw new Error('Bad request. Please check your API key format and try again.');
+            } else if (response.status === 503) {
+                throw new Error('Gemini AI server is overloaded. Please try again later.');
+            } else if (response.status === 500) {
+                throw new Error('Gemini AI server error. Please try again later.');
             } else {
-                throw new Error(`API request failed: ${response.status}. ${errorText}`);
+                throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
             }
         }
 
@@ -932,15 +809,7 @@ Return only the JSON array, no additional text or formatting`;
         } catch (error) {
             console.error('Error parsing API response:', error);
             console.log('Raw response:', responseText);
-
-            // Fallback: categorize all as 'Other' with original titles
-            return batch.map((bookmark, index) => ({
-                id: index + 1,
-                bookmarkId: bookmark.id,
-                category: 'Other',
-                title: bookmark.title || 'Untitled',
-                confidence: 0.1
-            }));
+            throw new Error(`Failed to parse AI response: ${error.message}`);
         }
     }
 
@@ -1044,7 +913,7 @@ Return only the JSON array, no additional text or formatting`;
 
         } catch (error) {
             console.error('AgentRouter fallback failed:', error);
-            throw error;
+            throw new Error(`AgentRouter API failed: ${error.message}`);
         }
     }
 
