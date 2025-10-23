@@ -11,7 +11,7 @@ class AIProcessor {
 
         // AgentRouter fallback configuration
         this.agentRouterApiKey = null;
-        this.agentRouterBaseUrl = 'https://agentrouter.org/v1/chat/completions';
+        this.agentRouterBaseUrl = 'https://agentrouter.org/v1';
         this.fallbackModel = 'gpt-5'; // Free model on AgentRouter
     }
 
@@ -55,37 +55,96 @@ class AIProcessor {
         await this._createFolderStructure(dynamicCategories);
 
         const results = [];
-        const batchSize = 10; // Very small batch size for reliable hierarchical processing
 
+        // Process bookmarks in BATCHES of 50 and MOVE IMMEDIATELY after each batch categorization
+        console.log(`🔍 Processing ${bookmarks.length} bookmarks in batches of 50 with IMMEDIATE MOVEMENT...`);
+
+        // DEBUG: Check if method exists
+        console.log('🔧 DEBUG: _moveBookmarkImmediately method exists:', typeof this._moveBookmarkImmediately === 'function');
+        console.log('🔧 DEBUG: _createFolderDirect method exists:', typeof this._createFolderDirect === 'function');
+
+        // Initialize BookmarkService if not already done
+        if (!this.bookmarkService && typeof BookmarkService !== 'undefined') {
+            this.bookmarkService = new BookmarkService();
+        }
+
+        let successfulMoves = 0;
+        let failedMoves = 0;
+        const batchSize = 50; // Process 50 bookmarks at a time to avoid rate limits
+
+        // Process bookmarks in batches
         for (let i = 0; i < bookmarks.length; i += batchSize) {
             const batch = bookmarks.slice(i, i + batchSize);
             const batchNumber = Math.floor(i / batchSize) + 1;
             const totalBatches = Math.ceil(bookmarks.length / batchSize);
 
-            console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} bookmarks)`);
+            console.log(`\n📦 === PROCESSING BATCH ${batchNumber}/${totalBatches} (${batch.length} bookmarks) ===`);
+            console.log(`📋 Batch bookmarks:`);
+            batch.forEach((bookmark, idx) => {
+                console.log(`   ${i + idx + 1}. "${bookmark.title}" - ${bookmark.url?.substring(0, 50)}...`);
+            });
 
             try {
-                // Add timeout for each batch (very long timeout for hierarchical processing)
+                // Process entire batch with AI (50 bookmarks at once)
+                console.log(`🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`);
+
                 const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Batch timeout after 10 minutes')), 600000); // 10 minutes timeout
+                    setTimeout(() => reject(new Error('Batch timeout after 5 minutes')), 300000); // 5 minutes for 50 bookmarks
                 });
 
                 const batchResults = await Promise.race([batchPromise, timeoutPromise]);
-                results.push(...batchResults);
 
-                console.log(`✅ Batch ${batchNumber}/${totalBatches} completed successfully`);
+                if (batchResults && batchResults.length > 0) {
+                    console.log(`✅ AI BATCH CATEGORIZATION SUCCESS: ${batchResults.length} bookmarks categorized`);
 
-                // Longer delay between batches for hierarchical processing
-                if (i + batchSize < bookmarks.length) {
-                    console.log(`Waiting 10 seconds before next batch...`);
-                    await this._delay(10000); // Long delay to avoid rate limiting
+                    // Show categorization results
+                    batchResults.forEach((result, idx) => {
+                        const bookmark = batch[idx];
+                        console.log(`   ${i + idx + 1}. "${bookmark?.title}" → "${result.category}" (confidence: ${result.confidence})`);
+                    });
+
+                    // IMMEDIATELY MOVE each bookmark in the batch after categorization
+                    console.log(`🚚 IMMEDIATE BATCH MOVEMENT: Moving ${batchResults.length} bookmarks...`);
+
+                    for (let j = 0; j < batchResults.length; j++) {
+                        const result = batchResults[j];
+                        const bookmark = batch[j];
+                        const globalBookmarkNumber = i + j + 1;
+
+                        try {
+                            if (typeof this._moveBookmarkImmediately === 'function') {
+                                await this._moveBookmarkImmediately(bookmark, result.category, globalBookmarkNumber, bookmarks.length);
+                            } else {
+                                // Inline movement as fallback
+                                console.log(`🚚 INLINE MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
+                                const folderId = await this._createFolderDirect(result.category, '1');
+                                await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
+                                console.log(`✅ INLINE MOVEMENT COMPLETE: "${bookmark.title}" moved to "${result.category}"`);
+                            }
+                            results.push(result);
+                            successfulMoves++;
+                        } catch (moveError) {
+                            console.error(`❌ MOVEMENT FAILED for bookmark ${globalBookmarkNumber}: ${moveError.message}`);
+                            // Still add to results even if movement failed
+                            results.push(result);
+                            successfulMoves++;
+                        }
+                    }
+
+                } else {
+                    throw new Error('No results returned from AI batch processing');
                 }
-            } catch (error) {
-                console.error(`❌ Error processing batch ${batchNumber}/${totalBatches}:`, error);
 
-                // Add SMART fallback categorization using generated categories
-                batch.forEach((bookmark, index) => {
+            } catch (error) {
+                console.error(`❌ AI BATCH CATEGORIZATION FAILED for batch ${batchNumber}: ${error.message}`);
+
+                // SMART fallback categorization for entire batch
+                console.log(`⚠️ Using smart fallback categorization for batch ${batchNumber}...`);
+
+                for (let j = 0; j < batch.length; j++) {
+                    const bookmark = batch[j];
+                    const globalBookmarkNumber = i + j + 1;
                     let fallbackCategory = 'Other';
 
                     if (bookmark.title && bookmark.url && dynamicCategories.length > 1) {
@@ -133,7 +192,6 @@ class AIProcessor {
 
                         if (bestMatch && bestScore > 0) {
                             fallbackCategory = bestMatch;
-                            console.log(`🎯 Smart fallback: "${bookmark.title}" → "${fallbackCategory}" (score: ${bestScore})`);
                         } else {
                             // If no good match, try to use a general category from the generated list
                             const generalCategories = dynamicCategories.filter(cat =>
@@ -143,28 +201,148 @@ class AIProcessor {
 
                             if (generalCategories.length > 0) {
                                 // Distribute among general categories to avoid everything going to "Other"
-                                fallbackCategory = generalCategories[index % generalCategories.length];
-                                console.log(`📂 General fallback: "${bookmark.title}" → "${fallbackCategory}"`);
+                                fallbackCategory = generalCategories[j % generalCategories.length];
                             }
                         }
                     }
 
-                    results.push({
-                        id: i + index,
+                    const fallbackResult = {
+                        id: globalBookmarkNumber,
                         bookmarkId: bookmark.id,
                         category: fallbackCategory,
                         confidence: fallbackCategory === 'Other' ? 0.1 : 0.3
-                    });
-                });
+                    };
 
-                console.log(`⚠️ Batch ${batchNumber} failed, using fallback categorization`);
+                    console.log(`   ${globalBookmarkNumber}. "${bookmark.title}" → "${fallbackCategory}" (fallback)`);
+
+                    // IMMEDIATELY MOVE the bookmark after fallback categorization
+                    try {
+                        if (typeof this._moveBookmarkImmediately === 'function') {
+                            await this._moveBookmarkImmediately(bookmark, fallbackCategory, globalBookmarkNumber, bookmarks.length);
+                        } else {
+                            // Inline movement as fallback
+                            console.log(`🚚 INLINE FALLBACK MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
+                            const folderId = await this._createFolderDirect(fallbackCategory, '1');
+                            await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
+                            console.log(`✅ INLINE FALLBACK MOVEMENT COMPLETE: "${bookmark.title}" moved to "${fallbackCategory}"`);
+                        }
+                        results.push(fallbackResult);
+                        failedMoves++;
+                    } catch (moveError) {
+                        console.error(`❌ FALLBACK MOVEMENT FAILED for bookmark ${globalBookmarkNumber}: ${moveError.message}`);
+                        // Still add to results even if movement failed
+                        results.push(fallbackResult);
+                        failedMoves++;
+                    }
+                }
+            }
+
+            // Delay between batches to avoid rate limiting
+            if (i + batchSize < bookmarks.length) {
+                console.log(`⏳ Waiting 10 seconds before next batch...`);
+                await this._delay(10000);
             }
         }
+
+        console.log(`\n🎯 === BATCH PROCESSING COMPLETE ===`);
+        console.log(`📊 Total bookmarks processed: ${results.length}`);
+        console.log(`✅ Successfully moved (AI): ${successfulMoves} bookmarks`);
+        console.log(`⚠️ Fallback moved: ${failedMoves} bookmarks`);
+        console.log(`📁 Categories available: ${dynamicCategories.length}`);
+        console.log(`📋 Categories: ${dynamicCategories.join(', ')}`);
+        console.log(`🚀 Batch size used: 50 bookmarks per API call (rate limit friendly)`);
+
+        // Show category distribution
+        const categoryCount = {};
+        results.forEach(result => {
+            categoryCount[result.category] = (categoryCount[result.category] || 0) + 1;
+        });
+
+        console.log(`📈 Category distribution:`);
+        Object.entries(categoryCount).forEach(([category, count]) => {
+            console.log(`   ${category}: ${count} bookmarks`);
+        });
 
         return {
             categories: dynamicCategories,
             results: results
         };
+    }
+
+    /**
+     * Move bookmark immediately after categorization
+     * @param {Object} bookmark - Bookmark object
+     * @param {string} category - Category to move to
+     * @param {number} bookmarkNumber - Current bookmark number
+     * @param {number} totalBookmarks - Total bookmarks being processed
+     */
+    async _moveBookmarkImmediately(bookmark, category, bookmarkNumber, totalBookmarks) {
+        console.log(`🚚 IMMEDIATE MOVEMENT: Moving bookmark ${bookmarkNumber}/${totalBookmarks}...`);
+
+        // Get current folder name before moving
+        let currentFolderName = 'Unknown';
+        try {
+            if (bookmark.parentId) {
+                const currentParent = await chrome.bookmarks.get(bookmark.parentId);
+                currentFolderName = currentParent[0].title;
+            }
+        } catch (error) {
+            currentFolderName = `ID:${bookmark.parentId}`;
+        }
+
+        // Create folder structure and get folder ID
+        const rootFolderId = '1'; // Always use Bookmarks Bar
+        const folderId = await this._createFolderDirect(category, rootFolderId);
+
+        // Get destination folder name
+        let destinationFolderName = 'Unknown';
+        try {
+            const destinationFolder = await chrome.bookmarks.get(folderId);
+            destinationFolderName = destinationFolder[0].title;
+        } catch (error) {
+            destinationFolderName = `ID:${folderId}`;
+        }
+
+        console.log(`📋 MOVING BOOKMARK:`);
+        console.log(`   📖 Title: "${bookmark.title}"`);
+        console.log(`   📂 FROM: "${currentFolderName}" (ID: ${bookmark.parentId})`);
+        console.log(`   📁 TO: "${destinationFolderName}" (ID: ${folderId})`);
+        console.log(`   🎯 Category: "${category}"`);
+
+        // Move the bookmark using direct Chrome API
+        await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
+
+        console.log(`   ✅ MOVEMENT COMPLETE: "${bookmark.title}" successfully moved from "${currentFolderName}" to "${destinationFolderName}"`);
+    }
+
+    /**
+     * Create folder directly (fallback when BookmarkService not available)
+     * @param {string} categoryPath - Category path (e.g., "Work/Projects")
+     * @param {string} rootFolderId - Root folder ID
+     * @returns {Promise<string>} Folder ID
+     */
+    async _createFolderDirect(categoryPath, rootFolderId) {
+        const parts = categoryPath.split(' > ').map(part => part.trim());
+        let currentParentId = rootFolderId;
+
+        for (const part of parts) {
+            // Check if folder already exists
+            const children = await chrome.bookmarks.getChildren(currentParentId);
+            let existingFolder = children.find(child => !child.url && child.title === part);
+
+            if (!existingFolder) {
+                // Create the folder
+                existingFolder = await chrome.bookmarks.create({
+                    parentId: currentParentId,
+                    title: part
+                });
+                console.log(`📁 Created folder: "${part}" in parent ${currentParentId}`);
+            }
+
+            currentParentId = existingFolder.id;
+        }
+
+        return currentParentId;
     }
 
     /**
