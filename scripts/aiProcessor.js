@@ -114,13 +114,14 @@ class AIProcessor {
 
                         try {
                             if (typeof this._moveBookmarkImmediately === 'function') {
-                                await this._moveBookmarkImmediately(bookmark, result.category, globalBookmarkNumber, bookmarks.length);
+                                await this._moveBookmarkImmediately(bookmark, result.category, result.title, globalBookmarkNumber, bookmarks.length);
                             } else {
                                 // Inline movement as fallback
                                 console.log(`🚚 INLINE MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
                                 const folderId = await this._createFolderDirect(result.category, '1');
+                                await chrome.bookmarks.update(bookmark.id, { title: result.title, url: bookmark.url });
                                 await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
-                                console.log(`✅ INLINE MOVEMENT COMPLETE: "${bookmark.title}" moved to "${result.category}"`);
+                                console.log(`✅ INLINE MOVEMENT COMPLETE: "${result.title}" moved to "${result.category}"`);
                             }
                             results.push(result);
                             successfulMoves++;
@@ -217,14 +218,18 @@ class AIProcessor {
 
                     // IMMEDIATELY MOVE the bookmark after fallback categorization
                     try {
+                        // Generate a fallback title for failed AI categorization
+                        const fallbackTitle = this._generateFallbackTitle(bookmark);
+
                         if (typeof this._moveBookmarkImmediately === 'function') {
-                            await this._moveBookmarkImmediately(bookmark, fallbackCategory, globalBookmarkNumber, bookmarks.length);
+                            await this._moveBookmarkImmediately(bookmark, fallbackCategory, fallbackTitle, globalBookmarkNumber, bookmarks.length);
                         } else {
                             // Inline movement as fallback
                             console.log(`🚚 INLINE FALLBACK MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
                             const folderId = await this._createFolderDirect(fallbackCategory, '1');
+                            await chrome.bookmarks.update(bookmark.id, { title: fallbackTitle, url: bookmark.url });
                             await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
-                            console.log(`✅ INLINE FALLBACK MOVEMENT COMPLETE: "${bookmark.title}" moved to "${fallbackCategory}"`);
+                            console.log(`✅ INLINE FALLBACK MOVEMENT COMPLETE: "${fallbackTitle}" moved to "${fallbackCategory}"`);
                         }
                         results.push(fallbackResult);
                         failedMoves++;
@@ -270,13 +275,14 @@ class AIProcessor {
     }
 
     /**
-     * Move bookmark immediately after categorization
+     * Move bookmark immediately after categorization and update title
      * @param {Object} bookmark - Bookmark object
      * @param {string} category - Category to move to
+     * @param {string} newTitle - New AI-generated title
      * @param {number} bookmarkNumber - Current bookmark number
      * @param {number} totalBookmarks - Total bookmarks being processed
      */
-    async _moveBookmarkImmediately(bookmark, category, bookmarkNumber, totalBookmarks) {
+    async _moveBookmarkImmediately(bookmark, category, newTitle, bookmarkNumber, totalBookmarks) {
         console.log(`🚚 IMMEDIATE MOVEMENT: Moving bookmark ${bookmarkNumber}/${totalBookmarks}...`);
 
         // Get current folder name before moving
@@ -303,16 +309,22 @@ class AIProcessor {
             destinationFolderName = `ID:${folderId}`;
         }
 
-        console.log(`📋 MOVING BOOKMARK:`);
-        console.log(`   📖 Title: "${bookmark.title}"`);
-        console.log(`   📂 FROM: "${currentFolderName}" (ID: ${bookmark.parentId})`);
+        console.log(`📋 MOVING & UPDATING BOOKMARK:`);
+        console.log(`   📖 Original Title: "${bookmark.title}"`);
+        console.log(`   ✨ New AI Title: "${newTitle}"`);
+        console.log(`   � FROM: "d${currentFolderName}" (ID: ${bookmark.parentId})`);
         console.log(`   📁 TO: "${destinationFolderName}" (ID: ${folderId})`);
         console.log(`   🎯 Category: "${category}"`);
 
-        // Move the bookmark using direct Chrome API
+        // Update bookmark title and move it using direct Chrome API
+        await chrome.bookmarks.update(bookmark.id, {
+            title: newTitle,
+            url: bookmark.url // Keep the same URL
+        });
+
         await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
 
-        console.log(`   ✅ MOVEMENT COMPLETE: "${bookmark.title}" successfully moved from "${currentFolderName}" to "${destinationFolderName}"`);
+        console.log(`   ✅ MOVEMENT & TITLE UPDATE COMPLETE: "${newTitle}" successfully moved from "${currentFolderName}" to "${destinationFolderName}"`);
     }
 
     /**
@@ -343,6 +355,58 @@ class AIProcessor {
         }
 
         return currentParentId;
+    }
+
+    /**
+     * Generate a fallback title when AI fails
+     * @param {Object} bookmark - Bookmark object
+     * @returns {string} Generated fallback title
+     */
+    _generateFallbackTitle(bookmark) {
+        const originalTitle = bookmark.title || 'Untitled';
+
+        try {
+            if (bookmark.url) {
+                const url = new URL(bookmark.url);
+                const domain = url.hostname.replace('www.', '');
+
+                // If title is generic or just domain, enhance it
+                if (originalTitle === domain ||
+                    originalTitle.toLowerCase() === 'home' ||
+                    originalTitle.toLowerCase() === 'dashboard' ||
+                    originalTitle.length < 10) {
+
+                    // Create a better title based on domain
+                    const domainParts = domain.split('.');
+                    const siteName = domainParts[0];
+
+                    // Common site enhancements
+                    const siteEnhancements = {
+                        'github': 'GitHub - Code Repository Platform',
+                        'stackoverflow': 'Stack Overflow - Programming Q&A',
+                        'youtube': 'YouTube - Video Streaming Platform',
+                        'netflix': 'Netflix - Streaming Movies & TV Shows',
+                        'amazon': 'Amazon - Online Shopping & Services',
+                        'google': 'Google - Search & Web Services',
+                        'microsoft': 'Microsoft - Technology & Cloud Services',
+                        'apple': 'Apple - Technology & Products',
+                        'facebook': 'Facebook - Social Media Platform',
+                        'twitter': 'Twitter - Social Media & News',
+                        'linkedin': 'LinkedIn - Professional Network',
+                        'reddit': 'Reddit - Social News & Discussion',
+                        'wikipedia': 'Wikipedia - Free Encyclopedia',
+                        'medium': 'Medium - Publishing Platform'
+                    };
+
+                    return siteEnhancements[siteName.toLowerCase()] || `${siteName.charAt(0).toUpperCase() + siteName.slice(1)} - ${domain}`;
+                }
+            }
+        } catch (error) {
+            console.log('Error generating fallback title:', error);
+        }
+
+        // Return original title if no enhancement needed
+        return originalTitle;
     }
 
     /**
@@ -753,8 +817,8 @@ Return only the JSON array, no additional text or formatting.`;
         // Get existing folder structure to include in prompt
         const existingFolders = await this._getExistingFolderStructure();
 
-        let prompt = `**Role:** Bookmark categorization assistant
-**Task:** Analyze the following bookmarks and assign each to the most appropriate category from the user's category list.
+        let prompt = `**Role:** Bookmark categorization and title optimization assistant
+**Task:** Analyze the following bookmarks, assign each to the most appropriate category, and generate improved descriptive titles.
 
 **EXISTING FOLDER STRUCTURE (PRIORITIZE THESE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
@@ -782,6 +846,18 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - ❌ DON'T: "AI & Machine Learning > Computer Vision > Image Recognition > Google Vision API"
 - ✅ DO: "Shopping > Electronics" (Amazon, Best Buy, Newegg all here)
 - ❌ DON'T: "Shopping > Electronics > Amazon > Laptops > Gaming"
+
+**TITLE GENERATION INSTRUCTIONS:**
+- **GENERATE IMPROVED TITLES:** Create descriptive, clear titles for each bookmark
+- **INCLUDE CONTEXT:** Add relevant context from URL domain and page content
+- **BE DESCRIPTIVE:** Make titles self-explanatory and informative
+- **MAINTAIN BREVITY:** Keep titles concise but descriptive (50-80 characters ideal)
+- **ADD VALUE:** Include key information that helps identify the bookmark's purpose
+- **EXAMPLES:**
+  - Original: "GitHub" → Improved: "GitHub - Code Repository Platform"
+  - Original: "Docs" → Improved: "React Documentation - JavaScript Library Guide"
+  - Original: "Home" → Improved: "Netflix - Streaming Movies & TV Shows"
+  - Original: "Dashboard" → Improved: "AWS Console - Cloud Services Dashboard"
 
 **Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
 
@@ -815,9 +891,10 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 
         prompt += `\n\n**HIERARCHICAL OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
-- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), and 'confidence' (0.0-1.0)
+- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), and 'confidence' (0.0-1.0)
 - Use hierarchical categories from the generated list above
 - Category must be the full path (e.g., "Work > Development > Frontend > React")
+- Title must be descriptive and informative, based on URL domain and content context
 - Be as specific as possible - use the deepest appropriate category level
 - If uncertain, use 'Other' category
 - Consider URL domain, title content, AND current folder location for granular categorization
@@ -825,9 +902,9 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 
 **EXAMPLE OUTPUT:**
 [
-  {"id": 1, "category": "Work > Development > Frontend > React", "confidence": 0.9},
-  {"id": 2, "category": "Learning > Programming > Python > Data Science", "confidence": 0.8},
-  {"id": 3, "category": "Personal > Finance > Investment > Stocks", "confidence": 0.7}
+  {"id": 1, "category": "Work > Development > Frontend > React", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9},
+  {"id": 2, "category": "Learning > Programming > Python > Data Science", "title": "Pandas Tutorial - Data Analysis with Python", "confidence": 0.8},
+  {"id": 3, "category": "Personal > Finance > Investment > Stocks", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7}
 ]
 
 Return only the JSON array, no additional text or formatting`;
@@ -861,11 +938,12 @@ Return only the JSON array, no additional text or formatting`;
                 throw new Error('Response is not an array');
             }
 
-            // Map results to bookmark IDs
+            // Map results to bookmark IDs and include titles
             return parsed.map((result, index) => ({
                 id: result.id || (index + 1),
                 bookmarkId: batch[index]?.id,
                 category: result.category || 'Other',
+                title: result.title || batch[index]?.title || 'Untitled',
                 confidence: result.confidence || 0.5
             }));
 
@@ -873,11 +951,12 @@ Return only the JSON array, no additional text or formatting`;
             console.error('Error parsing API response:', error);
             console.log('Raw response:', responseText);
 
-            // Fallback: categorize all as 'Other'
+            // Fallback: categorize all as 'Other' with original titles
             return batch.map((bookmark, index) => ({
                 id: index + 1,
                 bookmarkId: bookmark.id,
                 category: 'Other',
+                title: bookmark.title || 'Untitled',
                 confidence: 0.1
             }));
         }
