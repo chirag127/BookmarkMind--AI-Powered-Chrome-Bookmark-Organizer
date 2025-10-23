@@ -6,13 +6,64 @@
 class AIProcessor {
     constructor() {
         this.apiKey = null;
-        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
         this.bookmarkService = null;
+
+        // Gemini model fallback sequence - try models in order when one fails
+        this.geminiModels = [
+            'gemini-2.5-pro',
+            'gemini-2.5-flash-preview-09-2025',
+            'gemini-2.5-flash',
+            'gemini-2.5-flash-image',
+            'gemini-2.0-flash',
+            'gemini-2.5-flash-lite-preview-09-2025',
+            'gemini-2.5-flash-lite'
+        ];
+        this.currentModelIndex = 0;
+        this.baseUrlTemplate = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
 
         // AgentRouter fallback configuration
         this.agentRouterApiKey = null;
         this.agentRouterBaseUrl = 'https://agentrouter.org/v1/chat/completions';
         this.fallbackModel = 'gpt-5'; // Free model on AgentRouter
+    }
+
+    /**
+     * Get the current Gemini model URL
+     * @returns {string} Current model URL
+     */
+    getCurrentModelUrl() {
+        const currentModel = this.geminiModels[this.currentModelIndex];
+        return this.baseUrlTemplate.replace('{model}', currentModel);
+    }
+
+    /**
+     * Get the current Gemini model name
+     * @returns {string} Current model name
+     */
+    getCurrentModelName() {
+        return this.geminiModels[this.currentModelIndex];
+    }
+
+    /**
+     * Try next Gemini model in the fallback sequence
+     * @returns {boolean} True if there's a next model, false if exhausted
+     */
+    tryNextGeminiModel() {
+        if (this.currentModelIndex < this.geminiModels.length - 1) {
+            this.currentModelIndex++;
+            console.log(`🔄 Switching to next Gemini model: ${this.getCurrentModelName()}`);
+            return true;
+        }
+        console.log('⚠️ All Gemini models exhausted, no more fallbacks available');
+        return false;
+    }
+
+    /**
+     * Reset to first Gemini model (for new categorization sessions)
+     */
+    resetToFirstModel() {
+        this.currentModelIndex = 0;
+        console.log(`🔄 Reset to first Gemini model: ${this.getCurrentModelName()}`);
     }
 
     /**
@@ -44,6 +95,9 @@ class AIProcessor {
         if (!bookmarks || bookmarks.length === 0) {
             return { categories: [], results: [] };
         }
+
+        // Reset to first Gemini model at the start of each categorization session
+        this.resetToFirstModel();
 
         // First, analyze bookmarks to generate dynamic categories
         console.log('Generating dynamic categories from bookmarks...');
@@ -543,26 +597,8 @@ Return only the JSON array, no additional text or formatting.`;
                 }]
             };
 
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': this.apiKey
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Category generation failed: ${response.status} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!responseText) {
-                throw new Error('Invalid category generation response from Gemini AI');
-            }
+            // Use model fallback for category generation too
+            const responseText = await this._generateCategoriesWithModelFallback(requestBody);
 
             // Parse the generated categories
             const cleanText = responseText.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '');
@@ -588,6 +624,100 @@ Return only the JSON array, no additional text or formatting.`;
         }
     }
 
+    /**
+     * Generate categories with Gemini model fallback sequence
+     * @param {Object} requestBody - Request body for Gemini API
+     * @returns {Promise<string>} Response text from successful model
+     */
+    async _generateCategoriesWithModelFallback(requestBody) {
+        let lastError = null;
+        const originalModelIndex = this.currentModelIndex;
+
+        // Try each Gemini model for category generation
+        for (let attempt = 0; attempt < this.geminiModels.length; attempt++) {
+            const currentModel = this.getCurrentModelName();
+            const currentUrl = this.getCurrentModelUrl();
+
+            console.log(`🏷️ Generating categories with ${currentModel} (attempt ${attempt + 1}/${this.geminiModels.length})`);
+
+            try {
+                const response = await fetch(currentUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': this.apiKey
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (responseText) {
+                        console.log(`✅ Category generation SUCCESS with ${currentModel}`);
+                        // Reset to original model for next operations
+                        this.currentModelIndex = originalModelIndex;
+                        return responseText;
+                    } else {
+                        throw new Error('Invalid category generation response format');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Category generation failed with ${currentModel}:`, response.status, errorText);
+
+                    // Check if this is a retryable error
+                    const isRetryableError = response.status === 429 || // Rate limit
+                        response.status === 503 || // Service unavailable
+                        response.status === 500 || // Server error
+                        response.status === 502 || // Bad gateway
+                        response.status === 504;   // Gateway timeout
+
+                    if (!isRetryableError) {
+                        // Non-retryable errors - don't try other models
+                        if (response.status === 401) {
+                            throw new Error('Invalid API key for category generation. Please check your Gemini API key.');
+                        } else if (response.status === 403) {
+                            throw new Error('API access denied for category generation. Check your API key permissions.');
+                        } else if (response.status === 400) {
+                            throw new Error('Bad request for category generation. Check your API key format.');
+                        } else {
+                            throw new Error(`Category generation failed: ${response.status} - ${errorText}`);
+                        }
+                    }
+
+                    lastError = new Error(`${currentModel}: ${response.status} - ${errorText}`);
+                }
+
+            } catch (error) {
+                console.error(`❌ Category generation error with ${currentModel}:`, error.message);
+                lastError = error;
+
+                // If it's a non-retryable error, don't try other models
+                if (error.message.includes('Invalid API key') ||
+                    error.message.includes('API access denied') ||
+                    error.message.includes('Bad request')) {
+                    throw error;
+                }
+            }
+
+            // Try next model if available
+            if (attempt < this.geminiModels.length - 1) {
+                if (!this.tryNextGeminiModel()) {
+                    break;
+                }
+                // Small delay between model attempts
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        // Reset to original model
+        this.currentModelIndex = originalModelIndex;
+
+        // All models failed
+        throw new Error(`Category generation failed with all Gemini models. Last error: ${lastError?.message}`);
+    }
+
 
 
 
@@ -600,8 +730,18 @@ Return only the JSON array, no additional text or formatting.`;
      * @returns {Promise<Array>} Batch results
      */
     async _processBatch(batch, categories, learningData) {
-        const prompt = await this._buildPrompt(batch, categories, learningData);
+        return await this._processBatchWithModelFallback(batch, categories, learningData);
+    }
 
+    /**
+     * Process batch with Gemini model fallback sequence
+     * @param {Array} batch - Batch of bookmarks
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processBatchWithModelFallback(batch, categories, learningData) {
+        const prompt = await this._buildPrompt(batch, categories, learningData);
         const requestBody = {
             contents: [{
                 parts: [{
@@ -610,55 +750,101 @@ Return only the JSON array, no additional text or formatting.`;
             }]
         };
 
-        const response = await fetch(this.baseUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': this.apiKey
-            },
-            body: JSON.stringify(requestBody)
-        });
+        // Try each Gemini model in sequence
+        let lastError = null;
+        const originalModelIndex = this.currentModelIndex;
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Gemini API Error:', response.status, errorText);
+        for (let attempt = 0; attempt < this.geminiModels.length; attempt++) {
+            const currentModel = this.getCurrentModelName();
+            const currentUrl = this.getCurrentModelUrl();
 
-            // Try AgentRouter fallback if available
-            if (this.agentRouterApiKey && (response.status === 503 || response.status === 429 || response.status === 500)) {
-                console.log('🔄 Gemini API overloaded, trying AgentRouter fallback...');
-                try {
-                    return await this._processWithAgentRouter(batch, categories, learningData);
-                } catch (agentRouterError) {
-                    console.error('❌ AgentRouter fallback also failed:', agentRouterError.message);
-                    throw new Error(`Both Gemini AI and AgentRouter APIs failed. Gemini: ${errorText}. AgentRouter: ${agentRouterError.message}`);
+            console.log(`🤖 Trying Gemini model: ${currentModel} (attempt ${attempt + 1}/${this.geminiModels.length})`);
+
+            try {
+                const response = await fetch(currentUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': this.apiKey
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                        const responseText = data.candidates[0].content.parts[0].text;
+                        console.log(`✅ SUCCESS with ${currentModel}`);
+                        return this._parseResponse(responseText, batch);
+                    } else {
+                        throw new Error('Invalid API response format');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ ${currentModel} failed:`, response.status, errorText);
+
+                    // Check if this is a retryable error (rate limit, server overload, etc.)
+                    const isRetryableError = response.status === 429 || // Rate limit
+                        response.status === 503 || // Service unavailable
+                        response.status === 500 || // Server error
+                        response.status === 502 || // Bad gateway
+                        response.status === 504;   // Gateway timeout
+
+                    if (!isRetryableError) {
+                        // Non-retryable errors (auth, bad request, etc.) - don't try other models
+                        if (response.status === 401) {
+                            throw new Error('Invalid API key. Please check your Gemini API key in settings. Make sure it starts with "AIza" and is from Google AI Studio.');
+                        } else if (response.status === 403) {
+                            throw new Error('API access denied. Please check your API key permissions and ensure Gemini API is enabled.');
+                        } else if (response.status === 400) {
+                            throw new Error('Bad request. Please check your API key format and try again.');
+                        } else {
+                            throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
+                        }
+                    }
+
+                    lastError = new Error(`${currentModel}: ${response.status} - ${errorText}`);
+                }
+
+            } catch (error) {
+                console.error(`❌ ${currentModel} error:`, error.message);
+                lastError = error;
+
+                // If it's a non-retryable error, don't try other models
+                if (error.message.includes('Invalid API key') ||
+                    error.message.includes('API access denied') ||
+                    error.message.includes('Bad request')) {
+                    throw error;
                 }
             }
 
-            if (response.status === 401) {
-                throw new Error('Invalid API key. Please check your Gemini API key in settings. Make sure it starts with "AIza" and is from Google AI Studio.');
-            } else if (response.status === 429) {
-                throw new Error('API rate limit exceeded. Please try again later.');
-            } else if (response.status === 403) {
-                throw new Error('API access denied. Please check your API key permissions and ensure Gemini API is enabled.');
-            } else if (response.status === 400) {
-                throw new Error('Bad request. Please check your API key format and try again.');
-            } else if (response.status === 503) {
-                throw new Error('Gemini AI server is overloaded. Please try again later.');
-            } else if (response.status === 500) {
-                throw new Error('Gemini AI server error. Please try again later.');
-            } else {
-                throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
+            // Try next model if available
+            if (attempt < this.geminiModels.length - 1) {
+                if (!this.tryNextGeminiModel()) {
+                    break;
+                }
+                // Small delay between model attempts
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
-        const data = await response.json();
+        // All Gemini models failed, try AgentRouter as final fallback
+        console.log('⚠️ All Gemini models failed, trying AgentRouter as final fallback...');
 
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            throw new Error('Invalid API response format');
+        // Reset to original model for next batch
+        this.currentModelIndex = originalModelIndex;
+
+        if (this.agentRouterApiKey) {
+            try {
+                return await this._processWithAgentRouter(batch, categories, learningData);
+            } catch (agentRouterError) {
+                console.error('❌ AgentRouter fallback also failed:', agentRouterError.message);
+                throw new Error(`All Gemini models and AgentRouter failed. Last Gemini error: ${lastError?.message}. AgentRouter: ${agentRouterError.message}`);
+            }
+        } else {
+            throw new Error(`All Gemini models failed. Last error: ${lastError?.message}. No AgentRouter key configured.`);
         }
-
-        const responseText = data.candidates[0].content.parts[0].text;
-        return this._parseResponse(responseText, batch);
     }
 
     /**
