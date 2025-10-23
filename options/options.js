@@ -393,7 +393,7 @@ class OptionsController {
 
     try {
       // Test AgentRouter API
-      const response = await fetch('https://agentrouter.org/v1/chat/completions', {
+      const response = await fetch('https://agentrouter.org/v1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
