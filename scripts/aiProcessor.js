@@ -45,6 +45,319 @@ class AIProcessor {
     }
 
     /**
+     * Normalize folder name with proper capitalization and formatting
+     * Only changes folders that clearly need improvement
+     * @param {string} folderName - Original folder name
+     * @returns {string} Normalized folder name
+     */
+    normalizeFolderName(folderName) {
+        if (!folderName || typeof folderName !== 'string') {
+            return folderName;
+        }
+
+        const original = folderName.trim();
+
+        // Don't change if it's already well-formatted
+        if (this._isWellFormatted(original)) {
+            return original;
+        }
+
+        // Apply normalization rules
+        let normalized = original;
+
+        // Fix common capitalization issues
+        normalized = this._fixCapitalization(normalized);
+
+        // Clean up spacing and punctuation
+        normalized = this._cleanupSpacing(normalized);
+
+        // Fix common abbreviations and technical terms
+        normalized = this._fixCommonTerms(normalized);
+
+        // Only return the normalized version if it's significantly better
+        if (this._isSignificantImprovement(original, normalized)) {
+            console.log(`📁 Normalized folder: "${original}" → "${normalized}"`);
+            return normalized;
+        }
+
+        return original;
+    }
+
+    /**
+     * Check if a folder name is already well-formatted
+     * @param {string} name - Folder name to check
+     * @returns {boolean} True if well-formatted
+     */
+    _isWellFormatted(name) {
+        // Skip very short names
+        if (name.length <= 2) return true;
+
+        // Skip if it's intentionally all caps (like "AI", "API", "UI")
+        if (name.length <= 4 && name === name.toUpperCase()) return true;
+
+        // Skip if it's a proper noun or brand name that's already correct
+        if (this._isProperNoun(name)) return true;
+
+        // Check for obvious formatting issues that need fixing
+        const hasIssues = [
+            name === name.toLowerCase() && name.length > 2,  // all lowercase
+            name === name.toUpperCase() && name.length > 4,  // all uppercase
+            /\s{2,}/.test(name),                             // multiple spaces
+            /^\s|\s$/.test(name),                            // leading/trailing spaces
+            this._isCamelCase(name),                         // camelCase
+            /\bjavascript\b/i.test(name) && !/JavaScript/.test(name), // common tech terms
+            /\bgithub\b/i.test(name) && !/GitHub/.test(name),
+            /\bapi\b/i.test(name) && !/API/.test(name),
+            /\bui\b/i.test(name) && !/UI/.test(name),
+            /\bios\b/i.test(name) && !/iOS/.test(name)
+        ];
+
+        // If it has obvious issues, it's not well-formatted
+        if (hasIssues.some(Boolean)) {
+            return false;
+        }
+
+        // Check if it's already in good title case with proper technical terms
+        const titleCase = this._toTitleCase(name);
+        const withTechTerms = this._fixCommonTerms(titleCase);
+
+        // It's well-formatted if it matches the expected result
+        return name === withTechTerms;
+    }
+
+    /**
+     * Fix capitalization issues
+     * @param {string} name - Folder name
+     * @returns {string} Fixed name
+     */
+    _fixCapitalization(name) {
+        // Handle all lowercase
+        if (name === name.toLowerCase() && name.length > 2) {
+            return this._toTitleCase(name);
+        }
+
+        // Handle all uppercase (except short acronyms)
+        if (name === name.toUpperCase() && name.length > 4) {
+            return this._toTitleCase(name);
+        }
+
+        // Handle camelCase or PascalCase that should be title case
+        if (this._isCamelCase(name)) {
+            return this._camelToTitleCase(name);
+        }
+
+        return name;
+    }
+
+    /**
+     * Clean up spacing and punctuation
+     * @param {string} name - Folder name
+     * @returns {string} Cleaned name
+     */
+    _cleanupSpacing(name) {
+        return name
+            .replace(/\s+/g, ' ')           // Multiple spaces to single space
+            .replace(/\s*-\s*/g, ' - ')     // Fix spacing around dashes
+            .replace(/\s*&\s*/g, ' & ')     // Fix spacing around ampersands
+            .replace(/\s*\+\s*/g, ' + ')    // Fix spacing around plus signs
+            .replace(/^\s+|\s+$/g, '')      // Trim whitespace
+            .replace(/^-+|-+$/g, '')        // Remove leading/trailing dashes
+            .trim();
+    }
+
+    /**
+     * Fix common technical terms and abbreviations
+     * @param {string} name - Folder name
+     * @returns {string} Fixed name
+     */
+    _fixCommonTerms(name) {
+        const fixes = {
+            // Technical terms
+            'javascript': 'JavaScript',
+            'typescript': 'TypeScript',
+            'nodejs': 'Node.js',
+            'reactjs': 'React.js',
+            'vuejs': 'Vue.js',
+            'angularjs': 'Angular.js',
+            'jquery': 'jQuery',
+            'github': 'GitHub',
+            'gitlab': 'GitLab',
+            'stackoverflow': 'Stack Overflow',
+            'youtube': 'YouTube',
+            'linkedin': 'LinkedIn',
+            'facebook': 'Facebook',
+            'instagram': 'Instagram',
+            'twitter': 'Twitter',
+            'tiktok': 'TikTok',
+            'whatsapp': 'WhatsApp',
+            'wordpress': 'WordPress',
+            'shopify': 'Shopify',
+            'amazon': 'Amazon',
+            'netflix': 'Netflix',
+            'spotify': 'Spotify',
+            'paypal': 'PayPal',
+            'dropbox': 'Dropbox',
+            'onedrive': 'OneDrive',
+            'googledrive': 'Google Drive',
+            'icloud': 'iCloud',
+
+            // Common abbreviations that should stay uppercase
+            'ai': 'AI',
+            'api': 'API',
+            'ui': 'UI',
+            'ux': 'UX',
+            'seo': 'SEO',
+            'css': 'CSS',
+            'html': 'HTML',
+            'xml': 'XML',
+            'json': 'JSON',
+            'sql': 'SQL',
+            'php': 'PHP',
+            'ios': 'iOS',
+            'android': 'Android',
+            'windows': 'Windows',
+            'macos': 'macOS',
+            'linux': 'Linux',
+            'ubuntu': 'Ubuntu',
+
+            // Business terms
+            'ecommerce': 'E-commerce',
+            'b2b': 'B2B',
+            'b2c': 'B2C',
+            'saas': 'SaaS',
+            'crm': 'CRM',
+            'erp': 'ERP',
+            'hr': 'HR',
+            'it': 'IT',
+            'r&d': 'R&D',
+            'roi': 'ROI',
+            'kpi': 'KPI'
+        };
+
+        let result = name;
+
+        // Apply word-boundary fixes
+        for (const [wrong, correct] of Object.entries(fixes)) {
+            const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
+            result = result.replace(regex, correct);
+        }
+
+        return result;
+    }
+
+    /**
+     * Convert to title case
+     * @param {string} str - String to convert
+     * @returns {string} Title case string
+     */
+    _toTitleCase(str) {
+        const smallWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet'];
+
+        return str.toLowerCase().split(' ').map((word, index) => {
+            // Always capitalize first and last word
+            if (index === 0 || index === str.split(' ').length - 1) {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }
+
+            // Don't capitalize small words unless they're first/last
+            if (smallWords.includes(word)) {
+                return word;
+            }
+
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    }
+
+    /**
+     * Check if string has intentional mixed case
+     * @param {string} str - String to check
+     * @returns {boolean} True if has intentional mixed case
+     */
+    _hasIntentionalMixedCase(str) {
+        const intentionalPatterns = [
+            /^[A-Z][a-z]+[A-Z]/,  // PascalCase like "JavaScript"
+            /^i[A-Z]/,             // Apple style like "iPhone", "iPad"
+            /^e[A-Z]/,             // e-style like "eBay", "eCommerce"
+            /[A-Z]{2,}/,           // Contains acronyms like "HTML5"
+        ];
+
+        return intentionalPatterns.some(pattern => pattern.test(str));
+    }
+
+    /**
+     * Check if string is camelCase
+     * @param {string} str - String to check
+     * @returns {boolean} True if camelCase
+     */
+    _isCamelCase(str) {
+        return /^[a-z]+[A-Z]/.test(str) && !str.includes(' ');
+    }
+
+    /**
+     * Convert camelCase to Title Case
+     * @param {string} str - camelCase string
+     * @returns {string} Title Case string
+     */
+    _camelToTitleCase(str) {
+        return str
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+    }
+
+    /**
+     * Check if string is a proper noun that shouldn't be changed
+     * @param {string} str - String to check
+     * @returns {boolean} True if proper noun
+     */
+    _isProperNoun(str) {
+        const properNouns = [
+            'Google', 'Microsoft', 'Apple', 'Amazon', 'Facebook', 'Meta',
+            'Netflix', 'Spotify', 'Adobe', 'Oracle', 'IBM', 'Intel',
+            'Samsung', 'Sony', 'Nintendo', 'Tesla', 'Uber', 'Airbnb',
+            'PayPal', 'eBay', 'Etsy', 'Pinterest', 'Reddit', 'Discord',
+            'Slack', 'Zoom', 'Skype', 'WhatsApp', 'Telegram', 'Signal'
+        ];
+
+        return properNouns.includes(str);
+    }
+
+    /**
+     * Check if normalized version is a significant improvement
+     * @param {string} original - Original name
+     * @param {string} normalized - Normalized name
+     * @returns {boolean} True if significant improvement
+     */
+    _isSignificantImprovement(original, normalized) {
+        // Don't change if they're the same
+        if (original === normalized) return false;
+
+        // Don't change if only minor differences
+        if (original.toLowerCase() === normalized.toLowerCase() &&
+            Math.abs(original.length - normalized.length) <= 2) {
+            return false;
+        }
+
+        // Consider it an improvement if:
+        // - Fixed obvious casing issues
+        // - Cleaned up spacing
+        // - Fixed common technical terms
+
+        const improvements = [
+            // Fixed all lowercase
+            original === original.toLowerCase() && original.length > 2,
+            // Fixed all uppercase
+            original === original.toUpperCase() && original.length > 4,
+            // Fixed spacing issues
+            /\s{2,}/.test(original) || /^\s|\s$/.test(original),
+            // Fixed common terms
+            /\bjavascript\b/i.test(original) || /\bgithub\b/i.test(original) || /\bapi\b/i.test(original)
+        ];
+
+        return improvements.some(Boolean);
+    }
+
+    /**
      * Try next Gemini model in the fallback sequence
      * @returns {boolean} True if there's a next model, false if exhausted
      */
@@ -98,6 +411,9 @@ class AIProcessor {
 
         // Reset to first Gemini model at the start of each categorization session
         this.resetToFirstModel();
+
+        // Normalize existing folder names for better presentation
+        await this._normalizeExistingFolders();
 
         // First, analyze bookmarks to generate dynamic categories
         console.log('Generating dynamic categories from bookmarks...');
@@ -322,25 +638,100 @@ class AIProcessor {
         console.log(`📁 Creating folder structure for: "${categoryPath}"`);
 
         for (const part of parts) {
-            // Check if folder already exists
+            // Normalize the folder name for better presentation
+            const normalizedPart = this.normalizeFolderName(part);
+
+            // Check if folder already exists (check both original and normalized names)
             const children = await chrome.bookmarks.getChildren(currentParentId);
-            let existingFolder = children.find(child => !child.url && child.title === part);
+            let existingFolder = children.find(child => !child.url &&
+                (child.title === part || child.title === normalizedPart));
 
             if (!existingFolder) {
-                // Create the folder only when we actually need it
+                // Create the folder with normalized name
                 existingFolder = await chrome.bookmarks.create({
                     parentId: currentParentId,
-                    title: part
+                    title: normalizedPart
                 });
-                console.log(`📁 Created on-demand folder: "${part}" in parent ${currentParentId}`);
+                console.log(`📁 Created folder: "${normalizedPart}" in parent ${currentParentId}`);
             } else {
-                console.log(`📁 Using existing folder: "${part}" (ID: ${existingFolder.id})`);
+                // If existing folder has poor formatting, update it to normalized version
+                if (existingFolder.title !== normalizedPart &&
+                    this._isSignificantImprovement(existingFolder.title, normalizedPart)) {
+
+                    await chrome.bookmarks.update(existingFolder.id, { title: normalizedPart });
+                    console.log(`📁 Updated folder name: "${existingFolder.title}" → "${normalizedPart}"`);
+                } else {
+                    console.log(`📁 Using existing folder: "${existingFolder.title}" (ID: ${existingFolder.id})`);
+                }
             }
 
             currentParentId = existingFolder.id;
         }
 
         return currentParentId;
+    }
+
+    /**
+     * Normalize existing folder names for better presentation
+     * Only updates folders that clearly need improvement
+     */
+    async _normalizeExistingFolders() {
+        try {
+            console.log('📁 Checking existing folders for normalization...');
+
+            // Get all bookmark folders from main locations
+            const foldersToCheck = ['1', '2']; // Bookmarks Bar and Other Bookmarks
+            let normalizedCount = 0;
+
+            for (const rootId of foldersToCheck) {
+                normalizedCount += await this._normalizeFoldersRecursively(rootId);
+            }
+
+            if (normalizedCount > 0) {
+                console.log(`📁 Normalized ${normalizedCount} folder names for better presentation`);
+            } else {
+                console.log('📁 All existing folders are already well-formatted');
+            }
+
+        } catch (error) {
+            console.error('Error normalizing existing folders:', error);
+            // Don't throw - this is not critical for the main functionality
+        }
+    }
+
+    /**
+     * Recursively normalize folders in a tree
+     * @param {string} parentId - Parent folder ID
+     * @returns {Promise<number>} Number of folders normalized
+     */
+    async _normalizeFoldersRecursively(parentId) {
+        let normalizedCount = 0;
+
+        try {
+            const children = await chrome.bookmarks.getChildren(parentId);
+
+            for (const child of children) {
+                if (!child.url) { // It's a folder
+                    const normalizedName = this.normalizeFolderName(child.title);
+
+                    // Update if it's a significant improvement
+                    if (child.title !== normalizedName &&
+                        this._isSignificantImprovement(child.title, normalizedName)) {
+
+                        await chrome.bookmarks.update(child.id, { title: normalizedName });
+                        console.log(`📁 Normalized: "${child.title}" → "${normalizedName}"`);
+                        normalizedCount++;
+                    }
+
+                    // Recursively check subfolders
+                    normalizedCount += await this._normalizeFoldersRecursively(child.id);
+                }
+            }
+        } catch (error) {
+            console.error(`Error normalizing folders in parent ${parentId}:`, error);
+        }
+
+        return normalizedCount;
     }
 
     /**
