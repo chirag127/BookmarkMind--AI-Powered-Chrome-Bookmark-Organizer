@@ -34,6 +34,7 @@ class PopupController {
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
+    this.removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
     this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
     this.forceReorganizeBtn = document.getElementById('forceReorganizeBtn');
     this.exportBtn = document.getElementById('exportBtn');
@@ -75,6 +76,7 @@ class PopupController {
    */
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
     this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
     this.exportBtn.addEventListener('click', () => this.exportBookmarks());
@@ -281,6 +283,191 @@ class PopupController {
       if (this.forceReorganizeBtn) {
         this.forceReorganizeBtn.style.display = 'none';
       }
+    }
+  }
+
+  /**
+   * Remove duplicate URLs (same webpage with different fragments/anchors)
+   */
+  async removeDuplicateUrls() {
+    if (this.isProcessing) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      'This will scan all bookmarks and remove duplicates that point to the same webpage.\n\n' +
+      'Examples of duplicates that will be removed:\n' +
+      '• https://example.com/page#section1\n' +
+      '• https://example.com/page#section2\n' +
+      '(Both point to the same page, one will be kept)\n\n' +
+      'This action cannot be undone automatically.\n\n' +
+      'Are you sure you want to continue?'
+    );
+
+    if (!confirmed) return;
+
+    this.isProcessing = true;
+    this.showProgress();
+    this.updateProgress('Scanning for duplicate URLs...', 0);
+
+    try {
+      console.log('Popup: Starting duplicate URL removal...');
+
+      // Get all bookmarks
+      const bookmarkTree = await chrome.bookmarks.getTree();
+      const allBookmarks = [];
+
+      // Collect all bookmarks from all folders
+      const collectBookmarksFromTree = (nodes, parentTitle = '') => {
+        for (const node of nodes) {
+          if (node.url) {
+            allBookmarks.push({
+              id: node.id,
+              title: node.title,
+              url: node.url,
+              parentId: node.parentId,
+              currentFolder: parentTitle
+            });
+          }
+          if (node.children) {
+            collectBookmarksFromTree(node.children, node.title);
+          }
+        }
+      };
+
+      collectBookmarksFromTree(bookmarkTree);
+
+      console.log(`Found ${allBookmarks.length} total bookmarks to analyze`);
+      this.updateProgress(`Analyzing ${allBookmarks.length} bookmarks for duplicates...`, 10);
+
+      if (allBookmarks.length === 0) {
+        this.showResults({
+          processed: 0,
+          removed: 0,
+          message: 'No bookmarks found to analyze.'
+        });
+        return;
+      }
+
+      // Group bookmarks by normalized URL (without fragments, query params, etc.)
+      const urlGroups = new Map();
+      const duplicateGroups = [];
+
+      for (let i = 0; i < allBookmarks.length; i++) {
+        const bookmark = allBookmarks[i];
+        const progress = Math.round(10 + (i / allBookmarks.length) * 40);
+
+        this.ogress(`Analyzing "${bookmark.title}"... (${i + 1}/${allBookmarks.length})`, progress);
+
+        try {
+          // Normalize URL by removing fragments, query parameters, and trailing slashes
+          const url = new URL(bookmark.url);
+          const normalizedUrl = `${url.protocol}//${url.hostname}${url.pathname}`.replace(/\/$/, '');
+
+          if (!urlGroups.has(normalizedUrl)) {
+            urlGroups.set(normalizedUrl, []);
+          }
+
+          urlGroups.get(normalizedUrl).push(bookmark);
+        } catch (error) {
+          console.warn(`Invalid URL for bookmark "${bookmark.title}": ${bookmark.url}`);
+          // Keep invalid URLs as unique
+          const invalidKey = `invalid_${bookmark.url}`;
+          urlGroups.set(invalidKey, [bookmark]);
+        }
+      }
+
+      // Find groups with duplicates
+      for (const [normalizedUrl, bookmarks] of urlGroups) {
+        if (bookmarks.length > 1) {
+          duplicateGroups.push({
+            normalizedUrl,
+            bookmarks,
+            duplicateCount: bookmarks.length - 1
+          });
+        }
+      }
+
+      console.log(`Found ${duplicateGroups.length} groups with duplicates`);
+
+      if (duplicateGroups.length === 0) {
+        this.showResults({
+          processed: allBookmarks.length,
+          removed: 0,
+          message: 'No duplicate URLs found. All bookmarks point to unique webpages.'
+        });
+        return;
+      }
+
+      // Remove duplicates (keep the first one, remove the rest)
+      let removedCount = 0;
+      const errors = [];
+      let processedGroups = 0;
+
+      for (const group of duplicateGroups) {
+        processedGroups++;
+        const progress = Math.round(50 + (processedGroups / duplicateGroups.length) * 40);
+
+        this.updateProgress(
+          `Removing duplicates for ${group.normalizedUrl}... (${processedGroups}/${duplicateGroups.length})`,
+          progress
+        );
+
+        // Sort bookmarks by creation date (keep the oldest) or by title length (keep the most descriptive)
+        const sortedBookmarks = group.bookmarks.sort((a, b) => {
+          // Prefer bookmarks with longer, more descriptive titles
+          const titleDiff = b.title.length - a.title.length;
+          if (Math.abs(titleDiff) > 10) return titleDiff;
+
+          // If titles are similar length, prefer the first one found
+          return 0;
+        });
+
+        const keepBookmark = sortedBookmarks[0];
+        const duplicatesToRemove = sortedBookmarks.slice(1);
+
+        console.log(`Keeping: "${keepBookmark.title}" (${keepBookmark.url})`);
+        console.log(`Removing ${duplicatesToRemove.length} duplicates:`);
+
+        for (const duplicate of duplicatesToRemove) {
+          try {
+            console.log(`  - "${duplicate.title}" (${duplicate.url})`);
+            await chrome.bookmarks.remove(duplicate.id);
+            removedCount++;
+          } catch (error) {
+            console.error(`Failed to remove duplicate "${duplicate.title}":`, error);
+            errors.push(`${duplicate.title}: ${error.message}`);
+          }
+        }
+
+        // Small delay to prevent overwhelming the API
+        if (processedGroups < duplicateGroups.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      // Show results
+      const resultMessage = errors.length > 0
+        ? `Removed ${removedCount} duplicate bookmarks. ${errors.length} failed to remove.`
+        : `Successfully removed ${removedCount} duplicate bookmarks from ${duplicateGroups.length} groups.`;
+
+      this.showResults({
+        processed: allBookmarks.length,
+        removed: removedCount,
+        groups: duplicateGroups.length,
+        errors: errors.length,
+        message: resultMessage,
+        details: errors.length > 0 ? `Errors: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}` :
+          `Found ${duplicateGroups.length} groups of duplicates. Kept the most descriptive bookmark from each group.`
+      });
+
+      // Refresh stats after removing duplicates
+      await this.loadStats();
+
+    } catch (error) {
+      console.error('Popup: Remove duplicates error:', error);
+      this.showError(`Failed to remove duplicates: ${error.message}`);
+    } finally {
+      this.isProcessing = false;
     }
   }
 
@@ -676,6 +863,28 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   showResults(results) {
     this.progressSection.classList.add('hidden');
     this.resultsSection.classList.remove('hidden');
+
+    // Handle duplicate removal results
+    if (results.removed !== undefined) {
+      this.resultsTitle.textContent = 'Duplicates Removed!';
+      this.resultsMessage.textContent = results.message;
+
+      if (results.details) {
+        this.resultsMessage.textContent += `\n\n${results.details}`;
+      }
+
+      // Update stats display
+      this.processedCount.textContent = results.processed || 0;
+      this.categorizedCount.textContent = results.removed || 0;
+
+      // Change the label for removed bookmarks
+      const categorizedLabel = this.categorizedCount.nextElementSibling;
+      if (categorizedLabel) {
+        categorizedLabel.textContent = 'Removed';
+      }
+
+      return;
+    }
 
     // Handle move to bookmark bar results
     if (results.moved !== undefined) {
