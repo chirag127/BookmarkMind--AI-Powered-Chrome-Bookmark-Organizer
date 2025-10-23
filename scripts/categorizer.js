@@ -48,7 +48,7 @@ class Categorizer {
       }
 
       console.log('Categorizer: Setting API key...');
-      this.aiProcessor.setApiKey(settings.apiKey);
+      this.aiProcessor.setApiKey(settings.apiKey, settings.agentRouterApiKey);
 
       // Get all bookmarks
       console.log('Categorizer: Loading bookmarks...');

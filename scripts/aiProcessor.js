@@ -8,14 +8,21 @@ class AIProcessor {
         this.apiKey = null;
         this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
         this.bookmarkService = null;
+
+        // AgentRouter fallback configuration
+        this.agentRouterApiKey = null;
+        this.agentRouterBaseUrl = 'https://agentrouter.org/v1/chat/completions';
+        this.fallbackModel = 'gpt-5'; // Free model on AgentRouter
     }
 
     /**
      * Initialize with API key
      * @param {string} apiKey - Gemini API key
+     * @param {string} agentRouterKey - Optional AgentRouter API key for fallback
      */
-    setApiKey(apiKey) {
+    setApiKey(apiKey, agentRouterKey = null) {
         this.apiKey = apiKey;
+        this.agentRouterApiKey = agentRouterKey;
         // Initialize BookmarkService for folder creation
         if (typeof BookmarkService !== 'undefined') {
             this.bookmarkService = new BookmarkService();
@@ -442,7 +449,13 @@ Return only the JSON array, no additional text or formatting.`;
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('API Error:', response.status, errorText);
+            console.error('Gemini API Error:', response.status, errorText);
+
+            // Try AgentRouter fallback if available
+            if (this.agentRouterApiKey && (response.status === 503 || response.status === 429 || response.status === 500)) {
+                console.log('🔄 Gemini API failed, trying AgentRouter fallback...');
+                return await this._processWithAgentRouter(batch, categories, learningData);
+            }
 
             if (response.status === 401) {
                 throw new Error('Invalid API key. Please check your Gemini API key in settings. Make sure it starts with "AIza" and is from Google AI Studio.');
@@ -631,6 +644,64 @@ Return only the JSON array, no additional text or formatting`;
         } catch (error) {
             console.error('API key test failed:', error);
             return false;
+        }
+    }
+
+    /**
+     * Process batch using AgentRouter as fallback
+     * @param {Array} batch - Batch of bookmarks
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processWithAgentRouter(batch, categories, learningData) {
+        console.log('🌐 Using AgentRouter fallback API...');
+
+        const prompt = this._buildPrompt(batch, categories, learningData);
+
+        const requestBody = {
+            model: this.fallbackModel,
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            temperature: 0.3,
+            max_tokens: 4000
+        };
+
+        try {
+            const response = await fetch(this.agentRouterBaseUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.agentRouterApiKey}`,
+                    'HTTP-Referer': 'https://bookmarkmind.extension',
+                    'X-Title': 'BookmarkMind Extension'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('AgentRouter API Error:', response.status, errorText);
+                throw new Error(`AgentRouter API request failed: ${response.status}. ${errorText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                throw new Error('Invalid AgentRouter API response format');
+            }
+
+            const responseText = data.choices[0].message.content;
+            console.log('✅ AgentRouter fallback successful');
+            return this._parseResponse(responseText, batch);
+
+        } catch (error) {
+            console.error('AgentRouter fallback failed:', error);
+            throw error;
         }
     }
 
