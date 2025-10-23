@@ -418,9 +418,9 @@ class AIProcessor {
 
         // Get user preferences for hierarchical categories
         const settings = await this._getSettings();
-        const maxDepth = settings.maxCategoryDepth || 4;
-        const minCategories = settings.minCategories || 15;
-        const maxCategories = settings.maxCategories || 50;
+        const maxDepth = settings.maxCategoryDepth || 7; // Allow up to 7 levels for complex hierarchies
+        const minCategories = settings.minCategories || 15; // Restored original
+        const maxCategories = settings.maxCategories || 100; // Increased to allow hundreds of categories
         const hierarchicalMode = settings.hierarchicalMode !== false; // Default to true
 
         let prompt = `**Role:** Advanced Hierarchical Bookmark Category Generator
@@ -436,14 +436,28 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - **CONSISTENCY:** Match the naming style and hierarchy of existing folders
 
 **HIERARCHICAL CATEGORY REQUIREMENTS:**
-- Create ${minCategories}-${maxCategories} hierarchical categories with 2-${maxDepth} levels deep
-- Use format: "Parent > Child > Grandchild > Great-grandchild"
-- Examples: "Work > Development > Frontend > React", "Learning > Programming > JavaScript > Frameworks"
-- Be extremely specific and granular - hundreds of categories are encouraged
-- Consider domain expertise, content type, and usage patterns
-- Include both broad categories and very specific subcategories
-- Maximum depth: ${maxDepth} levels (e.g., Level1 > Level2 > Level3 > Level4)
-- **REUSE EXISTING FOLDERS FIRST, then extend with new subcategories**
+- Create ${minCategories}-${maxCategories} hierarchical categories with up to ${maxDepth} levels deep
+- Use format: "Parent > Child > Grandchild > Great-grandchild" etc. based on URL/title complexity
+- Examples: "Tools & Utilities > File Management > Cloud Storage", "Development > Frontend > JavaScript > Frameworks"
+- **SMART GRANULARITY:** Create deeper hierarchies for complex domains, broader for simple ones
+- **SERVICE-LEVEL GROUPING:** Group individual services/brands together, don't create separate folders for each
+- **CONTEXTUAL DEPTH:** Use URL domain and title content to determine appropriate hierarchy depth
+- Maximum depth: ${maxDepth} levels when justified by content complexity
+- **REUSE EXISTING FOLDERS FIRST, then extend intelligently based on bookmark content**
+
+**SMART GRANULARITY RULES:**
+- ✅ DO: "Tools & Utilities > File Management > Cloud Storage" (good hierarchy)
+- ❌ DON'T: "Tools & Utilities > File Management > Cloud Storage > OneDrive" (OneDrive stays in Cloud Storage)
+- ✅ DO: "Development > Frontend > JavaScript > Frameworks" (justified by technical complexity)
+- ❌ DON'T: "Development > Frontend > JavaScript > Frameworks > React > Hooks > useState" (too granular)
+- ✅ DO: "AI & Machine Learning > Natural Language Processing > Large Language Models" (complex domain)
+- ❌ DON'T: "AI & Machine Learning > Natural Language Processing > Large Language Models > ChatGPT > GPT-4" (individual service)
+
+**GROUPING PRINCIPLES:**
+- Group individual services/brands at the same level (OneDrive, Google Drive, Dropbox all in "Cloud Storage")
+- Create deeper hierarchies for technical/complex domains that warrant it
+- Use URL domain and title to determine if deeper categorization is justified
+- Avoid creating folders for individual products/services/brands
 
 **Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
 
@@ -750,14 +764,24 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 **CRITICAL CATEGORIZATION INSTRUCTIONS:**
 - **FIRST PRIORITY:** Use existing folders from the structure above whenever possible
 - **AVOID DUPLICATES:** Do not create categories similar to existing folders
-- **EXTEND EXISTING:** If a bookmark fits an existing folder, use it or extend it with subcategories
-- **CONSISTENCY:** Match the naming style and hierarchy of existing folders
-- **SPECIFICITY:** Assign to the most specific hierarchical category possible
+- **SMART GRANULARITY:** Use URL domain and title content to determine appropriate hierarchy depth
+- **SERVICE-LEVEL GROUPING:** Group individual services/brands together, don't separate them
+- **CONTEXTUAL DEPTH:** Complex technical domains can have deeper hierarchies, simple services stay grouped
+- **HIERARCHY INTELLIGENCE:** Create deeper paths when justified by content complexity
 - Consider current folder location, URL domain, title content, and page context
-- Use the full hierarchical path (e.g., "Work > Development > Frontend > React")
-- Be as granular as possible - prefer deeper, more specific categories
-- If current folder suggests a category tree, use similar hierarchical structure
-- Only create new categories if no existing folder is suitable
+- Use hierarchical paths appropriate to content complexity (e.g., "Tools & Utilities > File Management > Cloud Storage")
+- Group similar services at the same level within appropriate categories
+- Create new categories only when existing structure doesn't fit the content type
+
+**SMART GRANULARITY EXAMPLES:**
+- ✅ DO: "Tools & Utilities > File Management > Cloud Storage" (OneDrive, Google Drive, Dropbox all here)
+- ❌ DON'T: "Tools & Utilities > File Management > Cloud Storage > OneDrive > Personal"
+- ✅ DO: "Development > Frontend > JavaScript > Frameworks" (technical complexity justifies depth)
+- ❌ DON'T: "Development > Frontend > JavaScript > Frameworks > React > Components > Hooks"
+- ✅ DO: "AI & Machine Learning > Computer Vision > Image Recognition" (complex domain)
+- ❌ DON'T: "AI & Machine Learning > Computer Vision > Image Recognition > Google Vision API"
+- ✅ DO: "Shopping > Electronics" (Amazon, Best Buy, Newegg all here)
+- ❌ DON'T: "Shopping > Electronics > Amazon > Laptops > Gaming"
 
 **Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
 
@@ -970,9 +994,9 @@ Return only the JSON array, no additional text or formatting`;
     async _getSettings() {
         const defaultSettings = {
             hierarchicalMode: true,
-            maxCategoryDepth: 4,
-            minCategories: 15,
-            maxCategories: 50
+            maxCategoryDepth: 7, // Allow up to 7 levels for complex hierarchies
+            minCategories: 15, // Restored original
+            maxCategories: 100 // Increased to allow hundreds of categories
         };
 
         try {
