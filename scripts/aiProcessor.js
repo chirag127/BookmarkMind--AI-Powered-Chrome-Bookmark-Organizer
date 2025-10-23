@@ -496,13 +496,13 @@ class AIProcessor {
 
         // Get user preferences for hierarchical categories
         const settings = await this._getSettings();
-        const maxDepth = settings.maxCategoryDepth || 7; // Allow up to 7 levels for complex hierarchies
-        const minCategories = settings.minCategories || 15; // Restored original
-        const maxCategories = settings.maxCategories || 100; // Increased to allow hundreds of categories
+        const maxDepth = settings.maxCategoryDepth || 4; // Limit to 3 levels for practical organization
+        const minCategories = settings.minCategories || 10; // Fewer categories for better organization
+        const maxCategories = settings.maxCategories || 100; // Reduced to prevent over-categorization
         const hierarchicalMode = settings.hierarchicalMode !== false; // Default to true
 
-        let prompt = `**Role:** Ultra-Granular Hierarchical Bookmark Category Generator
-**Task:** Analyze the following bookmarks and create an extremely detailed hierarchical category system with maximum granularity and specificity.
+        let prompt = `**Role:** Smart Hierarchical Bookmark Category Generator
+**Task:** Analyze the following bookmarks and create a balanced hierarchical category system with practical, usable granularity.
 
 **EXISTING FOLDER STRUCTURE (REUSE THESE AS MUCH AS POSSIBLE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
@@ -510,38 +510,36 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 **CRITICAL INSTRUCTIONS:**
 - **PRIORITIZE EXISTING FOLDERS:** Use the existing folder structure above whenever possible
 - **AVOID DUPLICATES:** Do not create similar folders to existing ones (e.g., if "Development" exists, don't create "Programming" or "Coding")
-- **EXTEND EXISTING:** Add highly specific subcategories to existing folders rather than creating new top-level categories
+- **EXTEND EXISTING:** Add practical subcategories to existing folders rather than creating new top-level categories
 - **CONSISTENCY:** Match the naming style and hierarchy of existing folders
-- **MAXIMUM GRANULARITY:** Create the most specific, detailed categories possible
+- **BALANCED GRANULARITY:** Create useful, practical categories that are neither too broad nor too specific
 
-**ULTRA-GRANULAR HIERARCHICAL REQUIREMENTS:**
-- Create ${minCategories}-${maxCategories} extremely specific hierarchical categories with up to ${maxDepth} levels deep
-- Use format: "Parent > Child > Grandchild > Great-grandchild > Specific-Area > Ultra-Specific" etc.
-- Examples: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux"
-- **ULTRA-SPECIFIC CATEGORIZATION:** Create the deepest, most specific hierarchies possible
-- **DOMAIN EXPERTISE DEPTH:** Technical domains should have 4-7 levels of specificity
-- **CONTEXTUAL MICRO-CATEGORIZATION:** Use URL domain, path, and title content to create ultra-specific categories
-- **PROFESSIONAL GRANULARITY:** Match real-world professional categorization standards
-- **REUSE EXISTING FOLDERS FIRST, then extend with maximum specificity based on bookmark content**
+**BALANCED HIERARCHICAL REQUIREMENTS:**
+- Create ${minCategories}-${maxCategories} practical hierarchical categories with 2-4 levels deep (maximum)
+- Use format: "Parent > Child > Grandchild" (rarely go deeper than 3 levels)
+- Examples: "Development > Frontend > JavaScript", "Business > Marketing > SEO"
+- **PRACTICAL CATEGORIZATION:** Create categories that are useful for everyday bookmark organization
+- **MODERATE DEPTH:** Most categories should be 2-3 levels deep, only use 4 levels for very complex domains
+- **USER-FRIENDLY:** Categories should be easy to understand and navigate
+- **REUSE EXISTING FOLDERS FIRST, then extend with practical subcategories based on bookmark content**
 
-**ULTRA-GRANULAR CATEGORIZATION RULES:**
-- ✅ DO: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
-- ✅ DO: "Development > Backend > APIs > REST > Authentication > JWT > Token Management"
-- ✅ DO: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Image Recognition > Object Detection"
-- ✅ DO: "Design > UI-UX > Prototyping > Figma > Components > Design Systems > Atomic Design"
-- ✅ DO: "Business > Marketing > Digital Marketing > SEO > Technical SEO > Core Web Vitals"
-- ✅ DO: "Finance > Investment > Stock Analysis > Technical Analysis > Chart Patterns > Candlestick Patterns"
-- ✅ DO: "Learning > Programming > Languages > Python > Data Science > Machine Learning > Scikit-Learn"
-- ✅ DO: "Tools > Productivity > Project Management > Agile > Scrum > Sprint Planning > Estimation"
+**BALANCED CATEGORIZATION RULES:**
+- ✅ GOOD: "Development > Frontend > JavaScript" (practical depth)
+- ✅ GOOD: "Development > Backend > APIs" (clear and useful)
+- ✅ GOOD: "AI & Machine Learning > Tools" (appropriate grouping)
+- ✅ GOOD: "Design > UI-UX > Resources" (practical organization)
+- ✅ GOOD: "Business > Marketing > SEO" (clear hierarchy)
+- ❌ TOO DEEP: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
+- ❌ TOO DEEP: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision > Object Detection"
+- ❌ TOO SPECIFIC: "Tools > Productivity > Project Management > Agile > Scrum > Sprint Planning > Estimation"
 
-**MAXIMUM SPECIFICITY PRINCIPLES:**
-- Create 4-7 levels of hierarchy for technical/professional domains
-- Use industry-standard terminology and categorization
-- Break down broad topics into highly specific subtopics
-- Consider the actual content depth when creating hierarchies
-- Group related concepts at appropriate specificity levels
-- Create categories that match how professionals actually organize information
-- Use URL paths and domain expertise to inform granular categorization
+**PRACTICAL ORGANIZATION PRINCIPLES:**
+- Keep most categories at 2-3 levels deep for easy navigation
+- Group related tools and resources together at appropriate levels
+- Use clear, descriptive names that users will understand
+- Avoid over-categorization that makes finding bookmarks difficult
+- Focus on how users actually think about and use their bookmarks
+- Create categories that will remain useful as bookmark collections grow
 
 **Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
 
@@ -687,43 +685,41 @@ Return only the JSON array, no additional text or formatting.`;
         }
 
         return [
-            'Work > Development > Frontend > JavaScript',
-            'Work > Development > Frontend > CSS',
-            'Work > Development > Backend > APIs',
-            'Work > Development > DevOps > Tools',
-            'Work > Design > UI-UX > Resources',
-            'Work > Design > Graphics > Tools',
-            'Work > Business > Marketing > Digital',
-            'Work > Business > Finance > Tools',
-            'Learning > Programming > Languages > JavaScript',
-            'Learning > Programming > Languages > Python',
-            'Learning > Programming > Frameworks > React',
-            'Learning > Design > Tutorials > UI-UX',
-            'Learning > Technology > AI > Machine Learning',
-            'Learning > Business > Entrepreneurship > Startups',
-            'Personal > Finance > Investment > Stocks',
-            'Personal > Finance > Banking > Tools',
-            'Personal > Health > Fitness > Workouts',
-            'Personal > Travel > Planning > Destinations',
-            'Entertainment > Gaming > PC Games > Strategy',
-            'Entertainment > Gaming > Mobile Games > Casual',
-            'Entertainment > Media > Streaming > Movies',
-            'Entertainment > Media > Music > Platforms',
-            'Shopping > Technology > Computers > Hardware',
-            'Shopping > Technology > Software > Tools',
-            'Shopping > Lifestyle > Fashion > Clothing',
-            'Shopping > Home > Furniture > Decor',
-            'News > Technology > Industry > Updates',
-            'News > Business > Markets > Analysis',
-            'News > World > Politics > Current Events',
-            'Tools > Productivity > Project Management > Agile',
-            'Tools > Productivity > Note Taking > Apps',
-            'Tools > Development > Code Editors > Extensions',
-            'Tools > Design > Graphics > Software',
-            'Reference > Documentation > APIs > Web Services',
-            'Reference > Tutorials > Programming > Guides',
-            'Social > Networking > Professional > LinkedIn',
-            'Social > Communication > Messaging > Apps',
+            'Work > Development > Frontend',
+            'Work > Development > Backend',
+            'Work > Development > DevOps',
+            'Work > Design > UI-UX',
+            'Work > Design > Graphics',
+            'Work > Business > Marketing',
+            'Work > Business > Finance',
+            'Learning > Programming > JavaScript',
+            'Learning > Programming > Python',
+            'Learning > Programming > Web Development',
+            'Learning > Design > Tutorials',
+            'Learning > Technology > AI',
+            'Learning > Business > Entrepreneurship',
+            'Personal > Finance > Investment',
+            'Personal > Finance > Banking',
+            'Personal > Health > Fitness',
+            'Personal > Travel > Planning',
+            'Entertainment > Gaming > PC Games',
+            'Entertainment > Gaming > Mobile Games',
+            'Entertainment > Media > Streaming',
+            'Entertainment > Media > Music',
+            'Shopping > Technology > Hardware',
+            'Shopping > Technology > Software',
+            'Shopping > Lifestyle > Fashion',
+            'Shopping > Home > Furniture',
+            'News > Technology',
+            'News > Business',
+            'News > World',
+            'Tools > Productivity',
+            'Tools > Development',
+            'Tools > Design',
+            'Reference > Documentation',
+            'Reference > Tutorials',
+            'Social > Networking',
+            'Social > Communication',
             'Other'
         ];
     }
@@ -799,39 +795,39 @@ Return only the JSON array, no additional text or formatting.`;
         // Get existing folder structure to include in prompt
         const existingFolders = await this._getExistingFolderStructure();
 
-        let prompt = `**Role:** Ultra-Granular Bookmark Categorization and Title Optimization Expert
-**Task:** Analyze the following bookmarks with maximum precision, assign each to the most specific appropriate category, and generate highly descriptive titles.
+        let prompt = `**Role:** Smart Bookmark Categorization and Title Optimization Expert
+**Task:** Analyze the following bookmarks and assign each to the most appropriate practical category, and generate clear, descriptive titles.
 
 **EXISTING FOLDER STRUCTURE (PRIORITIZE THESE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
 
-**Available Ultra-Granular Categories:** ${categories.join(', ')}
+**Available Categories:** ${categories.join(', ')}
 
-**ULTRA-GRANULAR CATEGORIZATION INSTRUCTIONS:**
-- **MAXIMUM SPECIFICITY:** Use the deepest, most specific category that accurately describes the content
-- **PROFESSIONAL PRECISION:** Match industry-standard categorization practices
-- **CONTEXTUAL ANALYSIS:** Analyze URL path, domain, title, and inferred content type for precise categorization
-- **TECHNICAL DEPTH:** For technical content, use the full depth of available hierarchical categories
-- **DOMAIN EXPERTISE:** Apply professional knowledge to categorize at the appropriate granular level
-- **AVOID SHALLOW CATEGORIZATION:** Don't use broad categories when specific ones are available
+**PRACTICAL CATEGORIZATION INSTRUCTIONS:**
+- **BALANCED SPECIFICITY:** Use categories that are specific enough to be useful but not so deep they're hard to navigate
+- **CLEAR ORGANIZATION:** Choose categories that make sense for everyday bookmark management
+- **CONTEXTUAL ANALYSIS:** Analyze URL domain, title, and content type for appropriate categorization
+- **PRACTICAL DEPTH:** Use 2-3 levels of hierarchy for most content, only go deeper when truly necessary
+- **USER-FRIENDLY:** Choose categories that users will easily understand and remember
+- **AVOID OVER-CATEGORIZATION:** Don't use overly specific categories when broader ones work better
 
-**ULTRA-GRANULAR CATEGORIZATION EXAMPLES:**
-- ✅ EXCELLENT: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
-- ✅ EXCELLENT: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision > Object Detection"
-- ✅ EXCELLENT: "Design > UI-UX > Prototyping > Figma > Components > Design Systems > Atomic Design"
-- ✅ EXCELLENT: "Business > Marketing > Digital Marketing > SEO > Technical SEO > Core Web Vitals > Performance"
-- ✅ EXCELLENT: "Finance > Investment > Stock Analysis > Technical Analysis > Chart Patterns > Candlestick Analysis"
-- ✅ EXCELLENT: "Learning > Programming > Languages > Python > Data Science > Machine Learning > Scikit-Learn > Classification"
-- ❌ TOO SHALLOW: "Development > Frontend" (when "Development > Frontend > JavaScript > Frameworks > React" is available)
-- ❌ TOO SHALLOW: "AI & Machine Learning" (when "AI & Machine Learning > Deep Learning > Neural Networks" is available)
+**GOOD CATEGORIZATION EXAMPLES:**
+- ✅ GOOD: "Development > Frontend > JavaScript" (clear and practical)
+- ✅ GOOD: "AI & Machine Learning > Tools" (appropriately grouped)
+- ✅ GOOD: "Design > UI-UX > Resources" (useful organization)
+- ✅ GOOD: "Business > Marketing > SEO" (clear hierarchy)
+- ✅ GOOD: "Learning > Programming > Python" (practical depth)
+- ✅ GOOD: "Tools > Productivity > Project Management" (balanced specificity)
+- ❌ TOO DEEP: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux"
+- ❌ TOO DEEP: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision"
 
-**PRECISION CATEGORIZATION RULES:**
-- Use 4-7 levels of hierarchy when the content warrants such specificity
-- Analyze the actual content type, not just the domain name
-- Consider the professional context and intended use of the bookmark
-- Match the categorization depth to the content complexity and specificity
-- Use the most specific category that accurately represents the content
-- For technical documentation, tutorials, or tools, use maximum available depth
+**PRACTICAL CATEGORIZATION RULES:**
+- Use 2-3 levels of hierarchy for most bookmarks
+- Only use 4+ levels for very complex technical content when absolutely necessary
+- Analyze the bookmark's primary purpose and categorize accordingly
+- Consider how users will actually search for and use these bookmarks
+- Group similar tools and resources together at appropriate levels
+- Choose the most practical category that accurately represents the content
 
 **TITLE GENERATION INSTRUCTIONS:**
 - **GENERATE IMPROVED TITLES:** Create descriptive, clear titles for each bookmark
@@ -875,22 +871,22 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
             prompt += `\n${index + 1}. Title: "${title}" | Domain: "${domain}" | URL: "${url}" | Current Location: "${currentFolder}" (${folderPath})`;
         });
 
-        prompt += `\n\n**HIERARCHICAL OUTPUT REQUIREMENTS:**
+        prompt += `\n\n**OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
 - Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), and 'confidence' (0.0-1.0)
-- Use hierarchical categories from the generated list above
-- Category must be the full path (e.g., "Work > Development > Frontend > React")
+- Use categories from the available list above
+- Category must be the full path (e.g., "Work > Development > Frontend")
 - Title must be descriptive and informative, based on URL domain and content context
-- Be as specific as possible - use the deepest appropriate category level
-- If uncertain, use 'Other' category
-- Consider URL domain, title content, AND current folder location for granular categorization
-- Prefer deeper, more specific categories over shallow ones
+- Choose the most appropriate category level - not too broad, not too specific
+- If uncertain about the specific subcategory, use a broader category from the list
+- Consider URL domain, title content, and current folder location for accurate categorization
+- Prefer practical, usable categories that make sense for bookmark organization
 
 **EXAMPLE OUTPUT:**
 [
-  {"id": 1, "category": "Work > Development > Frontend > React", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9},
-  {"id": 2, "category": "Learning > Programming > Python > Data Science", "title": "Pandas Tutorial - Data Analysis with Python", "confidence": 0.8},
-  {"id": 3, "category": "Personal > Finance > Investment > Stocks", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7}
+  {"id": 1, "category": "Work > Development > Frontend", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9},
+  {"id": 2, "category": "Learning > Programming > Python", "title": "Pandas Tutorial - Data Analysis with Python", "confidence": 0.8},
+  {"id": 3, "category": "Personal > Finance > Investment", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7}
 ]
 
 Return only the JSON array, no additional text or formatting`;
@@ -1059,9 +1055,10 @@ Return only the JSON array, no additional text or formatting`;
     async _getSettings() {
         const defaultSettings = {
             hierarchicalMode: true,
-            maxCategoryDepth: 7, // Allow up to 7 levels for complex hierarchies
-            minCategories: 15, // Restored original
-            maxCategories: 100 // Increased to allow hundreds of categories
+            maxCategoryDepth: 3, // Limit to 3 levels for practical organization
+            minCategories: 10, // Fewer categories for better organization
+            maxCategories: 30, // Reduced to prevent over-categorization
+            batchSize: 50 // Default batch size
         };
 
         try {
