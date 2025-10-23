@@ -7,6 +7,7 @@ class AIProcessor {
     constructor() {
         this.apiKey = null;
         this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+        this.bookmarkService = null;
     }
 
     /**
@@ -15,6 +16,10 @@ class AIProcessor {
      */
     setApiKey(apiKey) {
         this.apiKey = apiKey;
+        // Initialize BookmarkService for folder creation
+        if (typeof BookmarkService !== 'undefined') {
+            this.bookmarkService = new BookmarkService();
+        }
     }
 
     /**
@@ -37,6 +42,10 @@ class AIProcessor {
         console.log('Generating dynamic categories from bookmarks...');
         const dynamicCategories = await this._generateDynamicCategories(bookmarks, suggestedCategories, learningData);
         console.log('Generated categories:', dynamicCategories);
+
+        // IMMEDIATELY create folder structure for all generated categories
+        console.log('🏗️  Creating folder structure for all generated categories...');
+        await this._createFolderStructure(dynamicCategories);
 
         const results = [];
         const batchSize = 10; // Very small batch size for reliable hierarchical processing
@@ -68,33 +77,67 @@ class AIProcessor {
             } catch (error) {
                 console.error(`❌ Error processing batch ${batchNumber}/${totalBatches}:`, error);
 
-                // Add fallback categorization for failed batch using generated categories
+                // Add SMART fallback categorization using generated categories
                 batch.forEach((bookmark, index) => {
-                    // Try to assign a relevant category based on bookmark content
                     let fallbackCategory = 'Other';
 
-                    if (bookmark.title && bookmark.url) {
+                    if (bookmark.title && bookmark.url && dynamicCategories.length > 1) {
                         const title = bookmark.title.toLowerCase();
                         const url = bookmark.url.toLowerCase();
 
-                        // Simple keyword matching to assign to generated categories
+                        // Extract domain for better matching
+                        let domain = '';
+                        try {
+                            domain = new URL(bookmark.url).hostname.replace('www.', '').toLowerCase();
+                        } catch (e) {
+                            domain = '';
+                        }
+
+                        // Smart keyword matching to assign to generated categories
+                        let bestMatch = null;
+                        let bestScore = 0;
+
                         for (const category of dynamicCategories) {
                             if (category === 'Other') continue;
 
                             const categoryLower = category.toLowerCase();
                             const categoryParts = categoryLower.split(' > ');
+                            let score = 0;
 
-                            // Check if any part of the category matches the bookmark
-                            const matches = categoryParts.some(part =>
-                                title.includes(part) || url.includes(part) ||
-                                part.includes('ai') && (title.includes('ai') || url.includes('ai')) ||
-                                part.includes('development') && (title.includes('dev') || url.includes('github')) ||
-                                part.includes('learning') && (title.includes('course') || url.includes('learn'))
+                            // Check matches in title, URL, and domain
+                            categoryParts.forEach(part => {
+                                if (title.includes(part)) score += 3;
+                                if (url.includes(part)) score += 2;
+                                if (domain.includes(part)) score += 4;
+                            });
+
+                            // Bonus scoring for common patterns
+                            if (categoryLower.includes('ai') && (title.includes('ai') || domain.includes('ai') || title.includes('artificial'))) score += 5;
+                            if (categoryLower.includes('development') && (domain.includes('github') || domain.includes('stackoverflow') || title.includes('code'))) score += 5;
+                            if (categoryLower.includes('learning') && (domain.includes('course') || title.includes('tutorial') || domain.includes('edu'))) score += 5;
+                            if (categoryLower.includes('shopping') && (domain.includes('amazon') || domain.includes('shop') || title.includes('buy'))) score += 5;
+                            if (categoryLower.includes('tools') && (title.includes('tool') || title.includes('app') || domain.includes('app'))) score += 3;
+
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMatch = category;
+                            }
+                        }
+
+                        if (bestMatch && bestScore > 0) {
+                            fallbackCategory = bestMatch;
+                            console.log(`🎯 Smart fallback: "${bookmark.title}" → "${fallbackCategory}" (score: ${bestScore})`);
+                        } else {
+                            // If no good match, try to use a general category from the generated list
+                            const generalCategories = dynamicCategories.filter(cat =>
+                                cat !== 'Other' &&
+                                cat.split(' > ').length <= 2 // Use broader categories
                             );
 
-                            if (matches) {
-                                fallbackCategory = category;
-                                break;
+                            if (generalCategories.length > 0) {
+                                // Distribute among general categories to avoid everything going to "Other"
+                                fallbackCategory = generalCategories[index % generalCategories.length];
+                                console.log(`📂 General fallback: "${bookmark.title}" → "${fallbackCategory}"`);
                             }
                         }
                     }
@@ -103,7 +146,7 @@ class AIProcessor {
                         id: i + index,
                         bookmarkId: bookmark.id,
                         category: fallbackCategory,
-                        confidence: 0.1
+                        confidence: fallbackCategory === 'Other' ? 0.1 : 0.3
                     });
                 });
 
@@ -276,6 +319,46 @@ Return only the JSON array, no additional text or formatting.`;
             console.error('Error generating categories:', error);
             return this._getFallbackCategories(suggestedCategories);
         }
+    }
+
+    /**
+     * Create folder structure immediately for all generated categories
+     * @param {Array} categories - Generated hierarchical categories
+     */
+    async _createFolderStructure(categories) {
+        console.log(`🏗️  Creating folder structure for ${categories.length} categories...`);
+
+        // Use existing BookmarkService instance or create new one
+        if (!this.bookmarkService) {
+            if (typeof BookmarkService === 'undefined') {
+                throw new Error('BookmarkService not available for folder creation');
+            }
+            this.bookmarkService = new BookmarkService();
+        }
+        let createdCount = 0;
+        let skippedCount = 0;
+
+        for (const category of categories) {
+            if (category === 'Other') {
+                skippedCount++;
+                continue; // Skip "Other" as it's not a hierarchical category
+            }
+
+            try {
+                console.log(`📁 Creating: ${category}`);
+                const folderId = await this.bookmarkService.findOrCreateFolderByPath(category, '1');
+                console.log(`✅ Created: ${category} → ${folderId}`);
+                createdCount++;
+
+                // Small delay to avoid overwhelming the API
+                await this._delay(100);
+
+            } catch (error) {
+                console.error(`❌ Failed to create folder: ${category}`, error);
+            }
+        }
+
+        console.log(`🎉 Folder structure creation complete: ${createdCount} created, ${skippedCount} skipped`);
     }
 
     /**

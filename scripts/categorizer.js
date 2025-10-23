@@ -166,6 +166,26 @@ class Categorizer {
   async _organizeBookmarks(categorizations, bookmarks, progressCallback) {
     console.log('🛡️  FOLDER PROTECTION: Starting bookmark organization');
     console.log('🛡️  PROTECTION RULE: Only MOVE bookmarks TO folders, never empty existing folders');
+    console.log(`📊 Organization input: ${categorizations.length} categorizations, ${bookmarks.length} bookmarks`);
+
+    // Debug: Show sample categorizations
+    if (categorizations.length > 0) {
+      console.log('📋 Sample categorizations:');
+      categorizations.slice(0, 3).forEach((cat, i) => {
+        console.log(`  ${i + 1}. Category: "${cat.category}", Confidence: ${cat.confidence}`);
+      });
+
+      // Check how many are "Other"
+      const otherCount = categorizations.filter(c => c.category === 'Other').length;
+      console.log(`📊 Category breakdown: ${otherCount} "Other", ${categorizations.length - otherCount} specific categories`);
+
+      if (otherCount === categorizations.length) {
+        console.log('⚠️  WARNING: ALL categorizations are "Other" - no folders will be created!');
+      }
+    } else {
+      console.log('❌ No categorizations received - cannot organize bookmarks');
+      return { success: 0, errors: 0, categoriesUsed: new Set() };
+    }
 
     const results = {
       success: 0,
@@ -191,12 +211,41 @@ class Categorizer {
 
         console.log(`📁 Creating hierarchical folder in Bookmarks Bar: "${categorization.category}"`);
 
-        // Find or create folder for category in Bookmarks Bar ONLY
+        // Get current folder name before moving
+        let currentFolderName = 'Unknown';
+        try {
+          if (bookmark.parentId) {
+            const currentParent = await chrome.bookmarks.get(bookmark.parentId);
+            currentFolderName = currentParent[0].title;
+          }
+        } catch (error) {
+          currentFolderName = `ID:${bookmark.parentId}`;
+        }
+
+        // Find or create folder for category in Bookmarks Bar ONLY (including "Other")
         const folderId = await this.bookmarkService.findOrCreateFolderByPath(categorization.category, rootFolderId);
 
+        // Get destination folder name
+        let destinationFolderName = 'Unknown';
+        try {
+          const destinationFolder = await chrome.bookmarks.get(folderId);
+          destinationFolderName = destinationFolder[0].title;
+        } catch (error) {
+          destinationFolderName = `ID:${folderId}`;
+        }
+
+        // Detailed logging of bookmark transfer
+        console.log(`📋 BOOKMARK TRANSFER:`);
+        console.log(`   📖 Bookmark: "${bookmark.title}"`);
+        console.log(`   📂 FROM: "${currentFolderName}" (ID: ${bookmark.parentId})`);
+        console.log(`   📁 TO: "${destinationFolderName}" (ID: ${folderId})`);
+        console.log(`   🎯 Category: "${categorization.category}"`);
+        console.log(`   🔗 URL: ${bookmark.url?.substring(0, 60)}...`);
+
         // Move bookmark to folder (PROTECTION: Only moving TO folders, not emptying)
-        console.log(`🛡️  PROTECTED MOVE: "${bookmark.title}" → "${categorization.category}"`);
         await this.bookmarkService.moveBookmark(bookmark.id, folderId);
+
+        console.log(`   ✅ TRANSFER COMPLETE: "${bookmark.title}" successfully moved from "${currentFolderName}" to "${destinationFolderName}"`);
 
         results.success++;
         results.categoriesUsed.add(categorization.category);
@@ -210,6 +259,14 @@ class Categorizer {
         results.errors++;
       }
     }
+
+    // Summary of all bookmark transfers
+    console.log(`\n📊 BOOKMARK TRANSFER SUMMARY:`);
+    console.log(`   ✅ Successful transfers: ${results.success}`);
+    console.log(`   ❌ Failed transfers: ${results.errors}`);
+    console.log(`   📁 Categories used: ${results.categoriesUsed.size}`);
+    console.log(`   📂 Categories: ${Array.from(results.categoriesUsed).join(', ')}`);
+    console.log(`🎉 Organization complete: ${results.success} bookmarks successfully transferred to hierarchical folders!`);
 
     return results;
   }

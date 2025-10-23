@@ -125,13 +125,41 @@ class BookmarkService {
    */
   async moveBookmark(bookmarkId, parentId, index) {
     try {
+      // Get bookmark details before moving
+      const bookmarkBefore = await chrome.bookmarks.get(bookmarkId);
+      const originalParentId = bookmarkBefore[0].parentId;
+
+      // Get folder names for detailed logging
+      let originalFolderName = 'Unknown';
+      let targetFolderName = 'Unknown';
+
+      try {
+        if (originalParentId) {
+          const originalParent = await chrome.bookmarks.get(originalParentId);
+          originalFolderName = originalParent[0].title;
+        }
+      } catch (e) {
+        originalFolderName = `ID:${originalParentId}`;
+      }
+
+      try {
+        const targetParent = await chrome.bookmarks.get(parentId);
+        targetFolderName = targetParent[0].title;
+      } catch (e) {
+        targetFolderName = `ID:${parentId}`;
+      }
+
       const moveDetails = { parentId };
       if (index !== undefined) {
         moveDetails.index = index;
       }
 
+      console.log(`🔄 Moving "${bookmarkBefore[0].title}" from "${originalFolderName}" to "${targetFolderName}"`);
+
       const bookmark = await chrome.bookmarks.move(bookmarkId, moveDetails);
-      console.log(`Moved bookmark ${bookmarkId} to folder ${parentId}`);
+
+      console.log(`✅ Move completed: "${bookmark.title}" is now in "${targetFolderName}"`);
+
       return bookmark;
     } catch (error) {
       console.error('Error moving bookmark:', error);
