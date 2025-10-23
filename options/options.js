@@ -393,7 +393,7 @@ class OptionsController {
 
     try {
       // Test AgentRouter API
-      const response = await fetch('https://agentrouter.org/v1', {
+      const response = await fetch('https://agentrouter.org/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -402,7 +402,7 @@ class OptionsController {
           'X-Title': 'BookmarkMind Extension'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-exp:free',
+          model: 'gpt-5',
           messages: [
             {
               role: 'user',

@@ -11,7 +11,7 @@ class AIProcessor {
 
         // AgentRouter fallback configuration
         this.agentRouterApiKey = null;
-        this.agentRouterBaseUrl = 'https://agentrouter.org/v1';
+        this.agentRouterBaseUrl = 'https://agentrouter.org/v1/chat/completions';
         this.fallbackModel = 'gpt-5'; // Free model on AgentRouter
     }
 
