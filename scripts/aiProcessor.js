@@ -904,6 +904,34 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - Focus on how users actually think about and use their bookmarks
 - Create categories that will remain useful as bookmark collections grow
 
+**FOLDER NAME FORMATTING REQUIREMENTS:**
+- **PROPER CAPITALIZATION:** Use proper Title Case for all category names
+- **TECHNICAL TERMS:** Capitalize technical terms correctly (JavaScript, GitHub, API, UI, UX, iOS, etc.)
+- **BRAND NAMES:** Use correct brand capitalization (GitHub, YouTube, LinkedIn, PayPal, etc.)
+- **ACRONYMS:** Keep acronyms uppercase (AI, API, UI, UX, SEO, CSS, HTML, JSON, etc.)
+- **CONSISTENT SPACING:** Use single spaces, proper spacing around separators
+- **PROFESSIONAL APPEARANCE:** Categories should look polished and professional
+
+**FORMATTING EXAMPLES:**
+- ✅ CORRECT: "Development > Frontend > JavaScript"
+- ✅ CORRECT: "Business > Marketing > SEO"
+- ✅ CORRECT: "Design > UI & UX > Resources"
+- ✅ CORRECT: "Technology > AI & Machine Learning"
+- ✅ CORRECT: "Social Media > GitHub > Repositories"
+- ❌ WRONG: "development > frontend > javascript"
+- ❌ WRONG: "business > marketing > seo"
+- ❌ WRONG: "design > ui&ux > resources"
+- ❌ WRONG: "technology > ai&machine learning"
+
+**TECHNICAL TERM CAPITALIZATION GUIDE:**
+- Programming: JavaScript, TypeScript, Node.js, React.js, Vue.js, Angular.js
+- Platforms: GitHub, GitLab, Stack Overflow, YouTube, LinkedIn, Facebook
+- Technologies: API, REST, GraphQL, JSON, XML, CSS, HTML, SQL, NoSQL
+- Mobile: iOS, Android, React Native, Flutter
+- Cloud: AWS, Azure, Google Cloud, Docker, Kubernetes
+- Business: B2B, B2C, SaaS, CRM, ERP, SEO, ROI, KPI
+- Design: UI, UX, Figma, Adobe, Photoshop
+
 **Current Bookmark Sample (${sampleBookmarks.length} bookmarks):**`;
 
         sampleBookmarks.forEach((bookmark, index) => {
@@ -960,24 +988,33 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - "Reference > Documentation > APIs > Web APIs > REST"
 
 **OUTPUT FORMAT:**
-Return a JSON array of hierarchical category paths, like:
+Return a JSON array of hierarchical category paths with proper capitalization, like:
 [
-  "Work > Development > Frontend > React",
+  "Work > Development > Frontend > JavaScript",
   "Work > Development > Backend > Node.js",
   "Learning > Programming > Python > Data Science",
   "Personal > Finance > Investment > Stocks",
   "Entertainment > Gaming > PC Games",
+  "Technology > AI & Machine Learning > Tools",
+  "Design > UI & UX > Resources",
+  "Business > Marketing > SEO",
   "Other"
 ]
 
-**IMPORTANT:**
-- Use " > " (space-greater-than-space) as the separator
+**CRITICAL FORMATTING REQUIREMENTS:**
+- **PROPER CAPITALIZATION:** Use Title Case for all category names
+- **TECHNICAL TERMS:** Capitalize correctly (JavaScript, Node.js, API, UI, UX, SEO, AI, etc.)
+- **SEPARATORS:** Use " > " (space-greater-than-space) as the separator
+- **CONSISTENCY:** Maintain consistent capitalization throughout all categories
+- **PROFESSIONAL APPEARANCE:** Categories should look polished and ready for professional use
+
+**CONTENT REQUIREMENTS:**
 - Create very specific subcategories based on the actual bookmarks you see
 - Generate 15-25 category trees minimum
 - Always include "Other" as the last category
 - Be as granular as possible - hundreds of categories are encouraged
 
-Return only the JSON array, no additional text or formatting.`;
+Return only the JSON array with properly formatted category names, no additional text or formatting.`;
 
         try {
             const requestBody = {
@@ -1295,6 +1332,21 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
   - Original: "Home" → Improved: "Netflix - Streaming Movies & TV Shows"
   - Original: "Dashboard" → Improved: "AWS Console - Cloud Services Dashboard"
 
+**CATEGORY NAME FORMATTING REQUIREMENTS:**
+- **USE EXACT CATEGORY NAMES:** Select categories from the available list using their exact capitalization
+- **PROPER TECHNICAL TERMS:** When categories contain technical terms, ensure they're properly capitalized
+- **CONSISTENT FORMATTING:** Match the formatting style of the provided categories exactly
+- **PROFESSIONAL APPEARANCE:** Categories should look polished and professional
+
+**CATEGORY FORMATTING EXAMPLES:**
+- ✅ CORRECT: "Development > Frontend > JavaScript" (proper technical term capitalization)
+- ✅ CORRECT: "Business > Marketing > SEO" (acronym properly capitalized)
+- ✅ CORRECT: "Design > UI & UX > Resources" (acronyms and spacing correct)
+- ✅ CORRECT: "Technology > AI & Machine Learning" (proper acronym and title case)
+- ❌ WRONG: "development > frontend > javascript" (all lowercase)
+- ❌ WRONG: "Business > Marketing > seo" (inconsistent capitalization)
+- ❌ WRONG: "design > ui&ux > resources" (poor spacing and capitalization)
+
 **Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
 
         // Add learning data if available
@@ -1328,8 +1380,9 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
         prompt += `\n\n**OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
 - Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), and 'confidence' (0.0-1.0)
-- Use categories from the available list above
-- Category must be the full path (e.g., "Work > Development > Frontend")
+- **USE EXACT CATEGORY NAMES:** Select categories from the available list using their exact capitalization and formatting
+- **MAINTAIN PROPER FORMATTING:** Category must be the full path with proper capitalization (e.g., "Work > Development > Frontend")
+- **TECHNICAL TERMS:** Ensure technical terms in categories are properly capitalized (JavaScript, API, UI, etc.)
 - Title must be descriptive and informative, based on URL domain and content context
 - Choose the most appropriate category level - not too broad, not too specific
 - If uncertain about the specific subcategory, use a broader category from the list
