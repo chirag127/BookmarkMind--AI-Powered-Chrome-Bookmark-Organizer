@@ -135,8 +135,14 @@ class Categorizer {
       const generatedCategories = categorizationData.categories;
 
       // Organize bookmarks into folders
+      console.log('🚨 ABOUT TO START ORGANIZATION STEP');
+      console.log(`Passing ${categorizations.length} categorizations and ${uncategorizedBookmarks.length} bookmarks to organization`);
+
       progressCallback?.({ stage: 'organizing', progress: 70 });
       const results = await this._organizeBookmarks(categorizations, uncategorizedBookmarks, progressCallback);
+
+      console.log('🚨 ORGANIZATION STEP COMPLETED');
+      console.log('Organization results:', results);
 
       progressCallback?.({ stage: 'complete', progress: 100 });
 
@@ -164,27 +170,38 @@ class Categorizer {
    * @returns {Promise<Object>} Organization results
    */
   async _organizeBookmarks(categorizations, bookmarks, progressCallback) {
+    console.log('🚨 === BOOKMARK ORGANIZATION STARTED ===');
     console.log('🛡️  FOLDER PROTECTION: Starting bookmark organization');
     console.log('🛡️  PROTECTION RULE: Only MOVE bookmarks TO folders, never empty existing folders');
     console.log(`📊 Organization input: ${categorizations.length} categorizations, ${bookmarks.length} bookmarks`);
 
-    // Debug: Show sample categorizations
-    if (categorizations.length > 0) {
-      console.log('📋 Sample categorizations:');
-      categorizations.slice(0, 3).forEach((cat, i) => {
-        console.log(`  ${i + 1}. Category: "${cat.category}", Confidence: ${cat.confidence}`);
-      });
-
-      // Check how many are "Other"
-      const otherCount = categorizations.filter(c => c.category === 'Other').length;
-      console.log(`📊 Category breakdown: ${otherCount} "Other", ${categorizations.length - otherCount} specific categories`);
-
-      if (otherCount === categorizations.length) {
-        console.log('⚠️  WARNING: ALL categorizations are "Other" - no folders will be created!');
-      }
-    } else {
-      console.log('❌ No categorizations received - cannot organize bookmarks');
+    // IMMEDIATE DEBUG: Show if we even have data to work with
+    if (categorizations.length === 0) {
+      console.log('🚨 CRITICAL: NO CATEGORIZATIONS RECEIVED - CANNOT TRANSFER ANY BOOKMARKS!');
       return { success: 0, errors: 0, categoriesUsed: new Set() };
+    }
+
+    if (bookmarks.length === 0) {
+      console.log('🚨 CRITICAL: NO BOOKMARKS RECEIVED - NOTHING TO TRANSFER!');
+      return { success: 0, errors: 0, categoriesUsed: new Set() };
+    }
+
+    // DETAILED DEBUG: Show ALL categorizations
+    console.log('📋 ALL CATEGORIZATIONS:');
+    categorizations.forEach((cat, i) => {
+      console.log(`  ${i + 1}. Bookmark ID: ${cat.bookmarkId}, Category: "${cat.category}", Confidence: ${cat.confidence}`);
+    });
+
+    // Check how many are "Other"
+    const otherCount = categorizations.filter(c => c.category === 'Other').length;
+    const specificCount = categorizations.length - otherCount;
+    console.log(`📊 Category breakdown: ${specificCount} specific categories, ${otherCount} "Other"`);
+
+    if (otherCount === categorizations.length) {
+      console.log('🚨 CRITICAL: ALL categorizations are "Other" - NO HIERARCHICAL TRANSFERS WILL HAPPEN!');
+      console.log('🚨 This means AI processing failed or timed out for all batches');
+    } else {
+      console.log(`✅ GOOD: ${specificCount} bookmarks have specific categories and WILL be transferred`);
     }
 
     const results = {
@@ -195,12 +212,18 @@ class Categorizer {
 
     const bookmarkMap = new Map(bookmarks.map(b => [b.id, b]));
 
+    console.log(`🔄 Starting to process ${categorizations.length} bookmark transfers...`);
+
     for (let i = 0; i < categorizations.length; i++) {
       const categorization = categorizations[i];
       const bookmark = bookmarkMap.get(categorization.bookmarkId);
 
+      console.log(`\n--- PROCESSING BOOKMARK ${i + 1}/${categorizations.length} ---`);
+      console.log(`Categorization:`, categorization);
+      console.log(`Bookmark found:`, bookmark ? `"${bookmark.title}"` : 'NOT FOUND');
+
       if (!bookmark) {
-        console.warn(`Bookmark not found for categorization:`, categorization);
+        console.error(`🚨 BOOKMARK NOT FOUND for categorization:`, categorization);
         results.errors++;
         continue;
       }
