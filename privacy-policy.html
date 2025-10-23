@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Privacy Policy for BookmarkMind - AI-Powered Chrome Extension. Learn about data usage, permissions, and security measures.">
+    <title>Privacy Policy - BookmarkMind</title>
+
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --primary-hover: #3367d6;
+            --secondary-color: #34a853;
+            --accent-color: #fbbc04;
+            --danger-color: #ea4335;
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-color: #30363d;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --gradient: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+        }
+
+        .content {
+            padding: 3rem 0;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .last-updated {
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .section h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .section p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .section ul {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        .section li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .permission-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .permission-name {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight p {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .contact-info {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .contact-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .contact-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .contact-link:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2rem;
+            }
+
+            . flex-direction: column;
+            gap: 1rem;
+        }
+
+        .permission-item {
+            padding: 1rem;
+        }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <a href="index.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"
+                        fill="#4285f4" />
+                    <path d="M7 7H17V9H7V7ZM7 11H17V13H7V11ZM7 15H14V17H7V15Z" fill="#4285f4" />
+                </svg>
+                BookmarkMind
+            </a>
+            <a href="index.html" class="back-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Back to Home
+            </a>
+        </nav>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+        <div class="container">
+            <h1 class="page-title">Privacy Policy</h1>
+            <p class="last-updated">Last updated: December 2024</p>
+
+            <!-- Introduction -->
+            <section class="section">
+                <h2>Introduction</h2>
+                <p>This Privacy Policy describes how BookmarkMind ("we", "our", or "us") collects, uses, and protects
+                    your information when you use our Chrome browser extension. We are committed to protecting your
+                    privacy and ensuring transparency about our data practices.</p>
+
+                <div class="highlight">
+                    <p><strong>Key Principle:</strong> BookmarkMind is designed with privacy-first principles. We
+                        minimize data collection, process information locally when possible, and never sell or share
+                        your personal data with third parties.</p>
+                </div>
+            </section>
+
+            <!-- Required Permissions -->
+            <section class="section">
+                <h2>Required Permissions</h2>
+                <p>BookmarkMind requires specific Chrome extension permissions to function properly. Here's exactly why
+                    each permission is necessary:</p>
+
+                <div class="permission-item">
+                    <div class="permission-name">bookmarks</div>
+                    <p><strong>Purpose:</strong> Read, create, modify, and organize your bookmark collection.</p>
+                    <p><strong>Usage:</strong> This permission allows the extension to access your bookmarks for
+                        AI-powered categorization, duplicate removal, and hierarchical organization. Without this
+                        permission, the core functionality would not work.</p>
+                </div>
+
+                <div class="permission-item">
+                    <div class="permission-name">storage</div>
+                    <p><strong>Purpose:</strong> Save your preferences, API keys, and extension settings.</p>
+                    <p><strong>Usage:</strong> Stores your Gemini API key, AgentRouter API key, categorization
+                        preferences, and learning data locally in Chrome's secure storage. This data syncs across your
+                        Chrome browsers when signed in.</p>
+                </div>
+
+                <div class="permission-item">
+                    <div class="permission-name">activeTab</div>
+                    <p><strong>Purpose:</strong> Access the currently active tab for context-aware categorization.</p>
+                    <p><strong>Usage:</strong> Allows the extension to understand the context of bookmarks you're
+                        creating in real-time, enabling more accurate AI categorization based on the current webpage.
+                    </p>
+                </div>
+
+                <div class="permission-item">
+                    <div class="permission-name">Host Permissions</div>
+                    <p><strong>Domains:</strong> https://generativelanguage.googleapis.com/*, https://agentrouter.org/*
+                    </p>
+                    <p><strong>Purpose:</strong> Communicate with AI services for bookmark categorization.</p>
+                    <p><strong>Usage:</strong> Enables secure communication with Google's Gemini AI API and AgentRouter
+                        fallback service to process and categorize your bookmarks using advanced language models.</p>
+                </div>
+            </section>
+
+            <!-- Information We Collect -->
+            <section class="section">
+                <h2>Information We Collect</h2>
+
+                <h3>Data We DO Collect:</h3>
+                <ul>
+                    <li><strong>Bookmark Data:</strong> Titles, URLs, and folder structure of your bookmarks (processed
+                        temporarily for categorization)</li>
+                    <li><strong>User Preferences:</strong> Your categorization settings, preferred categories, and
+                        extension configuration</li>
+                    <li><strong>API Keys:</strong> Your Gemini and AgentRouter API keys (stored securely in Chrome's
+                        encrypted storage)</li>
+                    <li><strong>Learning Data:</strong> Patterns from your manual bookmark corrections to improve future
+                        categorization</li>
+                    <li><strong>Usage Statistics:</strong> Basic metrics like number of bookmarks processed and
+                        categorization success rates (anonymized)</li>
+                </ul>
+
+                <h3>Data We DO NOT Collect:</h3>
+                <ul>
+                    <li>Personal identifying information (name, email, address, phone number)</li>
+                    <li>Complete browsing history or web activity</li>
+                    <li>Passwords or sensitive authentication data</li>
+                    <li>Content of webpages you visit</li>
+                    <li>Financial or payment information</li>
+                    <li>Location data or device identifiers</li>
+                </ul>
+
+                <div class="highlight">
+                    <p><strong>Important:</strong> Your bookmark data is only processed temporarily during
+                        categorization and is not permanently stored on our servers or shared with third parties.</p>
+                </div>
+            </section>
+
+            <!-- How We Use Your Information -->
+            <section class="section">
+                <h2>How We Use Your Information</h2>
+                <p>We use the collected information solely to provide and improve BookmarkMind's functionality:</p>
+
+                <ul>
+                    <li><strong>AI Categorization:</strong> Send bookmark titles and URLs to AI services for intelligent
+                        categorization</li>
+                    <li><strong>Personalization:</strong> Learn from your corrections to improve future categorization
+                        accuracy</li>
+                    <li><strong>Feature Enhancement:</strong> Generate improved bookmark titles and organize
+                        hierarchical folder structures</li>
+                    <li><strong>Duplicate Detection:</strong> Identify and remove duplicate bookmarks pointing to the
+                        same webpage</li>
+                    <li><strong>Settings Sync:</strong> Synchronize your preferences across Chrome browsers when signed
+                        in</li>
+                    <li><strong>Error Handling:</strong> Provide fallback categorization when primary AI services are
+                        unavailable</li>
+                </ul>
+
+                <div class="highlight">
+                    <p><strong>No Data Sales:</strong> We never sell, rent, or share your personal data with third
+                        parties for marketing or commercial purposes.</p>
+                </div>
+            </section>
+
+            <!-- Data Storage & Security -->
+            <section class="section">
+                <h2>Data Storage & Security</h2>
+
+                <h3>Local Storage</h3>
+                <p>Most of your data is stored locally using Chrome's secure storage APIs:</p>
+                <ul>
+                    <li>API keys are encrypted using Chrome's built-in security mechanisms</li>
+                    <li>Settings and preferences are stored in Chrome's sync storage</li>
+                    <li>Learning data is kept locally and only used to improve your experience</li>
+                </ul>
+
+                <h3>Temporary Processing</h3>
+                <p>During categorization, bookmark data is temporarily sent to AI services:</p>
+                <ul>
+                    <li>Data is transmitted over encrypted HTTPS connections</li>
+                    <li>Processing is done in real-time without permanent storage</li>
+                    <li>AI services process data according to their respective privacy policies</li>
+                </ul>
+
+                <h3>Security Measures</h3>
+                <ul>
+                    <li>All API communications use industry-standard TLS encryption</li>
+                    <li>API keys are stored using Chrome's secure storage with encryption at rest</li>
+                    <li>No sensitive data is logged or stored in plain text</li>
+                    <li>Regular security updates and vulnerability assessments</li>
+                </ul>
+            </section>
+
+            <!-- Third-Party Services -->
+            <section class="section">
+                <h2>Third-Party Services</h2>
+                <p>BookmarkMind integrates with the following external services:</p>
+
+                <div class="permission-item">
+                    <div class="permission-name">Google Gemini AI</div>
+                    <p><strong>Purpose:</strong> Primary AI service for bookmark categorization and title generation</p>
+                    <p><strong>Data Shared:</strong> Bookmark titles, URLs, and categorization context</p>
+                    <p><strong>Privacy Policy:</strong> <a href="https://policies.google.com/privacy"
+                            class="contact-link" target="_blank">Google Privacy Policy</a></p>
+                </div>
+
+                <div class="permission-item">
+                    <div class="permission-name">AgentRouter</div>
+                    <p><strong>Purpose:</strong> Fallback AI service when Gemini API is unavailable</p>
+                    <p><strong>Data Shared:</strong> Bookmark titles, URLs, and categorization context</p>
+                    <p><strong>Privacy Policy:</strong> <a href="https://agentrouter.org/privacy" class="contact-link"
+                            target="_blank">AgentRouter Privacy Policy</a></p>
+                </div>
+
+                <p><strong>Important:</strong> These services process your bookmark data according to their own privacy
+                    policies. We recommend reviewing their policies to understand how they handle data.</p>
+            </section>
+
+            <!-- User Rights -->
+            <section class="section">
+                <h2>Your Rights</h2>
+                <p>You have the following rights regarding your data:</p>
+
+                <ul>
+                    <li><strong>Access:</strong> View all data stored by the extension in Chrome's extension settings
+                    </li>
+                    <li><strong>Modification:</strong> Update your preferences, API keys, and categories at any time
+                    </li>
+                    <li><strong>Deletion:</strong> Remove all extension data by uninstalling the extension or using the
+                        "Reset All Settings" option</li>
+                    <li><strong>Export:</strong> Export your settings and learning data using the built-in export
+                        feature</li>
+                    <li><strong>Opt-out:</strong> Disable specific features like learning data collection in the
+                        settings</li>
+                </ul>
+
+                <h3>Data Deletion</h3>
+                <p>To completely remove all data:</p>
+                <ol>
+                    <li>Open the extension options page</li>
+                    <li>Click "Reset All Settings" to clear local data</li>
+                    <li>Uninstall the extension from Chrome to remove all traces</li>
+                    <li>Your API keys and any data sent to third-party services follow their respective retention
+                        policies</li>
+                </ol>
+            </section>
+
+            <!-- Changes to Privacy Policy -->
+            <section class="section">
+                <h2>Changes to This Privacy Policy</h2>
+                <p>We may update this Privacy Policy from time to time to reflect changes in our practices or for legal
+                    compliance. When we make changes:</p>
+
+                <ul>
+                    <li>We will update the "Last updated" date at the top of this policy</li>
+                    <li>Significant changes will be announced through the extension's update notes</li>
+                    <li>Users will be notified of major privacy-related changes through the extension interface</li>
+                    <li>Continued use of the extension after changes constitutes acceptance of the updated policy</li>
+                </ul>
+
+                <p>We encourage you to review this Privacy Policy periodically to stay informed about how we protect
+                    your information.</p>
+            </section>
+
+            <!-- Contact Information -->
+            <section class="section">
+                <div class="contact-info">
+                    <h3>Contact Us</h3>
+                    <p>If you have questions, concerns, or requests regarding this Privacy Policy or your data, please
+                        contact us:</p>
+
+                    <p><strong>GitHub Issues:</strong> <a
+                            href="https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer/issues"
+                            class="contact-link" target="_blank">Report an Issue</a></p>
+                    <p><strong>Email:</strong> <a href="mailto:chirag127@example.com"
+                            class="contact-link">chirag127@example.com</a></p>
+                    <p><strong>Repository:</strong> <a
+                            href="https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer"
+                            class="contact-link" target="_blank">BookmarkMind on GitHub</a></p>
+
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">We aim to respond to all privacy-related
+                        inquiries within 48 hours.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2024 BookmarkMind by Chirag127. This extension is open source and available under the MIT License.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

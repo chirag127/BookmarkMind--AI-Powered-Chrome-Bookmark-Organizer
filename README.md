@@ -1,235 +1,260 @@
-# BookmarkMind - AI-Powered Chrome Bookmark Organizer
+# 📘 BookmarkMind - AI-Powered Chrome Bookmark Organizer
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-blue)](https://chrome.google.com/webstore)
+## ✨ Description
 
-BookmarkMind is a Chrome extension that uses Google's Gemini AI to automatically categorize and organize your bookmarks into intelligent folders. Say goodbye to bookmark chaos and hello to an organized browsing experience!
+BookmarkMind is an intelligent Chrome extension that transforms your chaotic bookmark collection into a beautifully organized library using advanced AI technology. Powered by Google's Gemini AI with AgentRouter fallback, it automatically categorizes, enhances titles, removes duplicates, and creates hierarchical folder structures for your bookmarks.
 
-## ✨ Features
+Say goodbye to bookmark chaos and hello to intelligent organization that learns from your preferences and adapts to your browsing habits.
 
-- **AI-Powered Categorization**: Uses Google Gemini API to intelligently sort bookmarks
-- **Custom Categories**: Create and manage your own category structure with nested folders
-- **Learning System**: Improves over time by learning from your manual corrections
-- **Batch Processing**: Efficiently handles large bookmark collections (1000+ bookmarks)
-- **Privacy-Focused**: All processing happens locally, your data stays private
-- **Cross-Browser**: Works on Chrome, Edge, Brave, and all Chromium browsers
-- **Export Functionality**: Export your organized bookmark structure
-- **Zero Setup**: Ready to use in minutes after installation
+## 🚀 Live Demo
 
-## 🚀 Quick Start
+**🌐 Website:** [https://chirag127.github.io/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer](https://chirag127.github.io/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer)
 
-### 1. Installation
+**📱 Extension Demo:** Install the extension and try it with your own bookmarks!
 
-#### Option A: Load as Unpacked Extension (Development)
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in top right)
-4. Click "Load unpacked" and select the BookmarkMind folder (containing `manifest.json`)
-5. The extension icon will appear in your toolbar
-6. **Important**: If you don't see the icon, click the puzzle piece (🧩) and pin BookmarkMind
+## 🛠️ Tech Stack / Tools Used
 
-#### ⚠️ Troubleshooting Installation
-If the extension shows "0 bookmarks" or errors:
-1. **Check permissions**: Go to chrome://extensions/ → BookmarkMind → Details → Ensure bookmark permissions are granted
-2. **Verify bookmarks**: You need bookmarks in "Bookmarks Bar", "Other Bookmarks", or "Mobile Bookmarks" (not subfolders)
-3. **Test installation**: Open `extension_test.html` for step-by-step diagnosis
-4. **Check console**: Right-click popup → Inspect → Console for error messages
+-   **🤖 AI Services:**
 
-#### Option B: Chrome Web Store (Coming Soon)
-The extension will be available on the Chrome Web Store soon!
+    -   Google Gemini AI (Primary categorization engine)
+    -   AgentRouter (Fallback API service)
 
-### 2. Setup Your API Key
+-   **🌐 Frontend:**
 
-1. Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Click the BookmarkMind extension icon in your toolbar
-3. Click "Settings" (gear icon)
-4. Enter your API key and click "Save API Key"
-5. Test the key to ensure it's working
+    -   Vanilla JavaScript (ES6+)
+    -   HTML5 & CSS3
+    -   Chrome Extension APIs
 
-### 3. Organize Your Bookmarks
+-   **💾 Storage:**
 
-1. Click the BookmarkMind extension icon
-2. Click "Sort Bookmarks Now"
-3. Watch as AI organizes your bookmarks into categories like:
-   - Work
-   - Personal
-   - Shopping
-   - Entertainment
-   - News
-   - Social
-   - Learning
+    -   Chrome Storage API (Sync & Local)
+    -   Encrypted API key storage
 
-## 📋 Requirements
+-   **🔧 Development:**
+    -   Chrome Extension Manifest V3
+    -   Async/Await patterns
+    -   Modular architecture
+    -   Progressive enhancement
 
-- **Browser**: Chrome 88+ or any Chromium-based browser
-- **API Key**: Free Google Gemini API key
-- **Permissions**: Bookmarks and Storage (automatically requested)
+## 📦 Installation Instructions
 
-## 🛠️ Configuration
+### Method 1: Manual Installation (Recommended)
 
-### Default Categories
+1. **Download the Extension**
 
-BookmarkMind comes with these default categories:
-- Work
-- Personal
-- Shopping
-- Entertainment
-- News
-- Social
-- Learning
-- Other
+    ```bash
+    git clone https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer.git
+    cd BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer
+    ```
 
-### Custom Categories
+2. **Enable Developer Mode**
 
-You can add custom categories in Settings:
-- Simple categories: `Photography`
-- Nested categories: `Work/Projects/Current`
-- Edit or delete existing categories
-- Categories are synced across devices
+    - Open Chrome and navigate to `chrome://extensions/`
+    - Toggle "Developer mode" in the top right corner
 
-### Advanced Settings
+3. **Load the Extension**
 
-- **Batch Size**: Adjust how many bookmarks to process at once (25-100)
-- **Empty Folder Cleanup**: Automatically remove empty folders after organizing
-- **Learning Data**: View and manage AI learning patterns
+    - Click "Load unpacked"
+    - Select the BookmarkMind extension folder
+    - The extension icon should appear in your toolbar
 
-## 🔧 How It Works
+4. **Configure API Key**
+    - Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+    - Click the BookmarkMind extension icon
+    - Go to Settings and enter your API key
+    - (Optional) Add an AgentRouter API key for fallback support
 
-1. **Reading Bookmarks**: Uses Chrome Bookmarks API to access your bookmarks
-2. **AI Analysis**: Sends bookmark titles and URLs to Gemini API for categorization
-3. **Smart Organization**: Creates folders and moves bookmarks based on AI recommendations
-4. **Learning**: Records your manual corrections to improve future categorizations
-5. **Batch Processing**: Handles large collections efficiently with progress tracking
+### Method 2: Chrome Web Store (Coming Soon)
 
-## 🔒 Privacy & Security
+_Extension will be available on the Chrome Web Store after review process_
 
-- **Local Processing**: All bookmark organization happens in your browser
-- **API Key Security**: Your Gemini API key is encrypted and stored locally
-- **No Data Collection**: We don't collect or store your bookmark data
-- **Open Source**: Full source code available for review
-- **Minimal Permissions**: Only requests necessary bookmark and storage permissions
+## 🔧 Usage
 
-## 📊 Performance
+### Basic Usage
 
-- **Small Collections** (< 100 bookmarks): ~30 seconds
-- **Medium Collections** (100-500 bookmarks): ~2-5 minutes
-- **Large Collections** (500+ bookmarks): ~5-15 minutes
-- **Batch Processing**: Prevents browser freezing during organization
-- **Progress Tracking**: Real-time updates on organization progress
+1. **First Time Setup**
 
-## 🤝 Contributing
+    - Install the extension following the instructions above
+    - Configure your Gemini API key in settings
+    - Customize categories if desired
 
-We welcome contributions! Here's how to get started:
+2. **Organize Your Bookmarks**
+
+    - Click the BookmarkMind extension icon
+    - Click "Sort Bookmarks Now" to start AI categorization
+    - Watch as your bookmarks are intelligently organized into hierarchical folders
+
+3. **Advanced Features**
+    - Use "Remove Duplicate URLs" to clean up duplicate bookmarks
+    - Use "Move All to Bookmark Bar" to reset and reprocess bookmarks
+    - Use "Re-organize All" to reprocess already organized bookmarks
+
+### Settings Configuration
+
+-   **API Keys:** Configure Gemini and AgentRouter API keys
+-   **Categories:** Customize default categories or let AI generate them
+-   **Batch Size:** Adjust processing batch size (default: 50 bookmarks)
+-   **Advanced Options:** Enable/disable various features
+
+## 🧪 Features
+
+### 🤖 AI-Powered Categorization
+
+-   **Smart Analysis:** Advanced AI analyzes bookmark titles, URLs, and content context
+-   **Hierarchical Organization:** Creates deep folder structures (up to 7 levels)
+-   **Batch Processing:** Processes up to 50 bookmarks simultaneously
+-   **Learning System:** Improves accuracy based on your manual corrections
+
+### ✨ Title Enhancement
+
+-   **Descriptive Titles:** AI generates informative, descriptive bookmark titles
+-   **Context Awareness:** Includes relevant domain and content information
+-   **Consistency:** Maintains professional formatting across all bookmarks
+
+### 🔧 Smart Management
+
+-   **Duplicate Removal:** Detects and removes bookmarks pointing to the same webpage
+-   **Existing Folder Integration:** Reuses and extends your current folder structure
+-   **Fallback Protection:** AgentRouter ensures service availability
+-   **Progress Tracking:** Real-time progress updates during processing
+
+### 🛡️ Privacy & Security
+
+-   **Local Processing:** Most operations happen locally in your browser
+-   **Encrypted Storage:** API keys stored securely using Chrome's encryption
+-   **No Data Sales:** Your data is never sold or shared with third parties
+-   **Transparent Permissions:** Clear explanation of required permissions
+
+### 🎯 User Experience
+
+-   **One-Click Organization:** Simple interface for immediate results
+-   **Customizable Categories:** Add, edit, or remove categories as needed
+-   **Export/Import:** Backup and restore your settings and learning data
+-   **Mobile Responsive:** Works seamlessly across all devices
+
+## 📸 Screenshots
+
+### Extension Popup
+
+![Extension Popup](https://via.placeholder.com/400x300/161b22/f0f6fc?text=BookmarkMind+Popup)
+
+### Settings Page
+
+![Settings Page](https://via.placeholder.com/600x400/161b22/f0f6fc?text=Settings+Configuration)
+
+### Organized Bookmarks
+
+![Organized Bookmarks](https://via.placeholder.com/500x350/161b22/f0f6fc?text=Hierarchical+Organization)
+
+_Note: Replace placeholder images with actual screenshots_
+
+## 🙌 Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+### 🐛 Bug Reports
+
+-   Use the [GitHub Issues](https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer/issues) page
+-   Include detailed steps to reproduce
+-   Provide browser version and extension version
+-   Include console logs if applicable
+
+### 💡 Feature Requests
+
+-   Open an issue with the "enhancement" label
+-   Describe the feature and its benefits
+-   Provide use cases and examples
+
+### 🔧 Code Contributions
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and test thoroughly
-4. Commit with clear messages: `git commit -m "Add feature description"`
-5. Push to your fork: `git push origin feature-name`
-6. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Test thoroughly
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### 📝 Documentation
+
+-   Help improve documentation
+-   Add code comments
+-   Create tutorials or guides
+-   Translate to other languages
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/bookmarkmind/bookmarkmind.git
-cd bookmarkmind
+git clone https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer.git
 
-# Load the extension in Chrome
-# 1. Go to chrome://extensions/
-# 2. Enable Developer mode
-# 3. Click "Load unpacked" and select this folder
+# Navigate to project directory
+cd BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer
 
-# Make changes and reload the extension to test
+# Load extension in Chrome for testing
+# Follow the installation instructions above
 ```
 
-### Code Structure
+## 🪪 License
 
-```
-bookmarkmind/
-├── manifest.json          # Extension manifest
-├── popup/                 # Extension popup UI
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.js
-├── options/               # Settings page
-│   ├── options.html
-│   ├── options.css
-│   └── options.js
-├── scripts/               # Core functionality
-│   ├── background.js      # Service worker
-│   ├── bookmarkService.js # Bookmark operations
-│   ├── aiProcessor.js     # Gemini API integration
-│   ├── categorizer.js     # Main orchestrator
-│   └── folderManager.js   # Folder operations
-└── icons/                 # Extension icons
-```
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-## 🐛 Troubleshooting
+### MIT License Summary
 
-### Common Issues
-
-**Extension not working after installation**
-- Ensure you have a valid Gemini API key
-- Check that the extension has bookmark permissions
-- Try refreshing the extension in chrome://extensions/
-
-**API key errors**
-- Verify your API key at [Google AI Studio](https://makersuite.google.com/app/apikey)
-- Ensure the key has proper permissions
-- Check your API quota limits
-
-**Slow processing**
-- Reduce batch size in Advanced Settings
-- Check your internet connection
-- Large collections naturally take longer
-
-**Bookmarks not organizing correctly**
-- Check that bookmarks are in the Bookmarks Bar (not in folders)
-- Manually correct a few categorizations to improve AI learning
-- Verify your custom categories are set up correctly
-
-### Getting Help
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/bookmarkmind/bookmarkmind/issues)
-- **Documentation**: Check this README and inline help
-- **Community**: Join discussions in GitHub Discussions
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Google Gemini AI**: For providing the AI categorization capabilities
-- **Chrome Extensions API**: For enabling seamless browser integration
-- **Open Source Community**: For inspiration and best practices
-- **Contributors**: Everyone who helps improve BookmarkMind
-
-## 🗺️ Roadmap
-
-### Version 1.1 (Coming Soon)
-- [ ] Firefox support
-- [ ] Bookmark deduplication
-- [ ] Import/export bookmark organization
-- [ ] Scheduled automatic sorting
-
-### Version 1.2 (Future)
-- [ ] Multiple AI provider support (OpenAI, Claude)
-- [ ] Bookmark content analysis
-- [ ] Team/shared category templates
-- [ ] Advanced analytics dashboard
-
-## 📈 Stats
-
-- **Development Time**: 6 weeks
-- **Lines of Code**: ~2,000
-- **Supported Browsers**: Chrome, Edge, Brave, Opera
-- **Target Users**: Power users with 100+ bookmarks
-- **Performance**: Handles 2,000+ bookmarks efficiently
+-   ✅ Commercial use
+-   ✅ Modification
+-   ✅ Distribution
+-   ✅ Private use
+-   ❌ Liability
+-   ❌ Warranty
 
 ---
 
-**Made with ❤️ for better bookmark organization**
+## 🔗 Links
 
-[⭐ Star this repo](https://github.com/bookmarkmind/bookmarkmind) | [🐛 Report Bug](https://github.com/bookmarkmind/bookmarkmind/issues) | [💡 Request Feature](https://github.com/bookmarkmind/bookmarkmind/issues)
+-   **🌐 Website:** [https://chirag127.github.io/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer](https://chirag127.github.io/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer)
+-   **📱 GitHub Repository:** [BookmarkMind on GitHub](https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer)
+-   **🐛 Report Issues:** [GitHub Issues](https://github.com/chirag127/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer/issues)
+-   **🔑 Get API Key:** [Google AI Studio](https://makersuite.google.com/app/apikey)
+-   **🛡️ Privacy Policy:** [Privacy Policy](https://chirag127.github.io/BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer/privacy-policy.html)
+
+---
+
+## 🎯 Roadmap
+
+### Upcoming Features
+
+-   [ ] Chrome Web Store publication
+-   [ ] Support for additional AI models
+-   [ ] Bookmark import/export functionality
+-   [ ] Advanced filtering and search
+-   [ ] Bookmark analytics and insights
+-   [ ] Multi-language support
+-   [ ] Dark/Light theme toggle
+-   [ ] Keyboard shortcuts
+
+### Long-term Goals
+
+-   [ ] Firefox extension support
+-   [ ] Mobile app companion
+-   [ ] Cloud sync across browsers
+-   [ ] Team collaboration features
+-   [ ] Advanced AI training options
+
+---
+
+## 💖 Support
+
+If you find BookmarkMind helpful, please consider:
+
+-   ⭐ **Starring** the repository on GitHub
+-   🐛 **Reporting bugs** to help improve the extension
+-   💡 **Suggesting features** for future development
+-   📢 **Sharing** with friends and colleagues
+-   📝 **Contributing** code or documentation
+
+---
+
+**Made with ❤️ by [Chirag127](https://github.com/chirag127)**
+
+_Transform your bookmark chaos into organized brilliance with AI-powered intelligence._
