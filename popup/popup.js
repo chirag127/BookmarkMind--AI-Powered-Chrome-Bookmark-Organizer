@@ -34,6 +34,7 @@ class PopupController {
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
+    this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
     this.forceReorganizeBtn = document.getElementById('forceReorganizeBtn');
     this.exportBtn = document.getElementById('exportBtn');
     this.settingsBtn = document.getElementById('settingsBtn');
@@ -74,6 +75,7 @@ class PopupController {
    */
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
     this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
     this.exportBtn.addEventListener('click', () => this.exportBookmarks());
     this.settingsBtn.addEventListener('click', () => this.openSettings());
@@ -279,6 +281,119 @@ class PopupController {
       if (this.forceReorganizeBtn) {
         this.forceReorganizeBtn.style.display = 'none';
       }
+    }
+  }
+
+  /**
+   * Move all bookmarks to Bookmark Bar for reprocessing
+   */
+  async moveAllToBookmarkBar() {
+    if (this.isProcessing) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      'This will move ALL bookmarks from all folders back to the Bookmark Bar.\n\n' +
+      'This action will:\n' +
+      '• Move all bookmarks to the root of Bookmark Bar\n' +
+      '• Allow you to reprocess them with new categorization\n' +
+      '• Cannot be undone automatically\n\n' +
+      'Are you sure you want to continue?'
+    );
+
+    if (!confirmed) return;
+
+    this.isProcessing = true;
+    this.showProgress();
+    this.updateProgress('Moving bookmarks to Bookmark Bar...', 0);
+
+    try {
+      console.log('Popup: Starting move all to bookmark bar...');
+
+      // Get all bookmarks first to show progress
+      const bookmarkTree = await chrome.bookmarks.getTree();
+      const allBookmarks = [];
+
+      // Collect all bookmarks from all folders
+      const collectBookmarksFromTree = (nodes, parentTitle = '') => {
+        for (const node of nodes) {
+          if (node.url && node.parentId !== '1') { // Only bookmarks not already in Bookmark Bar
+            allBookmarks.push({
+              id: node.id,
+              title: node.title,
+              url: node.url,
+              parentId: node.parentId,
+              currentFolder: parentTitle
+            });
+          }
+          if (node.children) {
+            collectBookmarksFromTree(node.children, node.title);
+          }
+        }
+      };
+
+      collectBookmarksFromTree(bookmarkTree);
+
+      console.log(`Found ${allBookmarks.length} bookmarks to move to Bookmark Bar`);
+
+      if (allBookmarks.length === 0) {
+        this.showResults({
+          processed: 0,
+          moved: 0,
+          message: 'No bookmarks found to move. All bookmarks are already in the Bookmark Bar.'
+        });
+        return;
+      }
+
+      // Move bookmarks one by one with progress updates
+      let movedCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < allBookmarks.length; i++) {
+        const bookmark = allBookmarks[i];
+        const progress = Math.round((i / allBookmarks.length) * 100);
+
+        this.updateProgress(
+          `Moving "${bookmark.title}" to Bookmark Bar... (${i + 1}/${allBookmarks.length})`,
+          progress
+        );
+
+        try {
+          // Move bookmark to Bookmark Bar (parentId: '1')
+          await chrome.bookmarks.move(bookmark.id, { parentId: '1' });
+          movedCount++;
+          console.log(`Moved: "${bookmark.title}" from "${bookmark.currentFolder}" to Bookmark Bar`);
+        } catch (error) {
+          console.error(`Failed to move bookmark "${bookmark.title}":`, error);
+          errors.push(`${bookmark.title}: ${error.message}`);
+        }
+
+        // Small delay to prevent overwhelming the API
+        if (i < allBookmarks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+
+      // Show results
+      const resultMessage = errors.length > 0
+        ? `Moved ${movedCount} bookmarks. ${errors.length} failed to move.`
+        : `Successfully moved ${movedCount} bookmarks to Bookmark Bar.`;
+
+      this.showResults({
+        processed: allBookmarks.length,
+        moved: movedCount,
+        errors: errors.length,
+        message: resultMessage,
+        details: errors.length > 0 ? `Errors: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}` : null
+      });
+
+      // Refresh stats after moving
+      await this.loadStats();
+
+    } catch (error) {
+      console.error('Popup: Move to bookmark bar error:', error);
+      this.showError(`Failed to move bookmarks: ${error.message}`);
+    } finally {
+      this.isProcessing = false;
     }
   }
 
@@ -562,6 +677,29 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
     this.progressSection.classList.add('hidden');
     this.resultsSection.classList.remove('hidden');
 
+    // Handle move to bookmark bar results
+    if (results.moved !== undefined) {
+      this.resultsTitle.textContent = 'Bookmarks Moved!';
+      this.resultsMessage.textContent = results.message;
+
+      if (results.details) {
+        this.resultsMessage.textContent += `\n\n${results.details}`;
+      }
+
+      // Update stats display
+      this.processedCount.textContent = results.processed || 0;
+      this.categorizedCount.textContent = results.moved || 0;
+
+      // Change the label for moved bookmarks
+      const categorizedLabel = this.categorizedCount.nextElementSibling;
+      if (categorizedLabel) {
+        categorizedLabel.textContent = 'Moved';
+      }
+
+      return;
+    }
+
+    // Handle categorization results
     if (results.message) {
       // Special case for "already organized" message
       this.resultsTitle.textContent = 'Already Organized!';
