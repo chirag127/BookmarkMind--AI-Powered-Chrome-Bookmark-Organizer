@@ -627,9 +627,9 @@ class AIProcessor {
      * @returns {Promise<string>} Folder ID
      */
     async _createFolderDirect(categoryPath, rootFolderId) {
-        // Skip creating "Other" folder - bookmarks stay in root
-        if (categoryPath === 'Other') {
-            return rootFolderId;
+        // All bookmarks must be categorized into specific functional categories
+        if (!categoryPath || categoryPath.trim() === '') {
+            throw new Error('Category path cannot be empty - all bookmarks must be properly categorized');
         }
 
         const parts = categoryPath.split(' > ').map(part => part.trim());
@@ -768,7 +768,7 @@ class AIProcessor {
             return 'Tools/Utilities';
         }
 
-        return 'General/Other';
+        return 'Tools > Utilities';
     }
 
     /**
@@ -1113,22 +1113,29 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
   * Based on actual bookmark functionality but kept simple
   * Include functional categories that group services by what they do
 
-**FUNCTIONAL HIERARCHICAL CATEGORY EXAMPLES (Based on FMHY Structure):**
-- "Adblocking / Privacy > Antivirus / Anti-Malware" (Malwarebytes, ESET, AdwCleaner, etc.)
-- "Adblocking / Privacy > DNS Adblocking" (LibreDNS, NextDNS, DNSWarden, AdGuard DNS, Pi-Hole)
-- "Adblocking / Privacy > Encrypted Messengers" (Signal, SimpleX, Matrix, Wire)
+**FUNCTIONAL HIERARCHICAL CATEGORY EXAMPLES (Based on FMHY Structure - NO "OTHER" ALLOWED):**
 - "Adblocking / Privacy > VPN" (ProtonVPN, Mullvad, AirVPN, Windscribe, RiseupVPN)
+- "Adblocking / Privacy > Encrypted Messengers" (Signal, SimpleX, Matrix, Wire)
 - "Adblocking / Privacy > Password Privacy / 2FA" (2FA Directory, Ente Auth, Aegis, 2FAS, KeePassXC)
+- "Adblocking / Privacy > Antivirus / Anti-Malware" (Malwarebytes, ESET, AdwCleaner)
+- "Adblocking / Privacy > DNS Adblocking" (LibreDNS, NextDNS, DNSWarden, AdGuard DNS, Pi-Hole)
 - "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive, MEGA, pCloud)
 - "Tools > System Tools > Virtual Machines" (VMware, VirtualBox, QEMU)
-- "Education > Privacy Guides" (Privacy Guides, Surveillance Self-Defense, The New Oil, No Trace)
-- "Adblocking / Privacy > Site Legitimacy Check" (URLVoid, Trend Micro, ScamAdviser, IsLegitSite)
+- "Tools > Utilities" (General tools, converters, calculators, misc utilities)
 - "Web Privacy > Search Engines" (DuckDuckGo, Brave Search, Startpage, Mojeek, Searx)
 - "Development > Code Repositories" (GitHub, GitLab, Bitbucket, SourceForge)
 - "Development > Documentation" (MDN, Stack Overflow, DevDocs, API references)
-- "Entertainment > Streaming" (Netflix, YouTube, Twitch, Spotify)
+- "Education > Learning Platforms" (Coursera, Udemy, Khan Academy, edX)
+- "Entertainment > Streaming" (Netflix, YouTube, Twitch, Spotify, Disney+)
+- "Entertainment > Gaming" (Steam, Epic Games, gaming platforms)
+- "Entertainment > Music" (Spotify, Apple Music, SoundCloud, Bandcamp, YouTube Music)
+- "Entertainment > Adult" (Pornhub, Xvideos etc)
 - "Shopping > E-commerce" (Amazon, eBay, Etsy, AliExpress)
 - "News > Technology News" (TechCrunch, Ars Technica, The Verge, Hacker News)
+- "News > General News" (BBC, CNN, Reuters, Associated Press)
+- "Social Media > Platforms" (Twitter, Facebook, Instagram, LinkedIn)
+- "Business > Productivity" (Slack, Trello, Asana, Notion)
+- "Business > Finance" (Banking, investment, cryptocurrency platforms)
 
 **OUTPUT FORMAT:**
 Return a JSON array of FUNCTIONAL hierarchical category paths with proper capitalization, like:
@@ -1146,7 +1153,7 @@ Return a JSON array of FUNCTIONAL hierarchical category paths with proper capita
   "Entertainment > Streaming",
   "Shopping > E-commerce",
   "News > Technology News",
-  "Other"
+  "Tools > Utilities"
 ]
 
 **CRITICAL FORMATTING REQUIREMENTS:**
@@ -1159,7 +1166,8 @@ Return a JSON array of FUNCTIONAL hierarchical category paths with proper capita
 **CONTENT REQUIREMENTS:**
 - Create FUNCTIONAL categories that group services by what they do
 - Generate 8-15 functional category trees maximum
-- Always include "Other" as the last category
+- NEVER use "Other" - all bookmarks must be categorized into specific functional categories
+- If unsure, use "Tools > Utilities" for general tools or create appropriate functional categories
 - Organize by function, not by service provider or company name
 - Follow FMHY-style functional organization principles
 
@@ -1184,12 +1192,26 @@ Return only the JSON array with properly formatted category names, no additional
             if (jsonMatch) {
                 const categories = JSON.parse(jsonMatch[0]);
                 if (Array.isArray(categories) && categories.length > 0) {
-                    // Ensure "Other" is always included
-                    if (!categories.includes('Other')) {
-                        categories.push('Other');
-                    }
-                    console.log('Successfully generated dynamic categories:', categories);
-                    return categories;
+                    // Remove any "Other" categories if they exist
+                    const filteredCategories = categories.filter(cat => cat !== 'Other' && !cat.includes('Other'));
+
+                    // Ensure we have comprehensive functional categories
+                    const essentialCategories = [
+                        'Tools > Utilities',
+                        'Development > Tools',
+                        'Business > Productivity',
+                        'Entertainment > General',
+                        'Education > Resources'
+                    ];
+
+                    essentialCategories.forEach(essential => {
+                        if (!filteredCategories.some(cat => cat === essential)) {
+                            filteredCategories.push(essential);
+                        }
+                    });
+
+                    console.log('Successfully generated dynamic categories:', filteredCategories);
+                    return filteredCategories;
                 }
             }
 
@@ -1444,13 +1466,15 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 **Available Categories:** ${categories.join(', ')}
 
 **CRITICAL CATEGORIZATION INSTRUCTIONS:**
+- **NEVER USE "OTHER":** ABSOLUTELY FORBIDDEN to use "Other" category - ALL bookmarks must be categorized into specific functional categories
+- **MANDATORY CATEGORIZATION:** Every bookmark MUST be assigned to a specific functional category from the available list
 - **ANALYZE CURRENT CATEGORY:** Look at the bookmark's current category and determine if it's appropriate
 - **CHANGE WRONG CATEGORIES:** If the current category is incorrect, assign the correct one from the available list
 - **CONTENT-BASED CATEGORIZATION:** Use URL domain, path, title, and content type to determine the correct category
-- **AVOID INAPPROPRIATE ASSIGNMENTS:** Do NOT put content into unrelated categories (e.g., torrents should NOT go to paywall bypass)
-- **RESPECT CONTENT TYPE:** Match the actual content type to appropriate categories
+- **FUNCTIONAL GROUPING:** Group services by what they DO, not who provides them
+- **FALLBACK STRATEGY:** If unsure, use "Tools > Utilities" for general tools, but prefer specific functional categories
+- **RESPECT CONTENT TYPE:** Match the actual content type to appropriate functional categories
 - **USE RISK FLAGS:** Pay attention to risk flags and categorize accordingly
-- **BALANCED SPECIFICITY:** Use categories that are specific enough to be useful but not so deep they're hard to navigate
 - **USER-FRIENDLY:** Choose categories that users will easily understand and remember
 
 **FUNCTIONAL CATEGORIZATION RULES BY CONTENT TYPE (FMHY-Style):**
@@ -1570,31 +1594,40 @@ Based on previous user corrections and manual categorizations, follow these patt
         prompt += `\n\n**OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
 - Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), 'confidence' (0.0-1.0), and 'categoryChanged' (true/false)
+- **ABSOLUTELY NO "OTHER" CATEGORY:** NEVER use "Other" - this is strictly forbidden
+- **MANDATORY SPECIFIC CATEGORIZATION:** Every bookmark MUST be assigned to a specific functional category
 - **ANALYZE CURRENT CATEGORY:** Compare the current category with the correct category based on content analysis
 - **CHANGE WRONG CATEGORIES:** If current category is incorrect, assign the correct one and set 'categoryChanged': true
 - **USE EXACT CATEGORY NAMES:** Select categories from the available list using their exact capitalization and formatting
-- **MAINTAIN PROPER FORMATTING:** Category must be the full path with proper capitalization (e.g., "Work > Development > Frontend")
+- **MAINTAIN PROPER FORMATTING:** Category must be the full path with proper capitalization (e.g., "Adblocking / Privacy > VPN")
 - **TECHNICAL TERMS:** Ensure technical terms in categories are properly capitalized (JavaScript, API, UI, etc.)
-- **RESPECT CONTENT TYPE:** Match actual content to appropriate categories (torrents ≠ paywall bypass)
+- **FUNCTIONAL CATEGORIZATION:** Match actual content to appropriate functional categories based on what the service DOES
 - **FOLLOW LEARNING DATA:** Prioritize user-corrected patterns from learning data
+- **FALLBACK STRATEGY:** If genuinely unsure, use "Tools > Utilities" but prefer specific functional categories
 - Title must be descriptive and informative, based on URL domain and content context
-- Choose the most appropriate category level - not too hierarchical, not too specific
-- Consider URL domain, title content, risk flags, and content type for accurate categorization
-- Prefer practical, usable categories that make sense for bookmark organization
+- Choose the most appropriate functional category that describes what the service does
+- Consider URL domain, title content, risk flags, and content type for accurate functional categorization
+- Prefer practical, functional categories that group services by their purpose
 
-**EXAMPLE OUTPUT (FMHY-Style Functional Categories):**
+**EXAMPLE OUTPUT (FMHY-Style Functional Categories - NO "OTHER" ALLOWED):**
 [
   {"id": 1, "category": "Development > Documentation", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9, "categoryChanged": false},
   {"id": 2, "category": "Tools > File Tools > Cloud Storage", "title": "Google Drive - Cloud Storage Service", "confidence": 0.8, "categoryChanged": true},
-  {"id": 3, "category": "Adblocking / Privacy > VPN", "title": "ProtonVPN - Privacy-Focused VPN Service", "confidence": 0.9, "categoryChanged": true}
+  {"id": 3, "category": "Adblocking / Privacy > VPN", "title": "ProtonVPN - Privacy-Focused VPN Service", "confidence": 0.9, "categoryChanged": true},
+  {"id": 4, "category": "Tools > Utilities", "title": "Generic Tool - General Utility", "confidence": 0.7, "categoryChanged": true}
 ]
 
 **FUNCTIONAL CATEGORIZATION EXAMPLES (FMHY-Style):**
 - Google Drive currently in "Google Services" → Should be "Tools > File Tools > Cloud Storage" (categoryChanged: true)
 - ProtonVPN currently in "VPN Services" → Should be "Adblocking / Privacy > VPN" (categoryChanged: true)
-- GitHub repo currently in "Other" → Should be "Development > Code Repositories" (categoryChanged: true)
+- GitHub repo currently in "Uncategorized" → Should be "Development > Code Repositories" (categoryChanged: true)
 - Signal app currently in "Communication" → Should be "Adblocking / Privacy > Encrypted Messengers" (categoryChanged: true)
 - DuckDuckGo currently in "Search" → Should be "Web Privacy > Search Engines" (categoryChanged: true)
+
+**FINAL REMINDER: ABSOLUTELY NO "OTHER" CATEGORY ALLOWED**
+- Every bookmark must be categorized into a specific functional category
+- If you cannot determine the exact function, use "Tools > Utilities" as fallback
+- "Other" is completely forbidden and will cause system errors
 
 Return only the JSON array, no additional text or formatting`;
 
@@ -1627,14 +1660,39 @@ Return only the JSON array, no additional text or formatting`;
                 throw new Error('Response is not an array');
             }
 
-            // Map results to bookmark IDs and include titles
-            return parsed.map((result, index) => ({
-                id: result.id || (index + 1),
-                bookmarkId: batch[index]?.id,
-                category: result.category || 'Other',
-                title: result.title || batch[index]?.title || 'Untitled',
-                confidence: result.confidence || 0.5
-            }));
+            // Map results to bookmark IDs and include titles with validation
+            const results = parsed.map((result, index) => {
+                let category = result.category || 'Tools > Utilities';
+
+                // CRITICAL: Validate that "Other" is never used
+                if (category === 'Other' || category.includes('Other')) {
+                    console.warn(`⚠️ AI tried to use forbidden "Other" category for bookmark ${index + 1}. Forcing to "Tools > Utilities"`);
+                    category = 'Tools > Utilities';
+                }
+
+                // Ensure category is not empty
+                if (!category || category.trim() === '') {
+                    console.warn(`⚠️ Empty category detected for bookmark ${index + 1}. Using "Tools > Utilities"`);
+                    category = 'Tools > Utilities';
+                }
+
+                return {
+                    id: result.id || (index + 1),
+                    bookmarkId: batch[index]?.id,
+                    category: category,
+                    title: result.title || batch[index]?.title || 'Untitled',
+                    confidence: result.confidence || 0.5
+                };
+            });
+
+            // Final validation: Check if any "Other" categories slipped through
+            const otherCategories = results.filter(r => r.category === 'Other' || r.category.includes('Other'));
+            if (otherCategories.length > 0) {
+                console.error('🚨 CRITICAL: "Other" categories detected after validation!', otherCategories);
+                throw new Error('AI returned forbidden "Other" categories despite explicit instructions');
+            }
+
+            return results;
 
         } catch (error) {
             console.error('Error parsing API response:', error);
