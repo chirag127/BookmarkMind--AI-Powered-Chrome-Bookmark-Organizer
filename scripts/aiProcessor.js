@@ -998,9 +998,8 @@ class AIProcessor {
         // Get user preferences for functional categories
         const settings = await this._getSettings();
         const maxDepth = settings.maxCategoryDepth || 3; // Allow 2-3 levels for functional organization (FMHY-style)
-        const minCategories = settings.minCategories || 8; // Fewer main categories
-        const maxCategories = settings.maxCategories || 20; // Functional categories for better organization
         const functionalMode = settings.functionalMode !== false; // Default to true (FMHY-style)
+        // NO LIMITS on number of categories - generate as many as needed for proper organization
 
         let prompt = `**Role:** Smart Functional Bookmark Category Generator (FMHY-Style)
 **Task:** Analyze the following bookmarks and create a balanced functional category system organized by what services DO, not who provides them.
@@ -1016,12 +1015,14 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - **BALANCED GRANULARITY:** Create useful, practical categories that are neither too hierarchical nor too specific
 
 **FUNCTIONAL CATEGORIZATION REQUIREMENTS (FMHY-Style):**
-- Create ${minCategories}-${maxCategories} FUNCTIONAL categories with MAXIMUM 2-3 levels deep
+- Create AS MANY FUNCTIONAL categories as needed with MAXIMUM 2-3 levels deep
+- NO LIMITS on number of categories - generate comprehensive functional organization
 - Use format: "Category > Subcategory" or "Category > Subcategory > Type" (based on FMHY structure)
 - Examples: "Tools > File Tools > Cloud Storage", "Adblocking / Privacy > VPN", "Education > Privacy Guides"
 - **FUNCTIONAL ORGANIZATION:** Group services by WHAT THEY DO, not who provides them
 - **PRACTICAL DEPTH:** Categories should be 2-3 levels deep for proper organization
 - **SERVICE-AGNOSTIC:** Categories should contain ALL services that perform the same function
+- **COMPREHENSIVE COVERAGE:** Create specific categories for every type of service/content found
 - **REUSE EXISTING FOLDERS FIRST, but organize them functionally**
 
 **FUNCTIONAL CATEGORIZATION RULES (FMHY-Style):**
@@ -1105,7 +1106,8 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
         prompt += `\n\n**FUNCTIONAL HIERARCHICAL CATEGORY INSTRUCTIONS:**
 - Analyze bookmark titles, domains, current folders, and content patterns
 - Create FUNCTIONAL hierarchical categories with MAXIMUM ${maxDepth} levels using " > " separator
-- Generate ${minCategories}-${maxCategories} main category trees based on FUNCTION, not service names
+- Generate AS MANY category trees as needed based on FUNCTION, not service names (NO LIMITS)
+- Create comprehensive functional organization - don't limit the number of categories
 - Organize by WHAT THE TOOL DOES, not WHO PROVIDES IT
 - Categories should be:
   * Functional and practical (e.g., "Tools > File Tools > Cloud Storage" contains Google Drive, Dropbox, OneDrive)
@@ -1113,47 +1115,107 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
   * Based on actual bookmark functionality but kept simple
   * Include functional categories that group services by what they do
 
-**FUNCTIONAL HIERARCHICAL CATEGORY EXAMPLES (Based on FMHY Structure - NO "OTHER" ALLOWED):**
+**FUNCTIONAL HIERARCHICAL CATEGORY EXAMPLES (UNLIMITED CATEGORIES - CREATE AS MANY AS NEEDED):**
+
+**PRIVACY & SECURITY (Create specific subcategories):**
 - "Adblocking / Privacy > VPN" (ProtonVPN, Mullvad, AirVPN, Windscribe, RiseupVPN)
 - "Adblocking / Privacy > Encrypted Messengers" (Signal, SimpleX, Matrix, Wire)
 - "Adblocking / Privacy > Password Privacy / 2FA" (2FA Directory, Ente Auth, Aegis, 2FAS, KeePassXC)
 - "Adblocking / Privacy > Antivirus / Anti-Malware" (Malwarebytes, ESET, AdwCleaner)
 - "Adblocking / Privacy > DNS Adblocking" (LibreDNS, NextDNS, DNSWarden, AdGuard DNS, Pi-Hole)
-- "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive, MEGA, pCloud)
-- "Tools > System Tools > Virtual Machines" (VMware, VirtualBox, QEMU)
-- "Tools > Utilities" (General tools, converters, calculators, misc utilities)
 - "Web Privacy > Search Engines" (DuckDuckGo, Brave Search, Startpage, Mojeek, Searx)
+
+**TOOLS & UTILITIES (Create specific subcategories for each tool type):**
+- "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive, MEGA, pCloud)
+- "Tools > File Tools > Converters" (File format converters, compressors)
+- "Tools > File Tools > Sharing" (WeTransfer, file hosting services)
+- "Tools > System Tools > Virtual Machines" (VMware, VirtualBox, QEMU)
+- "Tools > Image Tools > Editors" (Image editing tools)
+- "Tools > Video Tools > Editors" (Video editing tools)
+- "Tools > Audio Tools > Editors" (Audio editing tools)
+- "Tools > Text Tools > Editors" (Text and markdown editors)
+- "Tools > Utilities" (General calculators, converters, misc utilities)
+
+**DEVELOPMENT (Create specific subcategories for each dev area):**
 - "Development > Code Repositories" (GitHub, GitLab, Bitbucket, SourceForge)
 - "Development > Documentation" (MDN, Stack Overflow, DevDocs, API references)
+- "Development > Tools > IDEs" (VS Code, IntelliJ, online IDEs)
+- "Development > Tools > Frameworks" (React, Angular, Vue documentation)
+- "Development > Tools > Testing" (Testing frameworks, tools)
+- "Development > Tools > Deployment" (Hosting, CI/CD platforms)
+
+**EDUCATION (Create specific subcategories for each learning type):**
 - "Education > Learning Platforms" (Coursera, Udemy, Khan Academy, edX)
-- "Entertainment > Streaming" (Netflix, YouTube, Twitch, Spotify, Disney+)
-- "Entertainment > Gaming" (Steam, Epic Games, gaming platforms)
-- "Entertainment > Music" (Spotify, Apple Music, SoundCloud, Bandcamp, YouTube Music)
-- "Entertainment > Adult" (Pornhub, Xvideos etc)
-- "Shopping > E-commerce" (Amazon, eBay, Etsy, AliExpress)
+- "Education > Programming Tutorials" (Coding bootcamps, programming courses)
+- "Education > Language Learning" (Duolingo, language platforms)
+- "Education > Academic Resources" (Research, academic databases)
+- "Education > Privacy Guides" (Privacy Guides, security education)
+
+**ENTERTAINMENT (Create specific subcategories for each entertainment type):**
+- "Entertainment > Streaming > Video" (Netflix, YouTube, Twitch, Disney+)
+- "Entertainment > Streaming > Music" (Spotify, Apple Music, SoundCloud)
+- "Entertainment > Gaming > Platforms" (Steam, Epic Games, gaming stores)
+- "Entertainment > Gaming > Resources" (Gaming news, guides, communities)
+- "Entertainment > Books > Reading" (Goodreads, online libraries, ebooks)
+- "Entertainment > Podcasts" (Podcast platforms and directories)
+
+**BUSINESS (Create specific subcategories for each business function):**
+- "Business > Productivity > Project Management" (Slack, Trello, Asana, Notion)
+- "Business > Productivity > Communication" (Zoom, Teams, communication tools)
+- "Business > Finance > Banking" (Online banking, financial services)
+- "Business > Finance > Investment" (Trading platforms, investment tools)
+- "Business > Finance > Cryptocurrency" (Crypto exchanges, blockchain tools)
+- "Business > Marketing > SEO" (SEO tools, analytics platforms)
+
+**SHOPPING (Create specific subcategories for each shopping type):**
+- "Shopping > E-commerce > General" (Amazon, eBay, general marketplaces)
+- "Shopping > E-commerce > Specialized" (Etsy, niche marketplaces)
+- "Shopping > Price Comparison" (Price tracking, deal aggregators)
+- "Shopping > Coupons & Deals" (Coupon sites, deal platforms)
+
+**NEWS & MEDIA (Create specific subcategories for each news type):**
 - "News > Technology News" (TechCrunch, Ars Technica, The Verge, Hacker News)
 - "News > General News" (BBC, CNN, Reuters, Associated Press)
+- "News > Industry Specific" (Industry publications, trade news)
+- "News > Blogs & Opinion" (Personal blogs, opinion sites)
+
+**SOCIAL & COMMUNICATION (Create specific subcategories):**
 - "Social Media > Platforms" (Twitter, Facebook, Instagram, LinkedIn)
-- "Business > Productivity" (Slack, Trello, Asana, Notion)
-- "Business > Finance" (Banking, investment, cryptocurrency platforms)
+- "Social Media > Professional" (LinkedIn, professional networks)
+- "Social Media > Communities" (Reddit, Discord, forums)
+
+**IMPORTANT: CREATE AS MANY SPECIFIC CATEGORIES AS NEEDED!**
+- Analyze ALL bookmarks and create specific functional categories for every type of service
+- Don't limit yourself to these examples - create new categories as needed
+- Be comprehensive and specific - users prefer detailed organization
+- Group services by their actual function, not by popularity or provider
 
 **OUTPUT FORMAT:**
-Return a JSON array of FUNCTIONAL hierarchical category paths with proper capitalization, like:
+Return a JSON array of FUNCTIONAL hierarchical category paths with proper capitalization.
+CREATE AS MANY CATEGORIES AS NEEDED - NO LIMITS! Example structure:
 [
   "Adblocking / Privacy > VPN",
   "Adblocking / Privacy > Encrypted Messengers",
   "Adblocking / Privacy > Password Privacy / 2FA",
-  "Adblocking / Privacy > Antivirus / Anti-Malware",
   "Tools > File Tools > Cloud Storage",
-  "Tools > System Tools > Virtual Machines",
-  "Web Privacy > Search Engines",
+  "Tools > File Tools > Converters",
+  "Tools > Image Tools > Editors",
+  "Tools > Video Tools > Editors",
   "Development > Code Repositories",
-  "Development > Documentation",
-  "Education > Privacy Guides",
-  "Entertainment > Streaming",
-  "Shopping > E-commerce",
+  "Development > Tools > IDEs",
+  "Development > Tools > Frameworks",
+  "Education > Learning Platforms",
+  "Education > Programming Tutorials",
+  "Entertainment > Streaming > Video",
+  "Entertainment > Streaming > Music",
+  "Entertainment > Gaming > Platforms",
+  "Business > Productivity > Project Management",
+  "Business > Finance > Banking",
+  "Shopping > E-commerce > General",
   "News > Technology News",
-  "Tools > Utilities"
+  "Social Media > Platforms",
+  "Tools > Utilities",
+  ... (create as many specific categories as needed for comprehensive organization)
 ]
 
 **CRITICAL FORMATTING REQUIREMENTS:**
@@ -1165,11 +1227,13 @@ Return a JSON array of FUNCTIONAL hierarchical category paths with proper capita
 
 **CONTENT REQUIREMENTS:**
 - Create FUNCTIONAL categories that group services by what they do
-- Generate 8-15 functional category trees maximum
+- Generate AS MANY functional category trees as needed (NO MAXIMUM LIMIT)
+- Create comprehensive, specific categories for every type of service found
 - NEVER use "Other" - all bookmarks must be categorized into specific functional categories
-- If unsure, use "Tools > Utilities" for general tools or create appropriate functional categories
+- If unsure, create new appropriate functional categories rather than using generic ones
 - Organize by function, not by service provider or company name
 - Follow FMHY-style functional organization principles
+- Prioritize comprehensive coverage over category count limits
 
 Return only the JSON array with properly formatted category names, no additional text or formatting.`;
 
@@ -1624,10 +1688,14 @@ Based on previous user corrections and manual categorizations, follow these patt
 - Signal app currently in "Communication" → Should be "Adblocking / Privacy > Encrypted Messengers" (categoryChanged: true)
 - DuckDuckGo currently in "Search" → Should be "Web Privacy > Search Engines" (categoryChanged: true)
 
-**FINAL REMINDER: ABSOLUTELY NO "OTHER" CATEGORY ALLOWED**
+**FINAL INSTRUCTIONS:**
+- **ABSOLUTELY NO "OTHER" CATEGORY ALLOWED** - completely forbidden
+- **CREATE UNLIMITED CATEGORIES** - generate as many specific functional categories as needed
+- **BE COMPREHENSIVE** - create detailed, specific categories for every type of service found
+- **NO CATEGORY LIMITS** - don't restrict yourself to a small number of categories
 - Every bookmark must be categorized into a specific functional category
-- If you cannot determine the exact function, use "Tools > Utilities" as fallback
-- "Other" is completely forbidden and will cause system errors
+- If you cannot determine the exact function, create a new appropriate category or use "Tools > Utilities"
+- Prioritize comprehensive, detailed organization over simplicity
 
 Return only the JSON array, no additional text or formatting`;
 
@@ -1813,9 +1881,9 @@ Return only the JSON array, no additional text or formatting`;
         const defaultSettings = {
             functionalMode: true, // FMHY-style functional organization
             maxCategoryDepth: 3, // Allow 2-3 levels for functional organization
-            minCategories: 8, // Functional categories for better organization
-            maxCategories: 20, // More categories needed for functional organization
-            batchSize: 50 // Default batch size
+            batchSize: 50, // Default batch size
+            // NO LIMITS on category count - generate as many as needed for proper organization
+            unlimitedCategories: true
         };
 
         try {
