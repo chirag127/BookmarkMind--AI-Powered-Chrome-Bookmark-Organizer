@@ -66,6 +66,8 @@ class OptionsController {
     // Settings elements
     this.batchSizeSelect = document.getElementById('batchSize');
     this.cleanupEmptyFoldersCheckbox = document.getElementById('cleanupEmptyFolders');
+    this.maxCategoryDepthSlider = document.getElementById('maxCategoryDepth');
+    this.maxDepthValueDisplay = document.getElementById('maxDepthValue');
 
     // Stats elements
     this.totalBookmarksCount = document.getElementById('totalBookmarksCount');
@@ -140,6 +142,8 @@ class OptionsController {
     // Settings events
     this.batchSizeSelect.addEventListener('change', () => this.saveSettings());
     this.cleanupEmptyFoldersCheckbox.addEventListener('change', () => this.saveSettings());
+    this.maxCategoryDepthSlider.addEventListener('input', () => this.onMaxDepthChange());
+    this.maxCategoryDepthSlider.addEventListener('change', () => this.saveSettings());
 
     // Data management events
     this.exportDataBtn.addEventListener('click', () => this.exportData());
@@ -189,7 +193,8 @@ class OptionsController {
       lastSortTime: 0,
       batchSize: 50,
       cleanupEmptyFolders: false,
-      agentRouterApiKey: ''
+      agentRouterApiKey: '',
+      maxCategoryDepth: 2
     };
   }
 
@@ -225,6 +230,8 @@ class OptionsController {
     // Advanced settings
     this.batchSizeSelect.value = this.settings.batchSize || 50;
     this.cleanupEmptyFoldersCheckbox.checked = this.settings.cleanupEmptyFolders !== false;
+    this.maxCategoryDepthSlider.value = this.settings.maxCategoryDepth || 2;
+    this.maxDepthValueDisplay.textContent = this.settings.maxCategoryDepth || 2;
 
     // Update button states after a short delay to ensure DOM is ready
     setTimeout(() => {
@@ -768,6 +775,15 @@ class OptionsController {
   }
 
   /**
+   * Handle max depth slider change
+   */
+  onMaxDepthChange() {
+    const value = parseInt(this.maxCategoryDepthSlider.value);
+    this.maxDepthValueDisplay.textContent = value;
+    this.settings.maxCategoryDepth = value;
+  }
+
+  /**
    * Save all settings
    */
   async saveSettings() {
@@ -775,6 +791,7 @@ class OptionsController {
       // Update settings from UI
       this.settings.batchSize = parseInt(this.batchSizeSelect.value);
       this.settings.cleanupEmptyFolders = this.cleanupEmptyFoldersCheckbox.checked;
+      this.settings.maxCategoryDepth = parseInt(this.maxCategoryDepthSlider.value);
 
       await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
       console.log('Settings saved');

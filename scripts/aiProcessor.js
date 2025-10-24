@@ -982,11 +982,11 @@ class AIProcessor {
     }
 
     /**
-     * Generate dynamic hierarchical categories based on bookmark analysis
+     * Generate dynamic functional categories based on bookmark analysis (FMHY-style)
      * @param {Array} bookmarks - All bookmarks to analyze
      * @param {Array} suggestedCategories - Optional suggested categories
      * @param {Object} learningData - Learning data
-     * @returns {Promise<Array>} Generated hierarchical categories
+     * @returns {Promise<Array>} Generated functional categories
      */
     async _generateDynamicCategories(bookmarks, suggestedCategories = [], learningData = {}) {
         // Take a sample of bookmarks for category generation (max 150 for better analysis)
@@ -995,15 +995,15 @@ class AIProcessor {
         // Get existing folder structure to avoid duplicates
         const existingFolders = await this._getExistingFolderStructure();
 
-        // Get user preferences for hierarchical categories
+        // Get user preferences for functional categories
         const settings = await this._getSettings();
-        const maxDepth = settings.maxCategoryDepth || 4; // Limit to 3 levels for practical organization
-        const minCategories = settings.minCategories || 10; // Fewer categories for better organization
-        const maxCategories = settings.maxCategories || 100; // Reduced to prevent over-categorization
-        const hierarchicalMode = settings.hierarchicalMode !== false; // Default to true
+        const maxDepth = settings.maxCategoryDepth || 3; // Allow 2-3 levels for functional organization (FMHY-style)
+        const minCategories = settings.minCategories || 8; // Fewer main categories
+        const maxCategories = settings.maxCategories || 20; // Functional categories for better organization
+        const functionalMode = settings.functionalMode !== false; // Default to true (FMHY-style)
 
-        let prompt = `**Role:** Smart Hierarchical Bookmark Category Generator
-**Task:** Analyze the following bookmarks and create a balanced hierarchical category system with practical, usable granularity.
+        let prompt = `**Role:** Smart Functional Bookmark Category Generator (FMHY-Style)
+**Task:** Analyze the following bookmarks and create a balanced functional category system organized by what services DO, not who provides them.
 
 **EXISTING FOLDER STRUCTURE (REUSE THESE AS MUCH AS POSSIBLE):**
 ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join('\n') : '- No existing folders found'}
@@ -1013,34 +1013,34 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - **AVOID DUPLICATES:** Do not create similar folders to existing ones (e.g., if "Development" exists, don't create "Programming" or "Coding")
 - **EXTEND EXISTING:** Add practical subcategories to existing folders rather than creating new top-level categories
 - **CONSISTENCY:** Match the naming style and hierarchy of existing folders
-- **BALANCED GRANULARITY:** Create useful, practical categories that are neither too broad nor too specific
+- **BALANCED GRANULARITY:** Create useful, practical categories that are neither too hierarchical nor too specific
 
-**BALANCED HIERARCHICAL REQUIREMENTS:**
-- Create ${minCategories}-${maxCategories} practical hierarchical categories with 2-4 levels deep (maximum)
-- Use format: "Parent > Child > Grandchild" (rarely go deeper than 3 levels)
-- Examples: "Development > Frontend > JavaScript", "Business > Marketing > SEO"
-- **PRACTICAL CATEGORIZATION:** Create categories that are useful for everyday bookmark organization
-- **MODERATE DEPTH:** Most categories should be 2-3 levels deep, only use 4 levels for very complex domains
-- **USER-FRIENDLY:** Categories should be easy to understand and navigate
-- **REUSE EXISTING FOLDERS FIRST, then extend with practical subcategories based on bookmark content**
+**FUNCTIONAL CATEGORIZATION REQUIREMENTS (FMHY-Style):**
+- Create ${minCategories}-${maxCategories} FUNCTIONAL categories with MAXIMUM 2-3 levels deep
+- Use format: "Category > Subcategory" or "Category > Subcategory > Type" (based on FMHY structure)
+- Examples: "Tools > File Tools > Cloud Storage", "Adblocking / Privacy > VPN", "Education > Privacy Guides"
+- **FUNCTIONAL ORGANIZATION:** Group services by WHAT THEY DO, not who provides them
+- **PRACTICAL DEPTH:** Categories should be 2-3 levels deep for proper organization
+- **SERVICE-AGNOSTIC:** Categories should contain ALL services that perform the same function
+- **REUSE EXISTING FOLDERS FIRST, but organize them functionally**
 
-**BALANCED CATEGORIZATION RULES:**
-- ✅ GOOD: "Development > Frontend > JavaScript" (practical depth)
-- ✅ GOOD: "Development > Backend > APIs" (clear and useful)
-- ✅ GOOD: "AI & Machine Learning > Tools" (appropriate grouping)
-- ✅ GOOD: "Design > UI-UX > Resources" (practical organization)
-- ✅ GOOD: "Business > Marketing > SEO" (clear hierarchy)
-- ❌ TOO DEEP: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux > Middleware"
-- ❌ TOO DEEP: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision > Object Detection"
-- ❌ TOO SPECIFIC: "Tools > Productivity > Project Management > Agile > Scrum > Sprint Planning > Estimation"
+**FUNCTIONAL CATEGORIZATION RULES (FMHY-Style):**
+- ✅ GOOD: "Tools > File Tools > Cloud Storage" (functional grouping of all cloud storage services)
+- ✅ GOOD: "Adblocking / Privacy > VPN" (functional grouping of all VPN services)
+- ✅ GOOD: "Adblocking / Privacy > Encrypted Messengers" (functional grouping of secure messaging)
+- ✅ GOOD: "Web Privacy > Search Engines" (functional grouping of privacy-focused search)
+- ✅ GOOD: "Education > Privacy Guides" (functional grouping of educational content)
+- ❌ WRONG: "Google > Drive" (organized by company, not function)
+- ❌ WRONG: "Microsoft > OneDrive" (organized by provider, not what it does)
+- ❌ WRONG: "Popular Tools" (catch-all category, not functional)
 
-**PRACTICAL ORGANIZATION PRINCIPLES:**
-- Keep most categories at 2-3 levels deep for easy navigation
-- Group related tools and resources together at appropriate levels
-- Use clear, descriptive names that users will understand
-- Avoid over-categorization that makes finding bookmarks difficult
-- Focus on how users actually think about and use their bookmarks
-- Create categories that will remain useful as bookmark collections grow
+**FUNCTIONAL ORGANIZATION PRINCIPLES (FMHY-Style):**
+- Keep categories at 2-3 levels maximum for proper functional organization
+- Group services by FUNCTION, not by provider or brand name
+- Use descriptive names that explain what the services DO
+- Organize by purpose: "Tools > File Tools > Cloud Storage" contains ALL cloud storage services
+- Focus on functional categories that group similar services together
+- Create categories that accommodate multiple service providers doing the same thing
 
 **FOLDER NAME FORMATTING REQUIREMENTS:**
 - **PROPER CAPITALIZATION:** Use proper Title Case for all category names
@@ -1050,21 +1050,23 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - **CONSISTENT SPACING:** Use single spaces, proper spacing around separators
 - **PROFESSIONAL APPEARANCE:** Categories should look polished and professional
 
-**FORMATTING EXAMPLES:**
-- ✅ CORRECT: "Development > Frontend > JavaScript"
-- ✅ CORRECT: "Business > Marketing > SEO"
-- ✅ CORRECT: "Design > UI & UX > Resources"
-- ✅ CORRECT: "Technology > AI & Machine Learning"
-- ✅ CORRECT: "Social Media > GitHub > Repositories"
-- ❌ WRONG: "development > frontend > javascript"
-- ❌ WRONG: "business > marketing > seo"
-- ❌ WRONG: "design > ui&ux > resources"
-- ❌ WRONG: "technology > ai&machine learning"
+**FORMATTING EXAMPLES (FMHY-Style):**
+- ✅ CORRECT: "Adblocking / Privacy > VPN"
+- ✅ CORRECT: "Tools > File Tools > Cloud Storage"
+- ✅ CORRECT: "Adblocking / Privacy > Password Privacy / 2FA"
+- ✅ CORRECT: "Web Privacy > Search Engines"
+- ✅ CORRECT: "Education > Privacy Guides"
+- ❌ WRONG: "adblocking / privacy > vpn"
+- ❌ WRONG: "tools > file tools > cloud storage"
+- ❌ WRONG: "web privacy>search engines"
+- ❌ WRONG: "education>privacy guides"
 
-**TECHNICAL TERM CAPITALIZATION GUIDE:**
-- Programming: JavaScript, TypeScript, Node.js, React.js, Vue.js, Angular.js
-- Platforms: GitHub, GitLab, Stack Overflow, YouTube, LinkedIn, Facebook
-- Technologies: API, REST, GraphQL, JSON, XML, CSS, HTML, SQL, NoSQL
+**TECHNICAL TERM CAPITALIZATION GUIDE (FMHY-Style):**
+- Privacy/Security: VPN, DNS, 2FA, Anti-Malware, URL, SSL, TLS
+- Programming: JavaScript, TypeScript, Node.js, React.js, Vue.js, Angular.js, API, REST, GraphQL
+- Platforms: GitHub, GitLab, Stack Overflow, YouTube, LinkedIn, Facebook, Google Drive, OneDrive
+- Cloud Storage: MEGA, pCloud, Dropbox, iCloud, Google Drive, OneDrive
+- Technologies: JSON, XML, CSS, HTML, SQL, NoSQL, VM, VirtualBox, VMware
 - Mobile: iOS, Android, React Native, Flutter
 - Cloud: AWS, Azure, Google Cloud, Docker, Kubernetes
 - Business: B2B, B2C, SaaS, CRM, ERP, SEO, ROI, KPI
@@ -1100,42 +1102,50 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
             prompt += '\n- No previous learning data available';
         }
 
-        prompt += `\n\n**HIERARCHICAL CATEGORY INSTRUCTIONS:**
+        prompt += `\n\n**FUNCTIONAL HIERARCHICAL CATEGORY INSTRUCTIONS:**
 - Analyze bookmark titles, domains, current folders, and content patterns
-- Create hierarchical categories with 2-4 levels using " > " separator
-- Generate 15-25 main category trees, each with multiple subcategories
-- Be extremely granular - create hundreds of specific subcategories
+- Create FUNCTIONAL hierarchical categories with MAXIMUM ${maxDepth} levels using " > " separator
+- Generate ${minCategories}-${maxCategories} main category trees based on FUNCTION, not service names
+- Organize by WHAT THE TOOL DOES, not WHO PROVIDES IT
 - Categories should be:
-  * Very specific and detailed (e.g., "Work > Development > Frontend > React > Hooks")
-  * Organized by domain expertise and content type
-  * Based on actual bookmark content and usage patterns
-  * Include both broad and ultra-specific categories
+  * Functional and practical (e.g., "Tools > File Tools > Cloud Storage" contains Google Drive, Dropbox, OneDrive)
+  * Organized by PURPOSE and FUNCTION, not by service provider
+  * Based on actual bookmark functionality but kept simple
+  * Include functional categories that group services by what they do
 
-**CATEGORY EXAMPLES:**
-- "Work > Development > Frontend > JavaScript > React"
-- "Work > Development > Backend > APIs > REST"
-- "Work > Development > DevOps > Docker > Containers"
-- "Learning > Programming > Languages > Python > Data Science"
-- "Learning > Design > UI-UX > Figma > Prototyping"
-- "Personal > Finance > Investment > Stocks > Analysis"
-- "Personal > Health > Fitness > Workouts > Strength Training"
-- "Entertainment > Gaming > PC Games > Strategy > RTS"
-- "Shopping > Tech > Computers > Laptops > Gaming"
-- "News > Technology > AI > Machine Learning > LLMs"
-- "Tools > Productivity > Project Management > Agile > Scrum"
-- "Reference > Documentation > APIs > Web APIs > REST"
+**FUNCTIONAL HIERARCHICAL CATEGORY EXAMPLES (Based on FMHY Structure):**
+- "Adblocking / Privacy > Antivirus / Anti-Malware" (Malwarebytes, ESET, AdwCleaner, etc.)
+- "Adblocking / Privacy > DNS Adblocking" (LibreDNS, NextDNS, DNSWarden, AdGuard DNS, Pi-Hole)
+- "Adblocking / Privacy > Encrypted Messengers" (Signal, SimpleX, Matrix, Wire)
+- "Adblocking / Privacy > VPN" (ProtonVPN, Mullvad, AirVPN, Windscribe, RiseupVPN)
+- "Adblocking / Privacy > Password Privacy / 2FA" (2FA Directory, Ente Auth, Aegis, 2FAS, KeePassXC)
+- "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive, MEGA, pCloud)
+- "Tools > System Tools > Virtual Machines" (VMware, VirtualBox, QEMU)
+- "Education > Privacy Guides" (Privacy Guides, Surveillance Self-Defense, The New Oil, No Trace)
+- "Adblocking / Privacy > Site Legitimacy Check" (URLVoid, Trend Micro, ScamAdviser, IsLegitSite)
+- "Web Privacy > Search Engines" (DuckDuckGo, Brave Search, Startpage, Mojeek, Searx)
+- "Development > Code Repositories" (GitHub, GitLab, Bitbucket, SourceForge)
+- "Development > Documentation" (MDN, Stack Overflow, DevDocs, API references)
+- "Entertainment > Streaming" (Netflix, YouTube, Twitch, Spotify)
+- "Shopping > E-commerce" (Amazon, eBay, Etsy, AliExpress)
+- "News > Technology News" (TechCrunch, Ars Technica, The Verge, Hacker News)
 
 **OUTPUT FORMAT:**
-Return a JSON array of hierarchical category paths with proper capitalization, like:
+Return a JSON array of FUNCTIONAL hierarchical category paths with proper capitalization, like:
 [
-  "Work > Development > Frontend > JavaScript",
-  "Work > Development > Backend > Node.js",
-  "Learning > Programming > Python > Data Science",
-  "Personal > Finance > Investment > Stocks",
-  "Entertainment > Gaming > PC Games",
-  "Technology > AI & Machine Learning > Tools",
-  "Design > UI & UX > Resources",
-  "Business > Marketing > SEO",
+  "Adblocking / Privacy > VPN",
+  "Adblocking / Privacy > Encrypted Messengers",
+  "Adblocking / Privacy > Password Privacy / 2FA",
+  "Adblocking / Privacy > Antivirus / Anti-Malware",
+  "Tools > File Tools > Cloud Storage",
+  "Tools > System Tools > Virtual Machines",
+  "Web Privacy > Search Engines",
+  "Development > Code Repositories",
+  "Development > Documentation",
+  "Education > Privacy Guides",
+  "Entertainment > Streaming",
+  "Shopping > E-commerce",
+  "News > Technology News",
   "Other"
 ]
 
@@ -1147,10 +1157,11 @@ Return a JSON array of hierarchical category paths with proper capitalization, l
 - **PROFESSIONAL APPEARANCE:** Categories should look polished and ready for professional use
 
 **CONTENT REQUIREMENTS:**
-- Create very specific subcategories based on the actual bookmarks you see
-- Generate 15-25 category trees minimum
+- Create FUNCTIONAL categories that group services by what they do
+- Generate 8-15 functional category trees maximum
 - Always include "Other" as the last category
-- Be as granular as possible - hundreds of categories are encouraged
+- Organize by function, not by service provider or company name
+- Follow FMHY-style functional organization principles
 
 Return only the JSON array with properly formatted category names, no additional text or formatting.`;
 
@@ -1442,32 +1453,39 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - **BALANCED SPECIFICITY:** Use categories that are specific enough to be useful but not so deep they're hard to navigate
 - **USER-FRIENDLY:** Choose categories that users will easily understand and remember
 
-**CATEGORIZATION RULES BY CONTENT TYPE:**
-- **TORRENT/P2P Content:** Should go to "Tools > File Sharing" or "Other" - NEVER to paywall bypass categories
-- **Paywall Bypass Tools:** Should go to "Tools > Utilities" or specific tool categories - NOT mixed with other content
-- **Streaming/Video:** Should go to "Entertainment > Streaming" or "Entertainment > Video"
-- **Development Tools:** Should go to "Development > Tools" or specific development categories
-- **Shopping Sites:** Should go to "Shopping" categories, not tools or utilities
-- **Social Media:** Should go to "Social" categories, not communication tools
-- **News/Media:** Should go to "News" or "Media" categories, not general tools
+**FUNCTIONAL CATEGORIZATION RULES BY CONTENT TYPE (FMHY-Style):**
+- **Cloud Storage Services:** Should go to "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive, MEGA, pCloud)
+- **VPN Services:** Should go to "Adblocking / Privacy > VPN" (ProtonVPN, Mullvad, AirVPN, Windscribe)
+- **Password Managers/2FA:** Should go to "Adblocking / Privacy > Password Privacy / 2FA" (KeePassXC, Aegis, 2FAS)
+- **Encrypted Messengers:** Should go to "Adblocking / Privacy > Encrypted Messengers" (Signal, Matrix, Wire)
+- **Search Engines:** Should go to "Web Privacy > Search Engines" (DuckDuckGo, Brave Search, Startpage)
+- **Antivirus/Security:** Should go to "Adblocking / Privacy > Antivirus / Anti-Malware" (Malwarebytes, ESET)
+- **DNS Services:** Should go to "Adblocking / Privacy > DNS Adblocking" (Pi-Hole, AdGuard DNS, NextDNS)
+- **Virtual Machines:** Should go to "Tools > System Tools > Virtual Machines" (VMware, VirtualBox, QEMU)
+- **Code Repositories:** Should go to "Development > Code Repositories" (GitHub, GitLab, Bitbucket)
+- **Streaming Services:** Should go to "Entertainment > Streaming" (Netflix, YouTube, Twitch, Spotify)
+- **E-commerce Sites:** Should go to "Shopping > E-commerce" (Amazon, eBay, Etsy)
+- **Privacy Guides:** Should go to "Education > Privacy Guides" (Privacy Guides, The New Oil)
 
-**GOOD CATEGORIZATION EXAMPLES:**
-- ✅ GOOD: "Development > Frontend > JavaScript" (clear and practical)
-- ✅ GOOD: "AI & Machine Learning > Tools" (appropriately grouped)
-- ✅ GOOD: "Design > UI-UX > Resources" (useful organization)
-- ✅ GOOD: "Business > Marketing > SEO" (clear hierarchy)
-- ✅ GOOD: "Learning > Programming > Python" (practical depth)
-- ✅ GOOD: "Tools > Productivity > Project Management" (balanced specificity)
-- ❌ TOO DEEP: "Development > Frontend > JavaScript > Frameworks > React > State Management > Redux"
-- ❌ TOO DEEP: "AI & Machine Learning > Deep Learning > Neural Networks > CNNs > Computer Vision"
+**FUNCTIONAL CATEGORIZATION EXAMPLES (Based on FMHY Structure):**
+- ✅ GOOD: "Adblocking / Privacy > VPN" (ProtonVPN, Mullvad, AirVPN - grouped by function)
+- ✅ GOOD: "Tools > File Tools > Cloud Storage" (Google Drive, Dropbox, OneDrive - grouped by what they do)
+- ✅ GOOD: "Adblocking / Privacy > Encrypted Messengers" (Signal, Matrix, Wire - grouped by function)
+- ✅ GOOD: "Education > Privacy Guides" (Privacy Guides, The New Oil - grouped by content type)
+- ✅ GOOD: "Web Privacy > Search Engines" (DuckDuckGo, Brave Search, Startpage - grouped by function)
+- ❌ WRONG: "Google > Drive" (organized by service provider, not function)
+- ❌ WRONG: "Microsoft > OneDrive" (organized by company, not what it does)
+- ❌ WRONG: "Popular Tools" (catch-all category, not functional)
 
-**PRACTICAL CATEGORIZATION RULES:**
-- Use 2-3 levels of hierarchy for most bookmarks
-- Only use 4+ levels for very complex technical content when absolutely necessary
-- Analyze the bookmark's primary purpose and categorize accordingly
-- Consider how users will actually search for and use these bookmarks
-- Group similar tools and resources together at appropriate levels
-- Choose the most practical category that accurately represents the content
+**FUNCTIONAL CATEGORIZATION RULES:**
+- Use MAXIMUM 2-3 levels of hierarchy for ALL bookmarks
+- Organize by FUNCTION/PURPOSE, not by service provider or company name
+- Group services that do the same thing together (e.g., all cloud storage services together)
+- Categories should describe WHAT THE SERVICE DOES, not WHO PROVIDES IT
+- Follow FMHY-style functional organization: Category > Subcategory > Item
+- Cloud storage should contain ALL cloud storage services (Google Drive, Dropbox, OneDrive, etc.)
+- VPN category should contain ALL VPN services (ProtonVPN, Mullvad, etc.)
+- Never create categories named after specific companies or services
 
 **TITLE GENERATION INSTRUCTIONS:**
 - **GENERATE IMPROVED TITLES:** Create descriptive, clear titles for each bookmark
@@ -1560,21 +1578,23 @@ Based on previous user corrections and manual categorizations, follow these patt
 - **RESPECT CONTENT TYPE:** Match actual content to appropriate categories (torrents ≠ paywall bypass)
 - **FOLLOW LEARNING DATA:** Prioritize user-corrected patterns from learning data
 - Title must be descriptive and informative, based on URL domain and content context
-- Choose the most appropriate category level - not too broad, not too specific
+- Choose the most appropriate category level - not too hierarchical, not too specific
 - Consider URL domain, title content, risk flags, and content type for accurate categorization
 - Prefer practical, usable categories that make sense for bookmark organization
 
-**EXAMPLE OUTPUT:**
+**EXAMPLE OUTPUT (FMHY-Style Functional Categories):**
 [
-  {"id": 1, "category": "Work > Development > Frontend", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9, "categoryChanged": false},
-  {"id": 2, "category": "Tools > File Sharing", "title": "BitTorrent Client - P2P File Sharing", "confidence": 0.8, "categoryChanged": true},
-  {"id": 3, "category": "Personal > Finance > Investment", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7, "categoryChanged": false}
+  {"id": 1, "category": "Development > Documentation", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9, "categoryChanged": false},
+  {"id": 2, "category": "Tools > File Tools > Cloud Storage", "title": "Google Drive - Cloud Storage Service", "confidence": 0.8, "categoryChanged": true},
+  {"id": 3, "category": "Adblocking / Privacy > VPN", "title": "ProtonVPN - Privacy-Focused VPN Service", "confidence": 0.9, "categoryChanged": true}
 ]
 
-**CATEGORIZATION EXAMPLES:**
-- Torrent site currently in "Tools > Paywall Bypass" → Should be "Tools > File Sharing" (categoryChanged: true)
-- GitHub repo currently in "Other" → Should be "Development > Repositories" (categoryChanged: true)
-- Netflix currently in "Entertainment > Streaming" → Correct category (categoryChanged: false)
+**FUNCTIONAL CATEGORIZATION EXAMPLES (FMHY-Style):**
+- Google Drive currently in "Google Services" → Should be "Tools > File Tools > Cloud Storage" (categoryChanged: true)
+- ProtonVPN currently in "VPN Services" → Should be "Adblocking / Privacy > VPN" (categoryChanged: true)
+- GitHub repo currently in "Other" → Should be "Development > Code Repositories" (categoryChanged: true)
+- Signal app currently in "Communication" → Should be "Adblocking / Privacy > Encrypted Messengers" (categoryChanged: true)
+- DuckDuckGo currently in "Search" → Should be "Web Privacy > Search Engines" (categoryChanged: true)
 
 Return only the JSON array, no additional text or formatting`;
 
@@ -1733,10 +1753,10 @@ Return only the JSON array, no additional text or formatting`;
      */
     async _getSettings() {
         const defaultSettings = {
-            hierarchicalMode: true,
-            maxCategoryDepth: 3, // Limit to 3 levels for practical organization
-            minCategories: 10, // Fewer categories for better organization
-            maxCategories: 30, // Reduced to prevent over-categorization
+            functionalMode: true, // FMHY-style functional organization
+            maxCategoryDepth: 3, // Allow 2-3 levels for functional organization
+            minCategories: 8, // Functional categories for better organization
+            maxCategories: 20, // More categories needed for functional organization
             batchSize: 50 // Default batch size
         };
 
