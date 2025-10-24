@@ -16,6 +16,15 @@ class OptionsController {
     this.loadStats();
     this.loadLearningData();
 
+    // Listen for learning data updates from background script
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.type === 'LEARNING_DATA_UPDATED') {
+        console.log('📚 Learning data updated, refreshing display...');
+        this.loadLearningData();
+        this.showToast(`Learned ${message.count} new patterns from bookmark move`, 'success');
+      }
+    });
+
     // Debug: Check if all elements were found
     console.log('Options controller initialized:', {
       apiKeyInput: !!this.apiKeyInput,
@@ -252,12 +261,20 @@ class OptionsController {
    */
   async loadLearningData() {
     try {
-      const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
-      const learningData = result.bookmarkMindLearning || {};
+      console.log('📚 Loading learning data from storage...');
 
-      console.log('Loaded learning data:', learningData);
+      // Get learning data from sync storage
+      const syncResult = await chrome.storage.sync.get(['bookmarkMindLearning']);
+      const learningData = syncResult.bookmarkMindLearning || {};
 
-      this.displayLearningData(learningData);
+      // Get last update timestamp from local storage
+      const localResult = await chrome.storage.local.get(['learningDataLastUpdate']);
+      const lastUpdate = localResult.learningDataLastUpdate;
+
+      console.log('📚 Loaded learning data:', learningData);
+      console.log('📚 Last update:', lastUpdate);
+
+      this.displayLearningData(learningData, lastUpdate);
     } catch (error) {
       console.error('Error loading learning data:', error);
       this.showToast('Failed to load learning data', 'error');
@@ -267,14 +284,13 @@ class OptionsController {
   /**
    * Display learning data in the UI
    */
-  displayLearningData(learningData) {
+  displayLearningData(learningData, lastUpdate = null) {
     const patterns = Object.entries(learningData);
 
     // Update summary
     this.totalLearningPatterns.textContent = patterns.length;
 
-    // Update last modified (we'll need to add this to storage)
-    const lastUpdate = localStorage.getItem('learningDataLastUpdate');
+    // Update last modified timestamp
     if (lastUpdate) {
       const date = new Date(lastUpdate);
       this.lastLearningUpdate.textContent = date.toLocaleString();
@@ -333,8 +349,10 @@ class OptionsController {
 
       await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
 
-      // Update last modified timestamp
-      localStorage.setItem('learningDataLastUpdate', new Date().toISOString());
+      // Update last modified timestamp in local storage
+      await chrome.storage.local.set({
+        learningDataLastUpdate: new Date().toISOString()
+      });
 
       this.showToast('Learning pattern deleted', 'success');
       this.loadLearningData(); // Refresh display
@@ -812,8 +830,10 @@ class OptionsController {
       try {
         await chrome.storage.sync.set({ bookmarkMindLearning: {} });
 
-        // Update last modified timestamp
-        localStorage.setItem('learningDataLastUpdate', new Date().toISOString());
+        // Update last modified timestamp in local storage
+        await chrome.storage.local.set({
+          learningDataLastUpdate: new Date().toISOString()
+        });
 
         this.showToast('Learning data cleared', 'success');
         this.loadStats(); // Refresh stats

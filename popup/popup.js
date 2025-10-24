@@ -34,6 +34,7 @@ class PopupController {
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
+    this.bulkCategorizeBtn = document.getElementById('bulkCategorizeBtn');
     this.deleteEmptyFoldersBtn = document.getElementById('deleteEmptyFoldersBtn');
     this.removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
     this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
@@ -43,6 +44,15 @@ class PopupController {
     this.helpLink = document.getElementById('helpLink');
     this.debugBtn = document.getElementById('debugBtn');
     this.debugResults = document.getElementById('debugResults');
+
+    // Bulk selection elements
+    this.selectAllBtn = document.getElementById('selectAllBtn');
+    this.selectNoneBtn = document.getElementById('selectNoneBtn');
+    this.cancelBulkBtn = document.getElementById('cancelBulkBtn');
+    this.categorizeBulkBtn = document.getElementById('categorizeBulkBtn');
+    this.bookmarkSearchInput = document.getElementById('bookmarkSearchInput');
+    this.bookmarkList = document.getElementById('bookmarkList');
+    this.selectedCount = document.getElementById('selectedCount');
 
     // Status elements
     this.extensionStatus = document.getElementById('extensionStatus');
@@ -57,6 +67,7 @@ class PopupController {
     // Sections
     this.apiKeyWarning = document.getElementById('apiKeyWarning');
     this.actionSection = document.getElementById('actionSection');
+    this.bulkSelectionSection = document.getElementById('bulkSelectionSection');
     this.progressSection = document.getElementById('progressSection');
     this.resultsSection = document.getElementById('resultsSection');
 
@@ -77,6 +88,7 @@ class PopupController {
    */
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.bulkCategorizeBtn.addEventListener('click', () => this.showBulkSelection());
     this.deleteEmptyFoldersBtn.addEventListener('click', () => this.deleteEmptyFolders());
     this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
@@ -88,6 +100,13 @@ class PopupController {
       this.showHelp();
     });
     this.debugBtn.addEventListener('click', () => this.runDebugTest());
+
+    // Bulk selection event listeners
+    this.selectAllBtn.addEventListener('click', () => this.selectAllBookmarks());
+    this.selectNoneBtn.addEventListener('click', () => this.selectNoneBookmarks());
+    this.cancelBulkBtn.addEventListener('click', () => this.hideBulkSelection());
+    this.categorizeBulkBtn.addEventListener('click', () => this.startBulkCategorization());
+    this.bookmarkSearchInput.addEventListener('input', (e) => this.filterBookmarks(e.target.value));
 
     // Test categorization button
     this.testCategorizationBtn = document.getElementById('testCategorizationBtn');
@@ -237,9 +256,11 @@ class PopupController {
     if (!this.settings.apiKey) {
       this.apiKeyWarning.classList.remove('hidden');
       this.sortBtn.disabled = true;
+      this.bulkCategorizeBtn.disabled = true;
     } else {
       this.apiKeyWarning.classList.add('hidden');
       this.sortBtn.disabled = false;
+      this.bulkCategorizeBtn.disabled = false;
     }
 
     // Show debug button if no bookmarks detected
@@ -264,6 +285,13 @@ class PopupController {
       `;
       this.sortBtn.disabled = true;
 
+      // Show bulk categorize button when bookmarks exist
+      if (this.bulkCategorizeBtn && !this.settings.apiKey) {
+        this.bulkCategorizeBtn.disabled = true;
+      } else if (this.bulkCategorizeBtn) {
+        this.bulkCategorizeBtn.disabled = false;
+      }
+
       // Show the force reorganize button when all bookmarks are organized
       if (this.forceReorganizeBtn) {
         this.forceReorganizeBtn.style.display = 'flex';
@@ -277,6 +305,13 @@ class PopupController {
       `;
       this.sortBtn.disabled = false;
 
+      // Show bulk categorize button when bookmarks exist
+      if (this.bulkCategorizeBtn && !this.settings.apiKey) {
+        this.bulkCategorizeBtn.disabled = true;
+      } else if (this.bulkCategorizeBtn) {
+        this.bulkCategorizeBtn.disabled = false;
+      }
+
       // Hide the force reorganize button when there are uncategorized bookmarks
       if (this.forceReorganizeBtn) {
         this.forceReorganizeBtn.style.display = 'none';
@@ -284,6 +319,9 @@ class PopupController {
     } else {
       // No bookmarks at all
       this.sortBtn.disabled = true;
+      if (this.bulkCategorizeBtn) {
+        this.bulkCategorizeBtn.disabled = true;
+      }
       if (this.forceReorganizeBtn) {
         this.forceReorganizeBtn.style.display = 'none';
       }
@@ -780,6 +818,293 @@ class PopupController {
       this.showError(`Failed to move bookmarks: ${error.message}`);
     } finally {
       this.isProcessing = false;
+    }
+  }
+
+  /**
+   * Show bulk selection interface
+   */
+  async showBulkSelection() {
+    if (this.isProcessing) return;
+
+    try {
+      // Hide main action section and show bulk selection
+      this.actionSection.classList.add('hidden');
+      this.bulkSelectionSection.classList.remove('hidden');
+
+      // Load all bookmarks for selection
+      await this.loadBookmarksForSelection();
+
+    } catch (error) {
+      console.error('Error showing bulk selection:', error);
+      this.showError('Failed to load bookmarks for selection');
+      this.hideBulkSelection();
+    }
+  }
+
+  /**
+   * Hide bulk selection interface
+   */
+  hideBulkSelection() {
+    this.bulkSelectionSection.classList.add('hidden');
+    this.actionSection.classList.remove('hidden');
+    this.bookmarkSearchInput.value = '';
+    this.selectedBookmarks = new Set();
+    this.updateSelectedCount();
+  }
+
+  /**
+   * Load all bookmarks for bulk selection
+   */
+  async loadBookmarksForSelection() {
+    try {
+      console.log('Loading bookmarks for bulk selection...');
+
+      // Get all bookmarks from Chrome API
+      const bookmarkTree = await chrome.bookmarks.getTree();
+      const allBookmarks = [];
+
+      // Collect all bookmarks with folder information
+      const collectBookmarks = (nodes, folderPath = '') => {
+        for (const node of nodes) {
+          if (node.url) {
+            // Get folder name for display
+            let folderName = 'Root';
+            if (node.parentId === '1') folderName = 'Bookmarks Bar';
+            else if (node.parentId === '2') folderName = 'Other Bookmarks';
+            else if (node.parentId === '3') folderName = 'Mobile Bookmarks';
+            else if (folderPath) folderName = folderPath;
+
+            allBookmarks.push({
+              id: node.id,
+              title: node.title || 'Untitled',
+              url: node.url,
+              parentId: node.parentId,
+              folderName: folderName
+            });
+          }
+          if (node.children) {
+            const currentPath = folderPath ? `${folderPath} > ${node.title}` : node.title;
+            collectBookmarks(node.children, currentPath);
+          }
+        }
+      };
+
+      collectBookmarks(bookmarkTree);
+
+      console.log(`Found ${allBookmarks.length} bookmarks for selection`);
+
+      // Store bookmarks and initialize selection
+      this.allBookmarks = allBookmarks;
+      this.selectedBookmarks = new Set();
+      this.filteredBookmarks = [...allBookmarks];
+
+      // Render bookmark list
+      this.renderBookmarkList();
+      this.updateSelectedCount();
+
+    } catch (error) {
+      console.error('Error loading bookmarks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Render the bookmark list for selection
+   */
+  renderBookmarkList() {
+    if (!this.bookmarkList || !this.filteredBookmarks) return;
+
+    this.bookmarkList.innerHTML = '';
+
+    if (this.filteredBookmarks.length === 0) {
+      this.bookmarkList.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #5f6368;">
+          No bookmarks found
+        </div>
+      `;
+      return;
+    }
+
+    // Create bookmark items
+    this.filteredBookmarks.forEach(bookmark => {
+      const item = document.createElement('div');
+      item.className = 'bookmark-item';
+      item.dataset.bookmarkId = bookmark.id;
+
+      const isSelected = this.selectedBookmarks.has(bookmark.id);
+      if (isSelected) {
+        item.classList.add('selected');
+      }
+
+      item.innerHTML = `
+        <input type="checkbox" class="bookmark-checkbox" ${isSelected ? 'checked' : ''}>
+        <div class="bookmark-info">
+          <div class="bookmark-title" title="${bookmark.title}">${bookmark.title}</div>
+          <div class="bookmark-url" title="${bookmark.url}">${bookmark.url}</div>
+        </div>
+        <div class="bookmark-folder">${bookmark.folderName}</div>
+      `;
+
+      // Add click handler for selection
+      item.addEventListener('click', (e) => {
+        if (e.target.type !== 'checkbox') {
+          const checkbox = item.querySelector('.bookmark-checkbox');
+          checkbox.checked = !checkbox.checked;
+        }
+        this.toggleBookmarkSelection(bookmark.id, item);
+      });
+
+      this.bookmarkList.appendChild(item);
+    });
+  }
+
+  /**
+   * Toggle bookmark selection
+   */
+  toggleBookmarkSelection(bookmarkId, itemElement) {
+    const checkbox = itemElement.querySelector('.bookmark-checkbox');
+
+    if (checkbox.checked) {
+      this.selectedBookmarks.add(bookmarkId);
+      itemElement.classList.add('selected');
+    } else {
+      this.selectedBookmarks.delete(bookmarkId);
+      itemElement.classList.remove('selected');
+    }
+
+    this.updateSelectedCount();
+  }
+
+  /**
+   * Select all visible bookmarks
+   */
+  selectAllBookmarks() {
+    this.filteredBookmarks.forEach(bookmark => {
+      this.selectedBookmarks.add(bookmark.id);
+    });
+
+    // Update UI
+    const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
+    const items = this.bookmarkList.querySelectorAll('.bookmark-item');
+
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    items.forEach(item => item.classList.add('selected'));
+
+    this.updateSelectedCount();
+  }
+
+  /**
+   * Deselect all bookmarks
+   */
+  selectNoneBookmarks() {
+    this.selectedBookmarks.clear();
+
+    // Update UI
+    const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
+    const items = this.bookmarkList.querySelectorAll('.bookmark-item');
+
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    items.forEach(item => item.classList.remove('selected'));
+
+    this.updateSelectedCount();
+  }
+
+  /**
+   * Filter bookmarks based on search input
+   */
+  filterBookmarks(searchTerm) {
+    if (!this.allBookmarks) return;
+
+    const term = searchTerm.toLowerCase().trim();
+
+    if (!term) {
+      this.filteredBookmarks = [...this.allBookmarks];
+    } else {
+      this.filteredBookmarks = this.allBookmarks.filter(bookmark =>
+        bookmark.title.toLowerCase().includes(term) ||
+        bookmark.url.toLowerCase().includes(term) ||
+        bookmark.folderName.toLowerCase().includes(term)
+      );
+    }
+
+    this.renderBookmarkList();
+  }
+
+  /**
+   * Update selected count display
+   */
+  updateSelectedCount() {
+    if (this.selectedCount) {
+      this.selectedCount.textContent = this.selectedBookmarks.size;
+    }
+
+    // Enable/disable bulk categorize button
+    if (this.categorizeBulkBtn) {
+      this.categorizeBulkBtn.disabled = this.selectedBookmarks.size === 0;
+    }
+  }
+
+  /**
+   * Start bulk categorization of selected bookmarks
+   */
+  async startBulkCategorization() {
+    if (this.isProcessing || this.selectedBookmarks.size === 0) return;
+
+    const selectedCount = this.selectedBookmarks.size;
+    const confirmed = confirm(
+      `This will categorize ${selectedCount} selected bookmark${selectedCount > 1 ? 's' : ''} using AI.\n\n` +
+      'The AI will analyze each bookmark and move it to an appropriate folder.\n\n' +
+      'Are you sure you want to continue?'
+    );
+
+    if (!confirmed) return;
+
+    this.isProcessing = true;
+
+    try {
+      // Hide bulk selection and show progress
+      this.bulkSelectionSection.classList.add('hidden');
+      this.showProgress();
+
+      console.log(`Starting bulk categorization of ${selectedCount} bookmarks...`);
+
+      // Get selected bookmark details
+      const selectedBookmarkIds = Array.from(this.selectedBookmarks);
+      const selectedBookmarkData = this.allBookmarks.filter(bookmark =>
+        selectedBookmarkIds.includes(bookmark.id)
+      );
+
+      // Send to background script for processing
+      const response = await chrome.runtime.sendMessage({
+        action: 'startBulkCategorization',
+        data: {
+          bookmarks: selectedBookmarkData,
+          selectedIds: selectedBookmarkIds
+        }
+      });
+
+      console.log('Bulk categorization response:', response);
+
+      if (response && response.success) {
+        this.showResults({
+          ...response.data,
+          processed: selectedCount,
+          categorized: response.data.categorized || selectedCount
+        });
+      } else {
+        const errorMsg = response?.error || 'Bulk categorization failed - no response';
+        console.error('Bulk categorization failed:', errorMsg);
+        this.showError(errorMsg);
+      }
+
+    } catch (error) {
+      console.error('Bulk categorization error:', error);
+      this.showError(`Failed to categorize selected bookmarks: ${error.message}`);
+    } finally {
+      this.isProcessing = false;
+      // Reset bulk selection
+      this.selectedBookmarks = new Set();
     }
   }
 

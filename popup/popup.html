@@ -77,6 +77,13 @@
           Sort Bookmarks Now
         </button>
 
+        <button id="bulkCategorizeBtn" class="primary-btn bulk-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
+          </svg>
+          Bulk Categorize Selected
+        </button>
+
         <div class="secondary-actions">
           <button id="deleteEmptyFoldersBtn" class="secondary-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -117,6 +124,38 @@
                 fill="currentColor" />
             </svg>
             Export Organization
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Selection Section -->
+      <div id="bulkSelectionSection" class="section hidden">
+        <div class="bulk-header">
+          <h3>Select Bookmarks to Categorize</h3>
+          <div class="bulk-controls">
+            <button id="selectAllBtn" class="control-btn">Select All</button>
+            <button id="selectNoneBtn" class="control-btn">Select None</button>
+            <button id="cancelBulkBtn" class="control-btn">Cancel</button>
+          </div>
+        </div>
+
+        <div class="bookmark-search">
+          <input type="text" id="bookmarkSearchInput" placeholder="Search bookmarks..." />
+        </div>
+
+        <div id="bookmarkList" class="bookmark-list">
+          <!-- Bookmarks will be populated here -->
+        </div>
+
+        <div class="bulk-actions">
+          <div class="selection-info">
+            <span id="selectedCount">0</span> bookmarks selected
+          </div>
+          <button id="categorizeBulkBtn" class="primary-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
+            </svg>
+            Categorize Selected Bookmarks
           </button>
         </div>
       </div>

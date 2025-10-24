@@ -163,6 +163,176 @@ class Categorizer {
   }
 
   /**
+   * Categorize selected bookmarks in bulk
+   * @param {Array} selectedBookmarks - Array of selected bookmark objects
+   * @param {Array} selectedIds - Array of selected bookmark IDs
+   * @param {Function} progressCallback - Progress update callback
+   * @returns {Promise<Object>} Results summary
+   */
+  async categorizeBulkBookmarks(selectedBookmarks, selectedIds, progressCallback) {
+    if (this.isProcessing) {
+      throw new Error('Categorization already in progress');
+    }
+
+    this.isProcessing = true;
+
+    try {
+      console.log(`Categorizer: Starting bulk categorization of ${selectedBookmarks.length} bookmarks...`);
+      progressCallback?.({ stage: 'starting', progress: 0 });
+
+      // Get user settings
+      console.log('Categorizer: Getting settings...');
+      const settings = await this._getSettings();
+      console.log('Categorizer: Settings loaded:', { hasApiKey: !!settings.apiKey, categories: settings.categories?.length });
+
+      if (!settings.apiKey) {
+        throw new Error('API key not configured. Please set up your Gemini API key in settings.');
+      }
+
+      console.log('Categorizer: Setting API key...');
+      this.aiProcessor.setApiKey(settings.apiKey, settings.agentRouterApiKey);
+
+      // Validate selected bookmarks exist in Chrome
+      console.log('Categorizer: Validating selected bookmarks...');
+      progressCallback?.({ stage: 'loading', progress: 10 });
+
+      const validBookmarks = [];
+      for (const bookmarkData of selectedBookmarks) {
+        try {
+          // Verify bookmark still exists
+          const chromeBookmark = await chrome.bookmarks.get(bookmarkData.id);
+          if (chromeBookmark && chromeBookmark[0]) {
+            validBookmarks.push({
+              ...bookmarkData,
+              // Update with current Chrome data in case it changed
+              title: chromeBookmark[0].title,
+              url: chromeBookmark[0].url,
+              parentId: chromeBookmark[0].parentId
+            });
+          }
+        } catch (error) {
+          console.warn(`Bookmark ${bookmarkData.id} no longer exists, skipping...`);
+        }
+      }
+
+      console.log(`Validated ${validBookmarks.length} out of ${selectedBookmarks.length} selected bookmarks`);
+
+      if (validBookmarks.length === 0) {
+        return { processed: selectedBookmarks.length, categorized: 0, errors: selectedBookmarks.length, message: 'No valid bookmarks found to categorize' };
+      }
+
+      // Get learning data for better categorization
+      console.log('Categorizer: Loading learning data...');
+      const learningData = await this._getLearningData();
+      console.log(`Categorizer: Loaded ${Object.keys(learningData).length} learning patterns`);
+
+      // Process bookmarks in batches for better performance
+      const batchSize = Math.min(settings.batchSize || 20, 50); // Limit batch size for bulk operations
+      const batches = [];
+      for (let i = 0; i < validBookmarks.length; i += batchSize) {
+        batches.push(validBookmarks.slice(i, i + batchSize));
+      }
+
+      console.log(`Processing ${validBookmarks.length} bookmarks in ${batches.length} batches of ${batchSize}`);
+
+      let totalCategorized = 0;
+      let totalErrors = 0;
+      const allCategorizations = [];
+      const categoriesUsed = new Set();
+
+      // Process each batch
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        const batchProgress = Math.round(20 + (batchIndex / batches.length) * 60);
+
+        progressCallback?.({
+          stage: 'categorizing',
+          progress: batchProgress,
+          message: `Processing batch ${batchIndex + 1} of ${batches.length}...`
+        });
+
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} bookmarks`);
+
+        try {
+          // Get AI categorizations for this batch
+          const batchCategorizations = await this.aiProcessor.categorizeBookmarks(
+            batch,
+            settings,
+            learningData
+          );
+
+          console.log(`Received ${batchCategorizations.length} categorizations for batch ${batchIndex + 1}`);
+          allCategorizations.push(...batchCategorizations);
+
+          // Track categories used
+          batchCategorizations.forEach(cat => {
+            if (cat.category && cat.category !== 'Other') {
+              categoriesUsed.add(cat.category);
+            }
+          });
+
+        } catch (error) {
+          console.error(`Error processing batch ${batchIndex + 1}:`, error);
+          totalErrors += batch.length;
+
+          // Add failed categorizations as "Other"
+          batch.forEach(bookmark => {
+            allCategorizations.push({
+              bookmarkId: bookmark.id,
+              category: 'Other',
+              confidence: 0,
+              reasoning: 'Failed to categorize due to error'
+            });
+          });
+        }
+
+        // Small delay between batches to prevent API rate limiting
+        if (batchIndex < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      console.log(`Bulk categorization complete. Got ${allCategorizations.length} categorizations`);
+
+      // Organize bookmarks into folders
+      progressCallback?.({ stage: 'organizing', progress: 80 });
+      console.log('Categorizer: Organizing bookmarks into folders...');
+
+      const organizationResults = await this._organizeBookmarks(
+        allCategorizations,
+        validBookmarks,
+        (orgProgress) => {
+          const adjustedProgress = Math.round(80 + (orgProgress * 0.2));
+          progressCallback?.({ stage: 'organizing', progress: adjustedProgress });
+        }
+      );
+
+      totalCategorized = organizationResults.success;
+      totalErrors += organizationResults.errors;
+
+      // Final results
+      const results = {
+        processed: selectedBookmarks.length,
+        categorized: totalCategorized,
+        errors: totalErrors,
+        categories: organizationResults.categoriesUsed,
+        generatedCategories: Array.from(organizationResults.categoriesUsed).sort()
+      };
+
+      console.log('Bulk categorization results:', results);
+      progressCallback?.({ stage: 'complete', progress: 100 });
+
+      return results;
+
+    } catch (error) {
+      console.error('Bulk categorization error:', error);
+      throw error;
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
    * Organize bookmarks into folders based on categorization results
    * @param {Array} categorizations - AI categorization results
    * @param {Array} bookmarks - Original bookmarks
