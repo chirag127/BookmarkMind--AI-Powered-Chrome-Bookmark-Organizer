@@ -14,6 +14,7 @@ class OptionsController {
     this.attachEventListeners();
     this.loadSettings();
     this.loadStats();
+    this.loadLearningData();
 
     // Debug: Check if all elements were found
     console.log('Options controller initialized:', {
@@ -68,6 +69,13 @@ class OptionsController {
     this.exportDataBtn = document.getElementById('exportData');
     this.clearLearningDataBtn = document.getElementById('clearLearningData');
     this.resetSettingsBtn = document.getElementById('resetSettings');
+
+    // Learning data elements
+    this.totalLearningPatterns = document.getElementById('totalLearningPatterns');
+    this.lastLearningUpdate = document.getElementById('lastLearningUpdate');
+    this.learningPatternsList = document.getElementById('learningPatternsList');
+    this.noPatternsMessage = document.getElementById('noPatternsMessage');
+    this.refreshLearningDataBtn = document.getElementById('refreshLearningData');
 
     // Toast notification
     this.toast = document.getElementById('toast');
@@ -128,6 +136,9 @@ class OptionsController {
     this.exportDataBtn.addEventListener('click', () => this.exportData());
     this.clearLearningDataBtn.addEventListener('click', () => this.clearLearningData());
     this.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
+
+    // Learning data events
+    this.refreshLearningDataBtn.addEventListener('click', () => this.loadLearningData());
   }
 
   /**
@@ -233,6 +244,104 @@ class OptionsController {
       this.lastSortDate.textContent = date.toLocaleString();
     } else {
       this.lastSortDate.textContent = 'Never';
+    }
+  }
+
+  /**
+   * Load and display learning data
+   */
+  async loadLearningData() {
+    try {
+      const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
+      const learningData = result.bookmarkMindLearning || {};
+
+      console.log('Loaded learning data:', learningData);
+
+      this.displayLearningData(learningData);
+    } catch (error) {
+      console.error('Error loading learning data:', error);
+      this.showToast('Failed to load learning data', 'error');
+    }
+  }
+
+  /**
+   * Display learning data in the UI
+   */
+  displayLearningData(learningData) {
+    const patterns = Object.entries(learningData);
+
+    // Update summary
+    this.totalLearningPatterns.textContent = patterns.length;
+
+    // Update last modified (we'll need to add this to storage)
+    const lastUpdate = localStorage.getItem('learningDataLastUpdate');
+    if (lastUpdate) {
+      const date = new Date(lastUpdate);
+      this.lastLearningUpdate.textContent = date.toLocaleString();
+    } else {
+      this.lastLearningUpdate.textContent = 'Never';
+    }
+
+    // Clear existing patterns
+    this.learningPatternsList.innerHTML = '';
+
+    if (patterns.length === 0) {
+      // Show no patterns message
+      const noPatterns = document.createElement('div');
+      noPatterns.className = 'no-patterns';
+      noPatterns.innerHTML = `
+        <p>No learning patterns collected yet. The extension will learn from your manual bookmark corrections and categorizations.</p>
+        <p><strong>How it works:</strong> When you manually move bookmarks to different categories, the extension learns these patterns and applies them to future categorizations.</p>
+      `;
+      this.learningPatternsList.appendChild(noPatterns);
+    } else {
+      // Show patterns
+      patterns.forEach(([pattern, category]) => {
+        const patternItem = document.createElement('div');
+        patternItem.className = 'pattern-item';
+        patternItem.innerHTML = `
+          <div class="pattern-info">
+            <div class="pattern-text">"${pattern}"</div>
+            <div class="pattern-category">${category}</div>
+          </div>
+          <div class="pattern-actions">
+            <button class="pattern-delete" onclick="optionsController.deleteLearningPattern('${pattern}')" title="Delete this pattern">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        `;
+        this.learningPatternsList.appendChild(patternItem);
+      });
+    }
+  }
+
+  /**
+   * Delete a specific learning pattern
+   */
+  async deleteLearningPattern(pattern) {
+    if (!confirm(`Delete learning pattern "${pattern}"?`)) {
+      return;
+    }
+
+    try {
+      const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
+      const learningData = result.bookmarkMindLearning || {};
+
+      delete learningData[pattern];
+
+      await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
+
+      // Update last modified timestamp
+      localStorage.setItem('learningDataLastUpdate', new Date().toISOString());
+
+      this.showToast('Learning pattern deleted', 'success');
+      this.loadLearningData(); // Refresh display
+
+    } catch (error) {
+      console.error('Error deleting learning pattern:', error);
+      this.showToast('Failed to delete learning pattern', 'error');
     }
   }
 
@@ -702,8 +811,13 @@ class OptionsController {
     if (confirm('Are you sure you want to clear all learning data? This will reset the AI\'s learned preferences.')) {
       try {
         await chrome.storage.sync.set({ bookmarkMindLearning: {} });
+
+        // Update last modified timestamp
+        localStorage.setItem('learningDataLastUpdate', new Date().toISOString());
+
         this.showToast('Learning data cleared', 'success');
         this.loadStats(); // Refresh stats
+        this.loadLearningData(); // Refresh learning data display
       } catch (error) {
         console.error('Error clearing learning data:', error);
         this.showToast('Failed to clear learning data', 'error');
@@ -780,5 +894,5 @@ class OptionsController {
 
 // Initialize options page when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  new OptionsController();
+  window.optionsController = new OptionsController();
 });

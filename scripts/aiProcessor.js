@@ -672,6 +672,144 @@ class AIProcessor {
     }
 
     /**
+     * Extract keywords from URL and title for better categorization
+     * @param {string} url - Bookmark URL
+     * @param {string} title - Bookmark title
+     * @returns {Array} Array of relevant keywords
+     */
+    _extractUrlKeywords(url, title) {
+        const keywords = [];
+
+        try {
+            if (url) {
+                const urlObj = new URL(url);
+                const domain = urlObj.hostname.toLowerCase();
+                const path = urlObj.pathname.toLowerCase();
+                const search = urlObj.search.toLowerCase();
+
+                // Extract domain keywords
+                const domainParts = domain.split('.');
+                keywords.push(...domainParts.filter(part => part.length > 2));
+
+                // Extract path keywords
+                const pathParts = path.split('/').filter(part => part.length > 2);
+                keywords.push(...pathParts);
+
+                // Extract search parameters
+                if (search) {
+                    const searchParts = search.match(/[a-zA-Z]{3,}/g) || [];
+                    keywords.push(...searchParts);
+                }
+            }
+
+            if (title) {
+                const titleWords = title.toLowerCase().match(/[a-zA-Z]{3,}/g) || [];
+                keywords.push(...titleWords);
+            }
+
+        } catch (error) {
+            console.warn('Error extracting keywords:', error);
+        }
+
+        // Remove duplicates and common words
+        const commonWords = ['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'];
+
+        return [...new Set(keywords)]
+            .filter(keyword => !commonWords.includes(keyword))
+            .slice(0, 10); // Limit to top 10 keywords
+    }
+
+    /**
+     * Detect content type from URL and title
+     * @param {string} url - Bookmark URL
+     * @param {string} title - Bookmark title
+     * @returns {string} Detected content type
+     */
+    _detectContentType(url, title) {
+        const combined = `${url} ${title}`.toLowerCase();
+
+        // Video content
+        if (/youtube|vimeo|twitch|netflix|video|stream|movie|tv|series/.test(combined)) {
+            return 'Video/Streaming';
+        }
+
+        // Social media
+        if (/facebook|twitter|instagram|linkedin|reddit|discord|telegram|whatsapp/.test(combined)) {
+            return 'Social Media';
+        }
+
+        // Development/Tech
+        if (/github|gitlab|stackoverflow|dev|code|programming|api|documentation|docs/.test(combined)) {
+            return 'Development/Tech';
+        }
+
+        // Shopping/E-commerce
+        if (/amazon|shop|buy|cart|store|price|product|deal|sale/.test(combined)) {
+            return 'Shopping/E-commerce';
+        }
+
+        // News/Media
+        if (/news|article|blog|medium|press|journalist|report/.test(combined)) {
+            return 'News/Media';
+        }
+
+        // Education/Learning
+        if (/course|tutorial|learn|education|university|school|training|study/.test(combined)) {
+            return 'Education/Learning';
+        }
+
+        // Finance
+        if (/bank|finance|money|investment|crypto|trading|stock|payment/.test(combined)) {
+            return 'Finance';
+        }
+
+        // Tools/Utilities
+        if (/tool|utility|app|software|service|platform|dashboard/.test(combined)) {
+            return 'Tools/Utilities';
+        }
+
+        return 'General/Other';
+    }
+
+    /**
+     * Detect risk flags that might indicate inappropriate categorization
+     * @param {string} url - Bookmark URL
+     * @param {string} title - Bookmark title
+     * @returns {Array} Array of risk flags
+     */
+    _detectRiskFlags(url, title) {
+        const flags = [];
+        const combined = `${url} ${title}`.toLowerCase();
+
+        // Torrent/P2P related
+        if (/torrent|magnet|pirate|p2p|bittorrent|utorrent|tracker|seed|leech/.test(combined)) {
+            flags.push('TORRENT/P2P');
+        }
+
+        // Paywall bypass related
+        if (/bypass|paywall|free|crack|hack|unlock|premium|subscription/.test(combined)) {
+            flags.push('PAYWALL_BYPASS');
+        }
+
+        // Adult content
+        if (/adult|xxx|porn|nsfw|18\+/.test(combined)) {
+            flags.push('ADULT_CONTENT');
+        }
+
+        // Gambling
+        if (/casino|gambling|bet|poker|lottery|slots/.test(combined)) {
+            flags.push('GAMBLING');
+        }
+
+        // Suspicious/Malware
+        if (/malware|virus|suspicious|phishing|scam/.test(combined)) {
+            flags.push('SUSPICIOUS');
+        }
+
+        return flags;
+    }
+
+    /**
      * Normalize existing folder names for better presentation
      * Only updates folders that clearly need improvement
      */
@@ -1294,13 +1432,24 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 
 **Available Categories:** ${categories.join(', ')}
 
-**PRACTICAL CATEGORIZATION INSTRUCTIONS:**
+**CRITICAL CATEGORIZATION INSTRUCTIONS:**
+- **ANALYZE CURRENT CATEGORY:** Look at the bookmark's current category and determine if it's appropriate
+- **CHANGE WRONG CATEGORIES:** If the current category is incorrect, assign the correct one from the available list
+- **CONTENT-BASED CATEGORIZATION:** Use URL domain, path, title, and content type to determine the correct category
+- **AVOID INAPPROPRIATE ASSIGNMENTS:** Do NOT put content into unrelated categories (e.g., torrents should NOT go to paywall bypass)
+- **RESPECT CONTENT TYPE:** Match the actual content type to appropriate categories
+- **USE RISK FLAGS:** Pay attention to risk flags and categorize accordingly
 - **BALANCED SPECIFICITY:** Use categories that are specific enough to be useful but not so deep they're hard to navigate
-- **CLEAR ORGANIZATION:** Choose categories that make sense for everyday bookmark management
-- **CONTEXTUAL ANALYSIS:** Analyze URL domain, title, and content type for appropriate categorization
-- **PRACTICAL DEPTH:** Use 2-3 levels of hierarchy for most content, only go deeper when truly necessary
 - **USER-FRIENDLY:** Choose categories that users will easily understand and remember
-- **AVOID OVER-CATEGORIZATION:** Don't use overly specific categories when broader ones work better
+
+**CATEGORIZATION RULES BY CONTENT TYPE:**
+- **TORRENT/P2P Content:** Should go to "Tools > File Sharing" or "Other" - NEVER to paywall bypass categories
+- **Paywall Bypass Tools:** Should go to "Tools > Utilities" or specific tool categories - NOT mixed with other content
+- **Streaming/Video:** Should go to "Entertainment > Streaming" or "Entertainment > Video"
+- **Development Tools:** Should go to "Development > Tools" or specific development categories
+- **Shopping Sites:** Should go to "Shopping" categories, not tools or utilities
+- **Social Media:** Should go to "Social" categories, not communication tools
+- **News/Media:** Should go to "News" or "Media" categories, not general tools
 
 **GOOD CATEGORIZATION EXAMPLES:**
 - ✅ GOOD: "Development > Frontend > JavaScript" (clear and practical)
@@ -1347,18 +1496,21 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
 - ❌ WRONG: "Business > Marketing > seo" (inconsistent capitalization)
 - ❌ WRONG: "design > ui&ux > resources" (poor spacing and capitalization)
 
-**Learning Data:** Based on previous user corrections, here are some patterns to follow:`;
+**LEARNING DATA - CRITICAL CATEGORIZATION PATTERNS:**
+Based on previous user corrections and manual categorizations, follow these patterns EXACTLY:`;
 
         // Add learning data if available
         if (Object.keys(learningData).length > 0) {
+            prompt += `\n**USER-CORRECTED PATTERNS (HIGHEST PRIORITY):**`;
             for (const [pattern, category] of Object.entries(learningData)) {
-                prompt += `\n- URLs/titles containing "${pattern}" should be categorized as "${category}"`;
+                prompt += `\n- ✅ URLs/titles containing "${pattern}" → MUST go to "${category}"`;
             }
+            prompt += `\n\n**IMPORTANT:** These patterns are based on user corrections. Follow them exactly to avoid repeating mistakes.`;
         } else {
-            prompt += '\n- No previous learning data available';
+            prompt += '\n- No previous learning data available - use content analysis for categorization';
         }
 
-        prompt += '\n\n**Bookmarks:**';
+        prompt += '\n\n**Bookmarks to Categorize:**';
 
         bookmarks.forEach((bookmark, index) => {
             const title = bookmark.title || 'Untitled';
@@ -1366,35 +1518,63 @@ ${existingFolders.length > 0 ? existingFolders.map(folder => `- ${folder}`).join
             const currentFolder = bookmark.currentFolderName || 'Root';
             const folderPath = bookmark.currentFolder || 'Root';
             let domain = 'unknown';
+            let urlPath = '';
+
             try {
                 if (url) {
-                    domain = new URL(url).hostname.replace('www.', '');
+                    const urlObj = new URL(url);
+                    domain = urlObj.hostname.replace('www.', '');
+                    urlPath = urlObj.pathname + urlObj.search;
                 }
             } catch (e) {
                 domain = 'invalid-url';
             }
 
-            prompt += `\n${index + 1}. Title: "${title}" | Domain: "${domain}" | URL: "${url}" | Current Location: "${currentFolder}" (${folderPath})`;
+            // Extract additional context from URL and title
+            const urlKeywords = this._extractUrlKeywords(url, title);
+            const contentType = this._detectContentType(url, title);
+            const riskFlags = this._detectRiskFlags(url, title);
+
+            prompt += `\n${index + 1}. BOOKMARK ANALYSIS:`;
+            prompt += `\n   Current Title: "${title}"`;
+            prompt += `\n   Current Category: "${currentFolder}" (Path: ${folderPath})`;
+            prompt += `\n   Domain: "${domain}"`;
+            prompt += `\n   URL Path: "${urlPath}"`;
+            prompt += `\n   Full URL: "${url}"`;
+            prompt += `\n   Content Type: ${contentType}`;
+            prompt += `\n   Keywords: ${urlKeywords.join(', ')}`;
+            if (riskFlags.length > 0) {
+                prompt += `\n   ⚠️ RISK FLAGS: ${riskFlags.join(', ')}`;
+            }
+            prompt += `\n   ---`;
         });
 
         prompt += `\n\n**OUTPUT REQUIREMENTS:**
 - Return JSON array with same number of items as input bookmarks
-- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), and 'confidence' (0.0-1.0)
+- Each item must have 'id' (bookmark position 1-${bookmarks.length}), 'category' (full hierarchical path), 'title' (improved descriptive title), 'confidence' (0.0-1.0), and 'categoryChanged' (true/false)
+- **ANALYZE CURRENT CATEGORY:** Compare the current category with the correct category based on content analysis
+- **CHANGE WRONG CATEGORIES:** If current category is incorrect, assign the correct one and set 'categoryChanged': true
 - **USE EXACT CATEGORY NAMES:** Select categories from the available list using their exact capitalization and formatting
 - **MAINTAIN PROPER FORMATTING:** Category must be the full path with proper capitalization (e.g., "Work > Development > Frontend")
 - **TECHNICAL TERMS:** Ensure technical terms in categories are properly capitalized (JavaScript, API, UI, etc.)
+- **RESPECT CONTENT TYPE:** Match actual content to appropriate categories (torrents ≠ paywall bypass)
+- **FOLLOW LEARNING DATA:** Prioritize user-corrected patterns from learning data
 - Title must be descriptive and informative, based on URL domain and content context
 - Choose the most appropriate category level - not too broad, not too specific
-- If uncertain about the specific subcategory, use a broader category from the list
-- Consider URL domain, title content, and current folder location for accurate categorization
+- Consider URL domain, title content, risk flags, and content type for accurate categorization
 - Prefer practical, usable categories that make sense for bookmark organization
 
 **EXAMPLE OUTPUT:**
 [
-  {"id": 1, "category": "Work > Development > Frontend", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9},
-  {"id": 2, "category": "Learning > Programming > Python", "title": "Pandas Tutorial - Data Analysis with Python", "confidence": 0.8},
-  {"id": 3, "category": "Personal > Finance > Investment", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7}
+  {"id": 1, "category": "Work > Development > Frontend", "title": "React Documentation - JavaScript Library Guide", "confidence": 0.9, "categoryChanged": false},
+  {"id": 2, "category": "Tools > File Sharing", "title": "BitTorrent Client - P2P File Sharing", "confidence": 0.8, "categoryChanged": true},
+  {"id": 3, "category": "Personal > Finance > Investment", "title": "Yahoo Finance - Stock Market Data & Analysis", "confidence": 0.7, "categoryChanged": false}
 ]
+
+**CATEGORIZATION EXAMPLES:**
+- Torrent site currently in "Tools > Paywall Bypass" → Should be "Tools > File Sharing" (categoryChanged: true)
+- GitHub repo currently in "Other" → Should be "Development > Repositories" (categoryChanged: true)
+- Netflix currently in "Entertainment > Streaming" → Correct category (categoryChanged: false)
 
 Return only the JSON array, no additional text or formatting`;
 
