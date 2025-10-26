@@ -26,6 +26,21 @@ try {
   console.log('Will create instances dynamically if needed');
 }
 
+// Global flag to track AI categorization state
+let isAICategorizing = false;
+let aiCategorizedBookmarks = new Set(); // Track bookmarks moved by AI
+let aiCategorizationStartTime = null; // Track when AI categorization started
+
+// Debug function to log AI state
+function logAIState(context) {
+  console.log(`🤖 AI State [${context}]:`, {
+    isAICategorizing,
+    aiCategorizedBookmarksCount: aiCategorizedBookmarks.size,
+    startTime: aiCategorizationStartTime,
+    timeSinceStart: aiCategorizationStartTime ? Date.now() - aiCategorizationStartTime : null
+  });
+}
+
 // Initialize extension on startup
 chrome.runtime.onStartup.addListener(() => {
   console.log('BookmarkMind extension started');
@@ -161,6 +176,62 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'CATEGORIZATION_ERROR':
         // Handle categorization errors from AI processor
         await handleCategorizationError(message, sendResponse);
+        break;
+
+      case 'startAICategorization':
+        // Mark AI categorization as starting
+        isAICategorizing = true;
+        aiCategorizedBookmarks.clear();
+        aiCategorizationStartTime = Date.now();
+
+        // AGGRESSIVE: Completely disable bookmark move listener during AI categorization
+        try {
+          chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+          console.log('🤖 Bookmark move listener DISABLED during AI categorization');
+        } catch (error) {
+          console.warn('Failed to disable bookmark move listener:', error);
+        }
+
+        console.log('🤖 AI Categorization started - learning completely disabled');
+        logAIState('START');
+        sendResponse({ success: true });
+        break;
+
+      case 'endAICategorization':
+        // Mark AI categorization as ended
+        isAICategorizing = false;
+        console.log(`🤖 AI Categorization ended - learning re-enabled. ${aiCategorizedBookmarks.size} bookmarks were moved by AI`);
+        logAIState('END');
+
+        // AGGRESSIVE: Re-enable bookmark move listener after AI categorization with delay
+        setTimeout(() => {
+          try {
+            // Remove listener first (in case it's still there)
+            chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+            // Add it back
+            chrome.bookmarks.onMoved.addListener(bookmarkMoveListener);
+            console.log('🤖 Bookmark move listener RE-ENABLED after AI categorization');
+          } catch (error) {
+            console.warn('Failed to re-enable bookmark move listener:', error);
+          }
+
+          console.log('🤖 Clearing AI-moved bookmarks set after delay');
+          aiCategorizedBookmarks.clear();
+          aiCategorizationStartTime = null;
+          logAIState('CLEANUP');
+        }, 15000); // Increased delay to 15 seconds to ensure all AI moves are complete
+
+        sendResponse({ success: true });
+        break;
+
+      case 'markBookmarkAsAIMoved':
+        // Mark a specific bookmark as moved by AI
+        if (message.bookmarkId) {
+          aiCategorizedBookmarks.add(message.bookmarkId);
+          console.log(`🤖 Marked bookmark ${message.bookmarkId} as AI-moved (total: ${aiCategorizedBookmarks.size})`);
+          logAIState('MARK_BOOKMARK');
+        }
+        sendResponse({ success: true });
         break;
 
       default:
@@ -518,13 +589,15 @@ async function handleCategorizationError(message, sendResponse) {
 }
 
 // Handle bookmark changes for learning
-chrome.bookmarks.onMoved.addListener(async (id, moveInfo) => {
+let bookmarkMoveListener = async (id, moveInfo) => {
   try {
     await handleBookmarkMove(id, moveInfo);
   } catch (error) {
     console.error('Error handling bookmark move:', error);
   }
-});
+};
+
+chrome.bookmarks.onMoved.addListener(bookmarkMoveListener);
 
 /**
  * Handle bookmark movement and learn from user categorizations
@@ -532,6 +605,36 @@ chrome.bookmarks.onMoved.addListener(async (id, moveInfo) => {
 async function handleBookmarkMove(bookmarkId, moveInfo) {
   try {
     console.log(`📚 Learning: Bookmark ${bookmarkId} moved from ${moveInfo.oldParentId} to ${moveInfo.parentId}`);
+    logAIState('BOOKMARK_MOVE');
+
+    // CRITICAL: Only learn from MANUAL user moves, never from AI categorization
+    // This prevents the AI from training on its own output, which would create feedback loops
+
+    // MULTIPLE LAYERS OF PROTECTION AGAINST AI LEARNING:
+
+    // Layer 1: Skip learning if AI categorization is in progress
+    if (isAICategorizing) {
+      console.log('📚 ❌ BLOCKED: AI categorization in progress - only learning from manual user moves');
+      return;
+    }
+
+    // Layer 2: Skip learning if this specific bookmark was moved by AI
+    if (aiCategorizedBookmarks.has(bookmarkId)) {
+      console.log(`📚 ❌ BLOCKED: Bookmark ${bookmarkId} was moved by AI - only learning from manual user moves`);
+      return;
+    }
+
+    // Layer 3: Skip learning if AI categorization happened recently (timing protection)
+    if (aiCategorizationStartTime && (Date.now() - aiCategorizationStartTime) < 30000) {
+      console.log(`📚 ❌ BLOCKED: AI categorization happened recently (${Date.now() - aiCategorizationStartTime}ms ago) - preventing learning`);
+      return;
+    }
+
+    // Layer 4: Skip learning if there are any AI-moved bookmarks still tracked
+    if (aiCategorizedBookmarks.size > 0) {
+      console.log(`📚 ❌ BLOCKED: ${aiCategorizedBookmarks.size} AI-moved bookmarks still tracked - preventing learning`);
+      return;
+    }
 
     // Get bookmark details
     const bookmark = await chrome.bookmarks.get(bookmarkId);
@@ -547,6 +650,12 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
     const newFolder = await getFolderPath(moveInfo.parentId);
 
     console.log(`📚 Move details: "${bookmarkData.title}" from "${oldFolder}" to "${newFolder}"`);
+
+    // Layer 5: Final safety check - if we got here during AI categorization, something is wrong
+    if (isAICategorizing) {
+      console.error('📚 🚨 CRITICAL ERROR: Learning function called during AI categorization despite safeguards!');
+      return;
+    }
 
     // Skip learning if moved to Bookmark Bar (user preparing for AI reorganization)
     if (moveInfo.parentId === '1') {
@@ -577,9 +686,22 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     if (patterns.length > 0) {
       await saveLearningPatterns(patterns, newFolder);
-      console.log(`📚 Learned ${patterns.length} patterns: ${patterns.join(', ')} → "${newFolder}"`);
+      console.log(`📚 ✅ MANUAL LEARNING SUCCESS: Learned ${patterns.length} patterns from USER move: ${patterns.join(', ')} → "${newFolder}"`);
+
+      // Send notification to options page about learning
+      try {
+        chrome.runtime.sendMessage({
+          type: 'LEARNING_DATA_UPDATED',
+          count: patterns.length,
+          patterns: patterns,
+          category: newFolder,
+          source: 'MANUAL_USER_MOVE'
+        });
+      } catch (error) {
+        console.warn('Failed to notify about learning update:', error);
+      }
     } else {
-      console.log('📚 No patterns extracted from this move');
+      console.log('📚 No patterns extracted from this manual move');
     }
 
   } catch (error) {

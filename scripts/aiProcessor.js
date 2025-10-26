@@ -412,159 +412,206 @@ class AIProcessor {
         // Reset to first Gemini model at the start of each categorization session
         this.resetToFirstModel();
 
-        // Normalize existing folder names for better presentation
-        await this._normalizeExistingFolders();
-
-        // First, analyze bookmarks to generate dynamic categories
-        console.log('Generating dynamic categories from bookmarks...');
-        const dynamicCategories = await this._generateDynamicCategories(bookmarks, suggestedCategories, learningData);
-        console.log('Generated categories:', dynamicCategories);
-
-        // Don't create folder structure upfront - create folders only when bookmarks are actually moved to them
-        console.log('🏗️  Folder structure will be created on-demand as bookmarks are categorized...');
-
-        // Get batch size from user settings first
-        const settings = await this._getSettings();
-        const batchSize = settings.batchSize || 50; // Default to 50 if not set
-        console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
-
-        const results = [];
-
-        // Process bookmarks in configurable BATCHES and MOVE IMMEDIATELY after each batch categorization
-        console.log(`🔍 Processing ${bookmarks.length} bookmarks in batches of ${batchSize} with IMMEDIATE MOVEMENT...`);
-
-        // DEBUG: Check if method exists
-        console.log('🔧 DEBUG: _moveBookmarkImmediately method exists:', typeof this._moveBookmarkImmediately === 'function');
-        console.log('🔧 DEBUG: _createFolderDirect method exists:', typeof this._createFolderDirect === 'function');
-
-        // Initialize BookmarkService if not already done
-        if (!this.bookmarkService && typeof BookmarkService !== 'undefined') {
-            this.bookmarkService = new BookmarkService();
+        // Notify background script that AI categorization is starting
+        try {
+            await chrome.runtime.sendMessage({ action: 'startAICategorization' });
+            console.log('🤖 Notified background: AI categorization started');
+        } catch (error) {
+            console.warn('Failed to notify background of AI categorization start:', error);
         }
 
-        let successfulMoves = 0;
-        let failedMoves = 0;
+        try {
 
-        // Process bookmarks in batches
-        for (let i = 0; i < bookmarks.length; i += batchSize) {
-            const batch = bookmarks.slice(i, i + batchSize);
-            const batchNumber = Math.floor(i / batchSize) + 1;
-            const totalBatches = Math.ceil(bookmarks.length / batchSize);
+            // Normalize existing folder names for better presentation
+            await this._normalizeExistingFolders();
 
-            console.log(`\n📦 === PROCESSING BATCH ${batchNumber}/${totalBatches} (${batch.length} bookmarks) ===`);
-            console.log(`📋 Batch bookmarks:`);
-            batch.forEach((bookmark, idx) => {
-                console.log(`   ${i + idx + 1}. "${bookmark.title}" - ${bookmark.url?.substring(0, 50)}...`);
-            });
+            // First, analyze bookmarks to generate dynamic categories
+            console.log('Generating dynamic categories from bookmarks...');
+            const dynamicCategories = await this._generateDynamicCategories(bookmarks, suggestedCategories, learningData);
+            console.log('Generated categories:', dynamicCategories);
 
-            try {
-                // Process entire batch with AI (50 bookmarks at once)
-                console.log(`🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`);
+            // Don't create folder structure upfront - create folders only when bookmarks are actually moved to them
+            console.log('🏗️  Folder structure will be created on-demand as bookmarks are categorized...');
 
-                const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
-                // Dynamic timeout based on batch size (6 seconds per bookmark, minimum 2 minutes)
-                const timeoutMs = Math.max(120000, batch.length * 6000);
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error(`Batch timeout after ${Math.round(timeoutMs / 1000)} seconds`)), timeoutMs);
+            // Get batch size from user settings first
+            const settings = await this._getSettings();
+            const batchSize = settings.batchSize || 50; // Default to 50 if not set
+            console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
+
+            const results = [];
+
+            // Process bookmarks in configurable BATCHES and MOVE IMMEDIATELY after each batch categorization
+            console.log(`🔍 Processing ${bookmarks.length} bookmarks in batches of ${batchSize} with IMMEDIATE MOVEMENT...`);
+
+            // DEBUG: Check if method exists
+            console.log('🔧 DEBUG: _moveBookmarkImmediately method exists:', typeof this._moveBookmarkImmediately === 'function');
+            console.log('🔧 DEBUG: _createFolderDirect method exists:', typeof this._createFolderDirect === 'function');
+
+            // Initialize BookmarkService if not already done
+            if (!this.bookmarkService && typeof BookmarkService !== 'undefined') {
+                this.bookmarkService = new BookmarkService();
+            }
+
+            let successfulMoves = 0;
+            let failedMoves = 0;
+
+            // Process bookmarks in batches
+            for (let i = 0; i < bookmarks.length; i += batchSize) {
+                const batch = bookmarks.slice(i, i + batchSize);
+                const batchNumber = Math.floor(i / batchSize) + 1;
+                const totalBatches = Math.ceil(bookmarks.length / batchSize);
+
+                console.log(`\n📦 === PROCESSING BATCH ${batchNumber}/${totalBatches} (${batch.length} bookmarks) ===`);
+                console.log(`📋 Batch bookmarks:`);
+                batch.forEach((bookmark, idx) => {
+                    console.log(`   ${i + idx + 1}. "${bookmark.title}" - ${bookmark.url?.substring(0, 50)}...`);
                 });
 
-                const batchResults = await Promise.race([batchPromise, timeoutPromise]);
+                try {
+                    // Process entire batch with AI (50 bookmarks at once)
+                    console.log(`🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`);
 
-                if (batchResults && batchResults.length > 0) {
-                    console.log(`✅ AI BATCH CATEGORIZATION SUCCESS: ${batchResults.length} bookmarks categorized`);
-
-                    // Show categorization results
-                    batchResults.forEach((result, idx) => {
-                        const bookmark = batch[idx];
-                        console.log(`   ${i + idx + 1}. "${bookmark?.title}" → "${result.category}" (confidence: ${result.confidence})`);
+                    const batchPromise = this._processBatch(batch, dynamicCategories, learningData);
+                    // Dynamic timeout based on batch size (6 seconds per bookmark, minimum 2 minutes)
+                    const timeoutMs = Math.max(120000, batch.length * 6000);
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error(`Batch timeout after ${Math.round(timeoutMs / 1000)} seconds`)), timeoutMs);
                     });
 
-                    // IMMEDIATELY MOVE each bookmark in the batch after categorization
-                    console.log(`🚚 IMMEDIATE BATCH MOVEMENT: Moving ${batchResults.length} bookmarks...`);
+                    const batchResults = await Promise.race([batchPromise, timeoutPromise]);
 
-                    for (let j = 0; j < batchResults.length; j++) {
-                        const result = batchResults[j];
-                        const bookmark = batch[j];
-                        const globalBookmarkNumber = i + j + 1;
+                    if (batchResults && batchResults.length > 0) {
+                        console.log(`✅ AI BATCH CATEGORIZATION SUCCESS: ${batchResults.length} bookmarks categorized`);
 
-                        try {
-                            if (typeof this._moveBookmarkImmediately === 'function') {
-                                await this._moveBookmarkImmediately(bookmark, result.category, result.title, globalBookmarkNumber, bookmarks.length);
-                            } else {
-                                // Inline movement as fallback
-                                console.log(`🚚 INLINE MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
-                                const folderId = await this._createFolderDirect(result.category, '1');
-                                await chrome.bookmarks.update(bookmark.id, { title: result.title, url: bookmark.url });
-                                await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
-                                console.log(`✅ INLINE MOVEMENT COMPLETE: "${result.title}" moved to "${result.category}"`);
+                        // Show categorization results
+                        batchResults.forEach((result, idx) => {
+                            const bookmark = batch[idx];
+                            console.log(`   ${i + idx + 1}. "${bookmark?.title}" → "${result.category}" (confidence: ${result.confidence})`);
+                        });
+
+                        // IMMEDIATELY MOVE each bookmark in the batch after categorization
+                        console.log(`🚚 IMMEDIATE BATCH MOVEMENT: Moving ${batchResults.length} bookmarks...`);
+
+                        for (let j = 0; j < batchResults.length; j++) {
+                            const result = batchResults[j];
+                            const bookmark = batch[j];
+                            const globalBookmarkNumber = i + j + 1;
+
+                            try {
+                                if (typeof this._moveBookmarkImmediately === 'function') {
+                                    await this._moveBookmarkImmediately(bookmark, result.category, result.title, globalBookmarkNumber, bookmarks.length);
+                                } else {
+                                    // Inline movement as fallback
+                                    console.log(`🚚 INLINE MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`);
+                                    const folderId = await this._createFolderDirect(result.category, '1');
+
+                                    // Mark this bookmark as moved by AI BEFORE moving it to prevent learning
+                                    try {
+                                        await chrome.runtime.sendMessage({
+                                            action: 'markBookmarkAsAIMoved',
+                                            bookmarkId: bookmark.id
+                                        });
+                                        console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved before inline move`);
+                                    } catch (error) {
+                                        console.warn('Failed to mark bookmark as AI-moved:', error);
+                                    }
+
+                                    // Small delay to ensure the message is processed
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                                    await chrome.bookmarks.update(bookmark.id, { title: result.title, url: bookmark.url });
+                                    await chrome.bookmarks.move(bookmark.id, { parentId: folderId });
+
+                                    console.log(`✅ INLINE MOVEMENT COMPLETE: "${result.title}" moved to "${result.category}"`);
+                                }
+                                results.push(result);
+                                successfulMoves++;
+                            } catch (moveError) {
+                                console.error(`❌ MOVEMENT FAILED for bookmark ${globalBookmarkNumber}: ${moveError.message}`);
+                                // Still add to results even if movement failed
+                                results.push(result);
+                                successfulMoves++;
                             }
-                            results.push(result);
-                            successfulMoves++;
-                        } catch (moveError) {
-                            console.error(`❌ MOVEMENT FAILED for bookmark ${globalBookmarkNumber}: ${moveError.message}`);
-                            // Still add to results even if movement failed
-                            results.push(result);
-                            successfulMoves++;
                         }
+
+                    } else {
+                        throw new Error('No results returned from AI batch processing');
                     }
 
-                } else {
-                    throw new Error('No results returned from AI batch processing');
+                } catch (error) {
+                    console.error(`❌ AI BATCH CATEGORIZATION FAILED for batch ${batchNumber}: ${error.message}`);
+
+                    // Show error notification to user instead of using fallback categories
+                    const errorMessage = `Failed to categorize batch ${batchNumber}/${totalBatches}. ${error.message}`;
+                    console.error(`🚨 CATEGORIZATION ERROR: ${errorMessage}`);
+
+                    // Send error notification to popup/options page
+                    try {
+                        await chrome.runtime.sendMessage({
+                            type: 'CATEGORIZATION_ERROR',
+                            message: errorMessage,
+                            batch: batchNumber,
+                            totalBatches: totalBatches
+                        });
+                    } catch (notificationError) {
+                        console.error('Failed to send error notification:', notificationError);
+                    }
+
+                    // Stop processing and throw error instead of continuing with fallback
+                    throw new Error(`Categorization failed for batch ${batchNumber}: ${error.message}`);
                 }
 
+                // Delay between batches to avoid rate limiting
+                if (i + batchSize < bookmarks.length) {
+                    console.log(`⏳ Waiting 10 seconds before next batch...`);
+                    await this._delay(10000);
+                }
+            }
+
+            console.log(`\n🎯 === BATCH PROCESSING COMPLETE ===`);
+            console.log(`📊 Total bookmarks processed: ${results.length}`);
+            console.log(`✅ Successfully moved (AI): ${successfulMoves} bookmarks`);
+            console.log(`⚠️ Fallback moved: ${failedMoves} bookmarks`);
+            console.log(`📁 Categories available: ${dynamicCategories.length}`);
+            console.log(`📋 Categories: ${dynamicCategories.join(', ')}`);
+            console.log(`🚀 Batch size used: ${batchSize} bookmarks per API call (configurable in options)`);
+
+            // Show category distribution
+            const categoryCount = {};
+            results.forEach(result => {
+                categoryCount[result.category] = (categoryCount[result.category] || 0) + 1;
+            });
+
+            console.log(`📈 Category distribution:`);
+            Object.entries(categoryCount).forEach(([category, count]) => {
+                console.log(`   ${category}: ${count} bookmarks`);
+            });
+
+            // Notify background script that AI categorization is ending
+            try {
+                await chrome.runtime.sendMessage({ action: 'endAICategorization' });
+                console.log('🤖 Notified background: AI categorization ended');
             } catch (error) {
-                console.error(`❌ AI BATCH CATEGORIZATION FAILED for batch ${batchNumber}: ${error.message}`);
-
-                // Show error notification to user instead of using fallback categories
-                const errorMessage = `Failed to categorize batch ${batchNumber}/${totalBatches}. ${error.message}`;
-                console.error(`🚨 CATEGORIZATION ERROR: ${errorMessage}`);
-
-                // Send error notification to popup/options page
-                try {
-                    await chrome.runtime.sendMessage({
-                        type: 'CATEGORIZATION_ERROR',
-                        message: errorMessage,
-                        batch: batchNumber,
-                        totalBatches: totalBatches
-                    });
-                } catch (notificationError) {
-                    console.error('Failed to send error notification:', notificationError);
-                }
-
-                // Stop processing and throw error instead of continuing with fallback
-                throw new Error(`Categorization failed for batch ${batchNumber}: ${error.message}`);
+                console.warn('Failed to notify background of AI categorization end:', error);
             }
 
-            // Delay between batches to avoid rate limiting
-            if (i + batchSize < bookmarks.length) {
-                console.log(`⏳ Waiting 10 seconds before next batch...`);
-                await this._delay(10000);
+            return {
+                categories: dynamicCategories,
+                results: results
+            };
+
+        } catch (error) {
+            // Ensure AI state is reset even if categorization fails
+            try {
+                await chrome.runtime.sendMessage({ action: 'endAICategorization' });
+                console.log('🤖 Notified background: AI categorization ended (due to error)');
+            } catch (notifyError) {
+                console.warn('Failed to notify background of AI categorization end after error:', notifyError);
             }
+
+            // Re-throw the original error
+            throw error;
         }
-
-        console.log(`\n🎯 === BATCH PROCESSING COMPLETE ===`);
-        console.log(`📊 Total bookmarks processed: ${results.length}`);
-        console.log(`✅ Successfully moved (AI): ${successfulMoves} bookmarks`);
-        console.log(`⚠️ Fallback moved: ${failedMoves} bookmarks`);
-        console.log(`📁 Categories available: ${dynamicCategories.length}`);
-        console.log(`📋 Categories: ${dynamicCategories.join(', ')}`);
-        console.log(`🚀 Batch size used: ${batchSize} bookmarks per API call (configurable in options)`);
-
-        // Show category distribution
-        const categoryCount = {};
-        results.forEach(result => {
-            categoryCount[result.category] = (categoryCount[result.category] || 0) + 1;
-        });
-
-        console.log(`📈 Category distribution:`);
-        Object.entries(categoryCount).forEach(([category, count]) => {
-            console.log(`   ${category}: ${count} bookmarks`);
-        });
-
-        return {
-            categories: dynamicCategories,
-            results: results
-        };
     }
 
     /**
@@ -608,6 +655,20 @@ class AIProcessor {
         console.log(`   � FROM: "d${currentFolderName}" (ID: ${bookmark.parentId})`);
         console.log(`   📁 TO: "${destinationFolderName}" (ID: ${folderId})`);
         console.log(`   🎯 Category: "${category}"`);
+
+        // Mark this bookmark as moved by AI BEFORE moving it to prevent learning
+        try {
+            await chrome.runtime.sendMessage({
+                action: 'markBookmarkAsAIMoved',
+                bookmarkId: bookmark.id
+            });
+            console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved before direct move`);
+        } catch (error) {
+            console.warn('Failed to mark bookmark as AI-moved:', error);
+        }
+
+        // Small delay to ensure the message is processed
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Update bookmark title and move it using direct Chrome API
         await chrome.bookmarks.update(bookmark.id, {
