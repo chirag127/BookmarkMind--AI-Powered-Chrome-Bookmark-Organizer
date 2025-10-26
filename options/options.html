@@ -184,6 +184,20 @@
           </div>
 
           <div class="setting-item">
+            <label for="minBookmarksThreshold">Minimum Bookmarks per Folder: <span id="minThresholdValue">3</span>
+              bookmarks</label>
+            <input type="range" id="minBookmarksThreshold" min="2" max="10" value="3" step="1">
+            <div class="depth-labels">
+              <span>2 (Aggressive)</span>
+              <span>3 (Balanced)</span>
+              <span>5 (Conservative)</span>
+              <span>10 (Minimal)</span>
+            </div>
+            <p class="setting-help">Folders with fewer bookmarks than this threshold will be consolidated during
+              cleanup.</p>
+          </div>
+
+          <div class="setting-item">
             <div class="checkbox-group">
               <input type="checkbox" id="cleanupEmptyFolders">
               <label for="cleanupEmptyFolders">Clean up empty folders after organizing</label>
@@ -266,10 +280,34 @@
       <section class="section">
         <div class="section-header">
           <h2>Data Management</h2>
-          <p>Manage your extension data, learning patterns, and settings.</p>
+          <p>Manage your extension data, learning patterns, settings, and bookmark organization.</p>
+        </div>
+
+        <div class="form-group">
+          <h3>Folder Organization</h3>
+          <p class="form-help">
+            <strong>Consolidate Sparse Folders:</strong> Automatically moves bookmarks from folders with less than 3
+            bookmarks to their parent folders.
+            This helps clean up your bookmark structure by eliminating folders that don't have enough content to justify
+            their existence.
+            <br><br>
+            <strong>Example:</strong> If you have "Work > Projects > Old Project" with only 2 bookmarks, those bookmarks
+            will be moved to "Work > Projects".
+            If "Work > Projects" then has less than 3 bookmarks, they'll be moved to "Work".
+          </p>
         </div>
 
         <div class="data-actions">
+          <button type="button" id="consolidateFolders" class="secondary-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10 4H4C2.89 4 2 4.89 2 6V18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6H12L10 4Z"
+                fill="currentColor" />
+              <path d="M8 12L10 14L16 8" stroke="currentColor" stroke-width="2" fill="none" />
+            </svg>
+            Consolidate Sparse Folders
+          </button>
+
           <button type="button" id="exportData" class="secondary-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -327,6 +365,7 @@
   <script src="../scripts/aiProcessor.js"></script>
   <script src="../scripts/categorizer.js"></script>
   <script src="../scripts/folderManager.js"></script>
+  <script src="../scripts/folderConsolidator.js"></script>
   <script src="options.js"></script>
 </body>
 

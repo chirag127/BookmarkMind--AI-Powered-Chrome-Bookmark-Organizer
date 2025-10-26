@@ -68,6 +68,8 @@ class OptionsController {
     this.cleanupEmptyFoldersCheckbox = document.getElementById('cleanupEmptyFolders');
     this.maxCategoryDepthSlider = document.getElementById('maxCategoryDepth');
     this.maxDepthValueDisplay = document.getElementById('maxDepthValue');
+    this.minBookmarksThresholdSlider = document.getElementById('minBookmarksThreshold');
+    this.minThresholdValueDisplay = document.getElementById('minThresholdValue');
 
     // Stats elements
     this.totalBookmarksCount = document.getElementById('totalBookmarksCount');
@@ -77,6 +79,7 @@ class OptionsController {
     this.lastSortDate = document.getElementById('lastSortDate');
 
     // Data management elements
+    this.consolidateFoldersBtn = document.getElementById('consolidateFolders');
     this.exportDataBtn = document.getElementById('exportData');
     this.clearLearningDataBtn = document.getElementById('clearLearningData');
     this.resetSettingsBtn = document.getElementById('resetSettings');
@@ -144,8 +147,11 @@ class OptionsController {
     this.cleanupEmptyFoldersCheckbox.addEventListener('change', () => this.saveSettings());
     this.maxCategoryDepthSlider.addEventListener('input', () => this.onMaxDepthChange());
     this.maxCategoryDepthSlider.addEventListener('change', () => this.saveSettings());
+    this.minBookmarksThresholdSlider.addEventListener('input', () => this.onMinThresholdChange());
+    this.minBookmarksThresholdSlider.addEventListener('change', () => this.saveSettings());
 
     // Data management events
+    this.consolidateFoldersBtn.addEventListener('click', () => this.consolidateFolders());
     this.exportDataBtn.addEventListener('click', () => this.exportData());
     this.clearLearningDataBtn.addEventListener('click', () => this.clearLearningData());
     this.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
@@ -194,7 +200,8 @@ class OptionsController {
       batchSize: 50,
       cleanupEmptyFolders: false,
       agentRouterApiKey: '',
-      maxCategoryDepth: 2
+      maxCategoryDepth: 2,
+      minBookmarksThreshold: 3
     };
   }
 
@@ -232,6 +239,8 @@ class OptionsController {
     this.cleanupEmptyFoldersCheckbox.checked = this.settings.cleanupEmptyFolders !== false;
     this.maxCategoryDepthSlider.value = this.settings.maxCategoryDepth || 2;
     this.maxDepthValueDisplay.textContent = this.settings.maxCategoryDepth || 2;
+    this.minBookmarksThresholdSlider.value = this.settings.minBookmarksThreshold || 3;
+    this.minThresholdValueDisplay.textContent = this.settings.minBookmarksThreshold || 3;
 
     // Update button states after a short delay to ensure DOM is ready
     setTimeout(() => {
@@ -784,6 +793,15 @@ class OptionsController {
   }
 
   /**
+   * Handle min bookmarks threshold slider change
+   */
+  onMinThresholdChange() {
+    const value = parseInt(this.minBookmarksThresholdSlider.value);
+    this.minThresholdValueDisplay.textContent = value;
+    this.settings.minBookmarksThreshold = value;
+  }
+
+  /**
    * Save all settings
    */
   async saveSettings() {
@@ -792,12 +810,97 @@ class OptionsController {
       this.settings.batchSize = parseInt(this.batchSizeSelect.value);
       this.settings.cleanupEmptyFolders = this.cleanupEmptyFoldersCheckbox.checked;
       this.settings.maxCategoryDepth = parseInt(this.maxCategoryDepthSlider.value);
+      this.settings.minBookmarksThreshold = parseInt(this.minBookmarksThresholdSlider.value);
 
       await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
       console.log('Settings saved');
     } catch (error) {
       console.error('Error saving settings:', error);
       this.showToast('Failed to save settings', 'error');
+    }
+  }
+
+  /**
+   * Consolidate sparse folders (less than 3 bookmarks)
+   */
+  async consolidateFolders() {
+    try {
+      // Show confirmation dialog
+      const threshold = this.settings.minBookmarksThreshold || 3;
+      const confirmed = confirm(
+        `This will move bookmarks from folders with less than ${threshold} bookmarks to their parent folders. ` +
+        'Empty folders will also be removed. This action cannot be undone.\n\n' +
+        'Do you want to continue?'
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Disable button and show loading state
+      this.consolidateFoldersBtn.disabled = true;
+      this.consolidateFoldersBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2V6L16 2L12 2Z" fill="currentColor">
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" dur="1s" from="0 12 12" to="360 12 12" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        Processing...
+      `;
+
+      // Initialize consolidator with user's threshold setting
+      const consolidator = new FolderConsolidator();
+      consolidator.setMinBookmarksThreshold(this.settings.minBookmarksThreshold || 3);
+
+      // Get preview first
+      const preview = await consolidator.getConsolidationPreview();
+
+      if (preview.totalFoldersToRemove === 0) {
+        this.showToast('No sparse folders found to consolidate', 'info');
+        return;
+      }
+
+      // Show preview and confirm
+      const previewMessage = `Found ${preview.sparseFolders.length} sparse folders and ${preview.emptyFolders.length} empty folders.\n` +
+        `This will move ${preview.totalBookmarksToMove} bookmarks and remove ${preview.totalFoldersToRemove} folders.\n\n` +
+        `Sparse folders:\n${preview.sparseFolders.map(f => `• ${f.name} (${f.bookmarkCount} bookmarks)`).join('\n')}\n\n` +
+        `Continue with consolidation?`;
+
+      const finalConfirm = confirm(previewMessage);
+      if (!finalConfirm) {
+        return;
+      }
+
+      // Perform consolidation
+      const results = await consolidator.consolidateSparsefolders();
+
+      // Show success message
+      const successMessage = `Consolidation completed!\n\n` +
+        `📊 Results:\n` +
+        `• Folders processed: ${results.foldersProcessed}\n` +
+        `• Bookmarks moved: ${results.bookmarksMoved}\n` +
+        `• Folders removed: ${results.foldersRemoved}\n\n` +
+        `Your bookmark structure has been optimized!`;
+
+      this.showToast('Folder consolidation completed successfully!', 'success');
+      alert(successMessage);
+
+      // Refresh stats
+      await this.loadStats();
+
+    } catch (error) {
+      console.error('Error consolidating folders:', error);
+      this.showToast(`Consolidation failed: ${error.message}`, 'error');
+    } finally {
+      // Restore button state
+      this.consolidateFoldersBtn.disabled = false;
+      this.consolidateFoldersBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 4H4C2.89 4 2 4.89 2 6V18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6H12L10 4Z" fill="currentColor"/>
+          <path d="M8 12L10 14L16 8" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+        Consolidate Sparse Folders
+      `;
     }
   }
 
