@@ -138,6 +138,14 @@ class FolderConsolidator {
 
             // Move all bookmarks to parent folder
             for (const bookmark of bookmarks) {
+                // Mark bookmark with AI metadata to prevent learning from consolidation moves
+                try {
+                    const metadataKey = `ai_moved_${bookmark.id}`;
+                    await chrome.storage.local.set({ [metadataKey]: Date.now() });
+                } catch (metadataError) {
+                    console.warn('Failed to set AI metadata:', metadataError);
+                }
+
                 await chrome.bookmarks.move(bookmark.id, { parentId: parentId });
                 console.log(`   ✅ Moved bookmark: "${bookmark.title}"`);
                 this.consolidationResults.bookmarksMoved++;

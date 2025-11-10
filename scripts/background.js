@@ -967,28 +967,46 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     // MULTIPLE LAYERS OF PROTECTION AGAINST AI LEARNING:
 
-    // Layer 1: Skip learning if AI categorization is in progress
+    // Layer 1: Skip learning if AI categorization is in progress (global flag)
     if (isAICategorizing) {
-      console.log('📚 ❌ BLOCKED: AI categorization in progress - only learning from manual user moves');
+      console.log('📚 ❌ BLOCKED (Layer 1): AI categorization in progress - only learning from manual user moves');
       return;
     }
 
-    // Layer 2: Skip learning if this specific bookmark was moved by AI
+    // Layer 2: Skip learning if this specific bookmark was moved by AI (bookmark-level tracking)
     if (aiCategorizedBookmarks.has(bookmarkId)) {
-      console.log(`📚 ❌ BLOCKED: Bookmark ${bookmarkId} was moved by AI - only learning from manual user moves`);
+      console.log(`📚 ❌ BLOCKED (Layer 2): Bookmark ${bookmarkId} was moved by AI - only learning from manual user moves`);
       return;
     }
 
-    // Layer 3: Skip learning if AI categorization happened recently (timing protection)
+    // Layer 3: Skip learning if AI categorization happened recently (time-based protection)
     if (aiCategorizationStartTime && (Date.now() - aiCategorizationStartTime) < 30000) {
-      console.log(`📚 ❌ BLOCKED: AI categorization happened recently (${Date.now() - aiCategorizationStartTime}ms ago) - preventing learning`);
+      console.log(`📚 ❌ BLOCKED (Layer 3): AI categorization happened recently (${Date.now() - aiCategorizationStartTime}ms ago) - preventing learning`);
       return;
     }
 
-    // Layer 4: Skip learning if there are any AI-moved bookmarks still tracked
+    // Layer 4: Skip learning if there are any AI-moved bookmarks still tracked (batch protection)
     if (aiCategorizedBookmarks.size > 0) {
-      console.log(`📚 ❌ BLOCKED: ${aiCategorizedBookmarks.size} AI-moved bookmarks still tracked - preventing learning`);
+      console.log(`📚 ❌ BLOCKED (Layer 4): ${aiCategorizedBookmarks.size} AI-moved bookmarks still tracked - preventing learning`);
       return;
+    }
+
+    // Layer 5: Check for AI metadata marker in Chrome storage (persistent metadata check)
+    try {
+      const metadata = await chrome.storage.local.get([`ai_moved_${bookmarkId}`]);
+      if (metadata[`ai_moved_${bookmarkId}`]) {
+        const moveAge = Date.now() - metadata[`ai_moved_${bookmarkId}`];
+        if (moveAge < 60000) { // Within last minute
+          console.log(`📚 ❌ BLOCKED (Layer 5): Bookmark ${bookmarkId} has AI metadata marker (${moveAge}ms old) - preventing learning`);
+          // Clean up old metadata
+          await chrome.storage.local.remove([`ai_moved_${bookmarkId}`]);
+          return;
+        }
+        // Clean up expired metadata
+        await chrome.storage.local.remove([`ai_moved_${bookmarkId}`]);
+      }
+    } catch (metadataError) {
+      console.warn('Error checking AI metadata:', metadataError);
     }
 
     // Get bookmark details
@@ -1006,9 +1024,9 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     console.log(`📚 Move details: "${bookmarkData.title}" from "${oldFolder}" to "${newFolder}"`);
 
-    // Layer 5: Final safety check - if we got here during AI categorization, something is wrong
+    // Layer 6: Final safety check - if we got here during AI categorization, something is wrong
     if (isAICategorizing) {
-      console.error('📚 🚨 CRITICAL ERROR: Learning function called during AI categorization despite safeguards!');
+      console.error('📚 🚨 CRITICAL ERROR (Layer 6): Learning function called during AI categorization despite safeguards!');
       return;
     }
 

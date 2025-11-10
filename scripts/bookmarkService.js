@@ -156,6 +156,14 @@ class BookmarkService {
 
       console.log(`🔄 Moving "${bookmarkBefore[0].title}" from "${originalFolderName}" to "${targetFolderName}"`);
 
+      // Mark bookmark with AI metadata if this is called during AI categorization
+      try {
+        const metadataKey = `ai_moved_${bookmarkId}`;
+        await chrome.storage.local.set({ [metadataKey]: Date.now() });
+      } catch (metadataError) {
+        console.warn('Failed to set AI metadata:', metadataError);
+      }
+
       const bookmark = await chrome.bookmarks.move(bookmarkId, moveDetails);
 
       console.log(`✅ Move completed: "${bookmark.title}" is now in "${targetFolderName}"`);

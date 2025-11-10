@@ -524,6 +524,11 @@ class AIProcessor {
                                             bookmarkId: bookmark.id
                                         });
                                         console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved before inline move`);
+                                        
+                                        // ALSO store persistent metadata in Chrome storage for additional protection
+                                        const metadataKey = `ai_moved_${bookmark.id}`;
+                                        await chrome.storage.local.set({ [metadataKey]: Date.now() });
+                                        console.log(`🤖 Stored AI metadata in Chrome storage for bookmark ${bookmark.id}`);
                                     } catch (error) {
                                         console.warn('Failed to mark bookmark as AI-moved:', error);
                                     }
@@ -675,6 +680,11 @@ class AIProcessor {
                 bookmarkId: bookmark.id
             });
             console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved before direct move`);
+            
+            // ALSO store persistent metadata in Chrome storage for additional protection
+            const metadataKey = `ai_moved_${bookmark.id}`;
+            await chrome.storage.local.set({ [metadataKey]: Date.now() });
+            console.log(`🤖 Stored AI metadata in Chrome storage for bookmark ${bookmark.id}`);
         } catch (error) {
             console.warn('Failed to mark bookmark as AI-moved:', error);
         }

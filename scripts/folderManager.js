@@ -110,6 +110,14 @@ class FolderManager {
 
     for (const move of moves) {
       try {
+        // Mark bookmark with AI metadata to prevent learning from AI moves
+        try {
+          const metadataKey = `ai_moved_${move.bookmarkId}`;
+          await chrome.storage.local.set({ [metadataKey]: Date.now() });
+        } catch (metadataError) {
+          console.warn('Failed to set AI metadata:', metadataError);
+        }
+
         await chrome.bookmarks.move(move.bookmarkId, {
           parentId: move.folderId
         });
