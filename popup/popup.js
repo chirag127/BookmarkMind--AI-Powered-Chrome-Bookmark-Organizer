@@ -86,6 +86,7 @@ class PopupController {
     this.snapshotCount = document.getElementById('snapshotCount');
     this.maxSnapshots = document.getElementById('maxSnapshots');
     this.storageSize = document.getElementById('storageSize');
+    this.runDiagnosticsBtn = document.getElementById('runDiagnosticsBtn');
 
     // Progress elements
     this.progressText = document.getElementById('progressText');
@@ -107,6 +108,7 @@ class PopupController {
     this.bulkCategorizeBtn.addEventListener('click', () => this.showBulkSelection());
     this.viewSnapshotsBtn.addEventListener('click', () => this.showSnapshots());
     this.closeSnapshotsBtn.addEventListener('click', () => this.hideSnapshots());
+    this.runDiagnosticsBtn.addEventListener('click', () => this.runSnapshotDiagnostics());
     this.deleteEmptyFoldersBtn.addEventListener('click', () => this.deleteEmptyFolders());
     this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
@@ -1643,11 +1645,12 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         const { snapshots, storageInfo } = response.data;
         this.displaySnapshots(snapshots, storageInfo);
       } else {
-        this.showError('Failed to load snapshots');
+        console.error('Failed to load snapshots:', response?.error);
+        this.showError(`Failed to load snapshots: ${response?.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error loading snapshots:', error);
-      this.showError('Failed to load snapshots');
+      this.showError(`Failed to load snapshots: ${error.message}`);
     }
   }
 
@@ -1791,6 +1794,48 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
     } catch (error) {
       console.error('Error deleting snapshot:', error);
       this.showError('Failed to delete snapshot');
+    }
+  }
+
+  /**
+   * Run snapshot diagnostics
+   */
+  async runSnapshotDiagnostics() {
+    try {
+      console.log('🔍 Running snapshot diagnostics...');
+      this.showProcessing('Running diagnostics...');
+
+      const response = await chrome.runtime.sendMessage({ action: 'runSnapshotDiagnostics' });
+
+      if (response && response.success) {
+        const diagnostics = response.data;
+        console.log('📊 Diagnostics results:', diagnostics);
+
+        let message = `Diagnostics Report:\n\n`;
+        message += `Health Status: ${diagnostics.health}\n`;
+        message += `Snapshot Count: ${diagnostics.storageInfo?.snapshotCount || 0}\n`;
+        message += `Storage Usage: ${diagnostics.storageState?.usagePercent || 0}%\n`;
+        message += `Total Size: ${diagnostics.storageState?.totalSizeMB || 0}MB\n`;
+        message += `Quota Remaining: ${diagnostics.storageState?.quotaRemainingMB || 0}MB\n`;
+
+        if (diagnostics.repairResult && diagnostics.repairResult.repaired) {
+          message += `\n⚠️ Repairs Made:\n`;
+          message += `Corrupted snapshots removed: ${diagnostics.repairResult.removed}\n`;
+          if (diagnostics.repairResult.validRemaining !== undefined) {
+            message += `Valid snapshots remaining: ${diagnostics.repairResult.validRemaining}\n`;
+          }
+        }
+
+        alert(message);
+
+        await this.showSnapshots();
+      } else {
+        console.error('Diagnostics failed:', response?.error);
+        this.showError(`Diagnostics failed: ${response?.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error running diagnostics:', error);
+      this.showError(`Diagnostics error: ${error.message}`);
     }
   }
 

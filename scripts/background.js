@@ -10,7 +10,9 @@ try {
     'aiProcessor.js',
     'categorizer.js',
     'folderManager.js',
-    'learningService.js'
+    'learningService.js',
+    'snapshotManager.js',
+    'analyticsService.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -20,7 +22,9 @@ try {
     AIProcessor: typeof AIProcessor !== 'undefined',
     Categorizer: typeof Categorizer !== 'undefined',
     FolderManager: typeof FolderManager !== 'undefined',
-    LearningService: typeof LearningService !== 'undefined'
+    LearningService: typeof LearningService !== 'undefined',
+    SnapshotManager: typeof SnapshotManager !== 'undefined',
+    AnalyticsService: typeof AnalyticsService !== 'undefined'
   });
 
 } catch (error) {
@@ -262,6 +266,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           logAIState('MARK_BOOKMARK');
         }
         sendResponse({ success: true });
+        break;
+
+      case 'getSnapshots':
+        await handleGetSnapshots(sendResponse);
+        break;
+
+      case 'restoreSnapshot':
+        await handleRestoreSnapshot(message.data, sendResponse);
+        break;
+
+      case 'deleteSnapshot':
+        await handleDeleteSnapshot(message.data, sendResponse);
+        break;
+
+      case 'getAnalytics':
+        await handleGetAnalytics(sendResponse);
+        break;
+
+      case 'clearAnalytics':
+        await handleClearAnalytics(sendResponse);
+        break;
+
+      case 'runSnapshotDiagnostics':
+        await handleRunSnapshotDiagnostics(sendResponse);
         break;
 
       default:
@@ -697,6 +725,29 @@ async function handleClearAnalytics(sendResponse) {
     sendResponse({
       success: false,
       error: error.message || 'Failed to clear analytics'
+    });
+  }
+}
+
+/**
+ * Handle run snapshot diagnostics request
+ */
+async function handleRunSnapshotDiagnostics(sendResponse) {
+  try {
+    if (typeof SnapshotManager === 'undefined') {
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
+    }
+
+    const snapshotManager = new SnapshotManager();
+    const diagnostics = await snapshotManager.runDiagnostics();
+
+    sendResponse({ success: true, data: diagnostics });
+
+  } catch (error) {
+    console.error('Snapshot diagnostics error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to run snapshot diagnostics'
     });
   }
 }

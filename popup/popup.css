@@ -533,6 +533,15 @@ body {
     color: #9aa0a6;
 }
 
+.snapshot-diagnostics {
+    margin-bottom: 12px;
+}
+
+.secondary-btn.small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
 .snapshots-list {
     max-height: 300px;
     overflow-y: auto;
