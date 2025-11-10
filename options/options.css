@@ -647,6 +647,79 @@ rning Data Section */
     display: inline-block;
 }
 
+/* Pattern Statistics Display */
+.pattern-stats {
+    background: white;
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.pattern-stats h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 12px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.stat-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+.category-distribution {
+    background: white;
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.category-distribution h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 12px;
+}
+
+.category-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.category-row:last-child {
+    border-bottom: none;
+}
+
+.category-name {
+    font-size: 13px;
+    color: #202124;
+}
+
+.category-count {
+    font-size: 12px;
+    color: #5f6368;
+}
+
 .pattern-actions {
     display: flex;
     gap: 8px;

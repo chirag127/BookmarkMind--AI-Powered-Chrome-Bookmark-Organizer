@@ -55,6 +55,13 @@ class PopupController {
     this.bookmarkList = document.getElementById('bookmarkList');
     this.selectedCount = document.getElementById('selectedCount');
 
+    // Recategorization elements
+    this.recategorizeSection = document.getElementById('recategorizeSection');
+    this.showRecategorizeBtn = document.getElementById('showRecategorizeBtn');
+    this.closeRecategorizeBtn = document.getElementById('closeRecategorizeBtn');
+    this.recategorizeSearchInput = document.getElementById('recategorizeSearchInput');
+    this.recategorizeBookmarkList = document.getElementById('recategorizeBookmarkList');
+
     // Status elements
     this.extensionStatus = document.getElementById('extensionStatus');
     this.statusDot = this.extensionStatus?.querySelector('.status-dot');
@@ -129,6 +136,17 @@ class PopupController {
     this.testCommBtn = document.getElementById('testCommBtn');
     if (this.testCommBtn) {
       this.testCommBtn.addEventListener('click', () => this.testCommunication());
+    }
+
+    // Recategorization event listeners
+    if (this.showRecategorizeBtn) {
+      this.showRecategorizeBtn.addEventListener('click', () => this.showRecategorization());
+    }
+    if (this.closeRecategorizeBtn) {
+      this.closeRecategorizeBtn.addEventListener('click', () => this.hideRecategorization());
+    }
+    if (this.recategorizeSearchInput) {
+      this.recategorizeSearchInput.addEventListener('input', (e) => this.filterRecategorizeBookmarks(e.target.value));
     }
 
     // Listen for progress updates and error notifications from background script
@@ -1800,6 +1818,192 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
     return date.toLocaleDateString();
+  }
+
+  /**
+   * Show recategorization interface
+   */
+  async showRecategorization() {
+    try {
+      this.recategorizeSection.classList.remove('hidden');
+      this.showRecategorizeBtn.classList.add('hidden');
+      this.closeRecategorizeBtn.classList.remove('hidden');
+
+      await this.loadRecategorizeBookmarks();
+    } catch (error) {
+      console.error('Error showing recategorization:', error);
+      this.showError('Failed to load bookmarks for recategorization');
+    }
+  }
+
+  /**
+   * Hide recategorization interface
+   */
+  hideRecategorization() {
+    this.recategorizeSection.classList.add('hidden');
+    this.showRecategorizeBtn.classList.remove('hidden');
+    this.closeRecategorizeBtn.classList.add('hidden');
+  }
+
+  /**
+   * Load bookmarks for recategorization
+   */
+  async loadRecategorizeBookmarks() {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'getAllBookmarks'
+      });
+
+      if (!response || !response.success) {
+        throw new Error('Failed to load bookmarks');
+      }
+
+      this.allRecategorizeBookmarks = response.data;
+      await this.renderRecategorizeBookmarks(this.allRecategorizeBookmarks);
+    } catch (error) {
+      console.error('Error loading recategorize bookmarks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Render bookmarks for recategorization
+   */
+  async renderRecategorizeBookmarks(bookmarks) {
+    this.recategorizeBookmarkList.innerHTML = '';
+
+    if (!bookmarks || bookmarks.length === 0) {
+      this.recategorizeBookmarkList.innerHTML = '<div class="no-bookmarks">No bookmarks found</div>';
+      return;
+    }
+
+    // Get all available categories from folders
+    const categories = await this.getAvailableCategories();
+
+    // Limit to first 50 bookmarks for performance
+    const limitedBookmarks = bookmarks.slice(0, 50);
+
+    limitedBookmarks.forEach(bookmark => {
+      const item = document.createElement('div');
+      item.className = 'bookmark-item-recategorize';
+      item.dataset.bookmarkId = bookmark.id;
+
+      const currentCategory = bookmark.currentFolderName || 'Uncategorized';
+
+      item.innerHTML = `
+        <div class="bookmark-header">
+          <div class="bookmark-info">
+            <div class="bookmark-title" title="${this.escapeHtml(bookmark.title)}">${this.escapeHtml(bookmark.title)}</div>
+            <div class="bookmark-current-category">Current: ${this.escapeHtml(currentCategory)}</div>
+          </div>
+        </div>
+        <div class="category-selector">
+          <select>
+            <option value="">Select new category...</option>
+            ${categories.map(cat => `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`).join('')}
+          </select>
+          <button class="apply-btn" disabled>Apply</button>
+        </div>
+      `;
+
+      const select = item.querySelector('select');
+      const applyBtn = item.querySelector('.apply-btn');
+
+      select.addEventListener('change', () => {
+        applyBtn.disabled = !select.value;
+      });
+
+      applyBtn.addEventListener('click', async () => {
+        await this.applyRecategorization(bookmark, select.value, currentCategory);
+      });
+
+      this.recategorizeBookmarkList.appendChild(item);
+    });
+
+    if (bookmarks.length > 50) {
+      const moreMessage = document.createElement('div');
+      moreMessage.style.padding = '12px';
+      moreMessage.style.textAlign = 'center';
+      moreMessage.style.color = '#5f6368';
+      moreMessage.style.fontSize = '12px';
+      moreMessage.textContent = `Showing first 50 of ${bookmarks.length} bookmarks. Use search to find specific bookmarks.`;
+      this.recategorizeBookmarkList.appendChild(moreMessage);
+    }
+  }
+
+  /**
+   * Get available categories from bookmark folders
+   */
+  async getAvailableCategories() {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'getAvailableCategories'
+      });
+
+      if (response && response.success) {
+        return response.data;
+      }
+
+      return ['Work', 'Personal', 'Learning', 'Entertainment', 'Shopping', 'News', 'Social Media', 'Tools', 'Reference'];
+    } catch (error) {
+      console.error('Error getting categories:', error);
+      return ['Work', 'Personal', 'Learning', 'Entertainment', 'Shopping', 'News', 'Social Media', 'Tools', 'Reference'];
+    }
+  }
+
+  /**
+   * Apply recategorization
+   */
+  async applyRecategorization(bookmark, newCategory, oldCategory) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'recategorizeBookmark',
+        data: {
+          bookmark: bookmark,
+          newCategory: newCategory,
+          oldCategory: oldCategory
+        }
+      });
+
+      if (response && response.success) {
+        this.showNotification(`Moved "${bookmark.title}" to "${newCategory}"`);
+        
+        // Reload bookmarks to show updated categories
+        await this.loadRecategorizeBookmarks();
+      } else {
+        this.showError('Failed to recategorize bookmark');
+      }
+    } catch (error) {
+      console.error('Error applying recategorization:', error);
+      this.showError('Failed to recategorize bookmark');
+    }
+  }
+
+  /**
+   * Filter recategorize bookmarks by search term
+   */
+  filterRecategorizeBookmarks(searchTerm) {
+    if (!this.allRecategorizeBookmarks) return;
+
+    const filtered = this.allRecategorizeBookmarks.filter(bookmark => {
+      const title = (bookmark.title || '').toLowerCase();
+      const url = (bookmark.url || '').toLowerCase();
+      const folder = (bookmark.currentFolderName || '').toLowerCase();
+      const term = searchTerm.toLowerCase();
+
+      return title.includes(term) || url.includes(term) || folder.includes(term);
+    });
+
+    this.renderRecategorizeBookmarks(filtered);
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }
 

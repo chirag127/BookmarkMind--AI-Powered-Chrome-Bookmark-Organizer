@@ -10,8 +10,7 @@ try {
     'aiProcessor.js',
     'categorizer.js',
     'folderManager.js',
-    'snapshotManager.js',
-    'analyticsService.js'
+    'learningService.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -21,8 +20,7 @@ try {
     AIProcessor: typeof AIProcessor !== 'undefined',
     Categorizer: typeof Categorizer !== 'undefined',
     FolderManager: typeof FolderManager !== 'undefined',
-    SnapshotManager: typeof SnapshotManager !== 'undefined',
-    AnalyticsService: typeof AnalyticsService !== 'undefined'
+    LearningService: typeof LearningService !== 'undefined'
   });
 
 } catch (error) {
@@ -120,9 +118,7 @@ async function ensureClassesLoaded() {
   if (typeof Categorizer === 'undefined' ||
     typeof BookmarkService === 'undefined' ||
     typeof AIProcessor === 'undefined' ||
-    typeof FolderManager === 'undefined' ||
-    typeof SnapshotManager === 'undefined' ||
-    typeof AnalyticsService === 'undefined') {
+    typeof FolderManager === 'undefined') {
 
     console.log('Classes not loaded, attempting to reload...');
     try {
@@ -130,9 +126,7 @@ async function ensureClassesLoaded() {
         'bookmarkService.js',
         'aiProcessor.js',
         'categorizer.js',
-        'folderManager.js',
-        'snapshotManager.js',
-        'analyticsService.js'
+        'folderManager.js'
       );
       console.log('Classes reloaded successfully');
     } catch (error) {
@@ -176,24 +170,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await handleExportBookmarks(sendResponse);
         break;
 
-      case 'getSnapshots':
-        await handleGetSnapshots(sendResponse);
+      case 'getAllBookmarks':
+        await handleGetAllBookmarks(sendResponse);
         break;
 
-      case 'restoreSnapshot':
-        await handleRestoreSnapshot(message.data, sendResponse);
+      case 'getAvailableCategories':
+        await handleGetAvailableCategories(sendResponse);
         break;
 
-      case 'deleteSnapshot':
-        await handleDeleteSnapshot(message.data, sendResponse);
+      case 'recategorizeBookmark':
+        await handleRecategorizeBookmark(message.data, sendResponse);
         break;
 
-      case 'getAnalytics':
-        await handleGetAnalytics(sendResponse);
+      case 'exportLearningData':
+        await handleExportLearningData(sendResponse);
         break;
 
-      case 'clearAnalytics':
-        await handleClearAnalytics(sendResponse);
+      case 'importLearningData':
+        await handleImportLearningData(message.data, sendResponse);
+        break;
+
+      case 'clearLearningData':
+        await handleClearLearningData(sendResponse);
+        break;
+
+      case 'getLearningStatistics':
+        await handleGetLearningStatistics(sendResponse);
         break;
 
       case 'ping':
@@ -603,7 +605,7 @@ async function handleRestoreSnapshot(data, sendResponse) {
     }
 
     const snapshotManager = new SnapshotManager();
-    
+
     const results = await snapshotManager.restoreSnapshot(data.snapshotId, (progress) => {
       try {
         chrome.runtime.sendMessage({
@@ -696,6 +698,142 @@ async function handleClearAnalytics(sendResponse) {
       success: false,
       error: error.message || 'Failed to clear analytics'
     });
+  }
+}
+
+/**
+ * Get all bookmarks
+ */
+async function handleGetAllBookmarks(sendResponse) {
+  try {
+    const bookmarkService = new BookmarkService();
+    const bookmarks = await bookmarkService.getAllBookmarks();
+    sendResponse({ success: true, data: bookmarks });
+  } catch (error) {
+    console.error('Error getting all bookmarks:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Get available categories from folder structure
+ */
+async function handleGetAvailableCategories(sendResponse) {
+  try {
+    const tree = await chrome.bookmarks.getTree();
+    const categories = new Set();
+
+    // Extract folder paths recursively
+    function extractFolders(node, path = '') {
+      if (!node.url && node.id !== '0') {
+        const folderPath = path ? `${path} > ${node.title}` : node.title;
+        if (!['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(node.title)) {
+          categories.add(folderPath);
+        }
+
+        if (node.children) {
+          node.children.forEach(child => extractFolders(child, folderPath));
+        }
+      }
+    }
+
+    tree[0].children.forEach(root => {
+      if (root.children) {
+        root.children.forEach(child => extractFolders(child));
+      }
+    });
+
+    const categoryList = Array.from(categories).sort();
+    sendResponse({ success: true, data: categoryList });
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle bookmark recategorization (manual user correction)
+ */
+async function handleRecategorizeBookmark(data, sendResponse) {
+  try {
+    const { bookmark, newCategory, oldCategory } = data;
+
+    if (!bookmark || !newCategory) {
+      throw new Error('Invalid recategorization data');
+    }
+
+    // Move bookmark to new category
+    const bookmarkService = new BookmarkService();
+    const folderId = await bookmarkService.findOrCreateFolderByPath(newCategory, '1');
+    await bookmarkService.moveBookmark(bookmark.id, folderId);
+
+    // Record correction for learning (MANUAL correction, not automatic)
+    const learningService = new LearningService();
+    await learningService.recordCorrection(bookmark, oldCategory, newCategory, true);
+
+    console.log(`✅ Manual recategorization: "${bookmark.title}" from "${oldCategory}" to "${newCategory}"`);
+
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error recategorizing bookmark:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Export learning data
+ */
+async function handleExportLearningData(sendResponse) {
+  try {
+    const learningService = new LearningService();
+    const exportData = await learningService.exportLearningData();
+    sendResponse({ success: true, data: exportData });
+  } catch (error) {
+    console.error('Error exporting learning data:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Import learning data
+ */
+async function handleImportLearningData(data, sendResponse) {
+  try {
+    const { learningData, merge } = data;
+    const learningService = new LearningService();
+    const result = await learningService.importLearningData(learningData, merge);
+    sendResponse({ success: true, data: result });
+  } catch (error) {
+    console.error('Error importing learning data:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Clear learning data
+ */
+async function handleClearLearningData(sendResponse) {
+  try {
+    const learningService = new LearningService();
+    await learningService.clearLearningData();
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error clearing learning data:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Get learning statistics
+ */
+async function handleGetLearningStatistics(sendResponse) {
+  try {
+    const learningService = new LearningService();
+    const statistics = await learningService.getStatistics();
+    sendResponse({ success: true, data: statistics });
+  } catch (error) {
+    console.error('Error getting learning statistics:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 
@@ -980,28 +1118,6 @@ function extractLearningPatterns(bookmark, targetCategory) {
 }
 
 /**
- * Calculate UTF-8 byte size of a string
- * @param {string} str - String to measure
- * @returns {number} - Byte size in UTF-8 encoding
- */
-function getUtf8ByteSize(str) {
-  let byteSize = 0;
-  for (let i = 0; i < str.length; i++) {
-    const charCode = str.charCodeAt(i);
-    if (charCode <= 0x7F) {
-      byteSize += 1;
-    } else if (charCode <= 0x7FF) {
-      byteSize += 2;
-    } else if (charCode <= 0xFFFF) {
-      byteSize += 3;
-    } else {
-      byteSize += 4;
-    }
-  }
-  return byteSize;
-}
-
-/**
  * Save learning patterns to storage
  */
 async function saveLearningPatterns(patterns, category) {
@@ -1010,86 +1126,16 @@ async function saveLearningPatterns(patterns, category) {
     const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
     const learningData = result.bookmarkMindLearning || {};
 
-    // Add new patterns with timestamp for pruning
+    // Add new patterns
     let newPatternsCount = 0;
-    const timestamp = Date.now();
-    
-    // Ensure all existing patterns have timestamps
-    for (const pattern in learningData) {
-      if (typeof learningData[pattern] === 'string') {
-        // Convert old format to new format with timestamp
-        learningData[pattern] = {
-          category: learningData[pattern],
-          timestamp: timestamp - 1 // Older than new entries
-        };
-      }
-    }
-    
     for (const pattern of patterns) {
-      const existing = learningData[pattern];
-      if (!existing || existing.category !== category) {
-        learningData[pattern] = {
-          category: category,
-          timestamp: timestamp
-        };
+      if (!learningData[pattern] || learningData[pattern] !== category) {
+        learningData[pattern] = category;
         newPatternsCount++;
       }
     }
 
     if (newPatternsCount > 0) {
-      // Calculate byte size
-      const jsonString = JSON.stringify(learningData);
-      const charLength = jsonString.length;
-      const byteSize = getUtf8ByteSize(jsonString);
-      
-      console.log(`📊 Learning patterns data size - Char length: ${charLength}, Byte size: ${byteSize} bytes`);
-      
-      // Chrome's sync storage limit is 8192 bytes per item
-      const QUOTA_BYTES_PER_ITEM = 8192;
-      const SAFETY_THRESHOLD = 0.85; // Start pruning at 85% capacity
-      const TARGET_SIZE = 0.75; // Prune down to 75% capacity
-      
-      // Check if we need to prune
-      if (byteSize >= QUOTA_BYTES_PER_ITEM * SAFETY_THRESHOLD) {
-        console.log(`⚠️ Learning patterns approaching size limit (${byteSize}/${QUOTA_BYTES_PER_ITEM} bytes, ${Math.round(byteSize/QUOTA_BYTES_PER_ITEM*100)}% full)`);
-        
-        // Sort patterns by timestamp (oldest first)
-        const sortedPatterns = Object.entries(learningData)
-          .sort((a, b) => a[1].timestamp - b[1].timestamp);
-        
-        const targetByteSize = QUOTA_BYTES_PER_ITEM * TARGET_SIZE;
-        const prunedData = {};
-        let prunedCount = 0;
-        let currentByteSize = 0;
-        
-        // Add patterns from newest to oldest until we reach target size
-        for (let i = sortedPatterns.length - 1; i >= 0; i--) {
-          const [pattern, data] = sortedPatterns[i];
-          const testData = { ...prunedData, [pattern]: data };
-          const testJsonString = JSON.stringify(testData);
-          const testByteSize = getUtf8ByteSize(testJsonString);
-          
-          if (testByteSize <= targetByteSize) {
-            prunedData[pattern] = data;
-            currentByteSize = testByteSize;
-          } else {
-            prunedCount++;
-            console.log(`🗑️ Pruning pattern: "${pattern}" -> "${data.category}" (timestamp: ${new Date(data.timestamp).toISOString()})`);
-          }
-        }
-        
-        Object.assign(learningData, {}); // Clear
-        Object.assign(learningData, prunedData); // Replace with pruned data
-        
-        const newByteSize = getUtf8ByteSize(JSON.stringify(learningData));
-        console.log(`✂️ Pruned ${prunedCount} oldest patterns. New size: ${newByteSize} bytes (${Math.round(newByteSize/QUOTA_BYTES_PER_ITEM*100)}% full)`);
-      }
-      
-      // Final size check before save
-      const finalJsonString = JSON.stringify(learningData);
-      const finalByteSize = getUtf8ByteSize(finalJsonString);
-      console.log(`💾 Saving learning patterns - Char length: ${finalJsonString.length}, Byte size: ${finalByteSize} bytes`);
-
       // Save updated learning data
       await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
 

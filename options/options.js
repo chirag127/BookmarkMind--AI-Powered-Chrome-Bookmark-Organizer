@@ -90,6 +90,8 @@ class OptionsController {
     this.learningPatternsList = document.getElementById('learningPatternsList');
     this.noPatternsMessage = document.getElementById('noPatternsMessage');
     this.refreshLearningDataBtn = document.getElementById('refreshLearningData');
+    this.exportLearningDataBtn = document.getElementById('exportLearningData');
+    this.importLearningDataBtn = document.getElementById('importLearningData');
 
     // Toast notification
     this.toast = document.getElementById('toast');
@@ -152,12 +154,18 @@ class OptionsController {
 
     // Data management events
     this.consolidateFoldersBtn.addEventListener('click', () => this.consolidateFolders());
-    this.exportDataBtn.addEventListener('click', () => this.exportData());
+    this.exportDataBtn.addEventListener('click', () => this.exportAllData());
     this.clearLearningDataBtn.addEventListener('click', () => this.clearLearningData());
     this.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
 
     // Learning data events
     this.refreshLearningDataBtn.addEventListener('click', () => this.loadLearningData());
+    if (this.exportLearningDataBtn) {
+      this.exportLearningDataBtn.addEventListener('click', () => this.exportLearningData());
+    }
+    if (this.importLearningDataBtn) {
+      this.importLearningDataBtn.addEventListener('click', () => this.importLearningData());
+    }
   }
 
   /**
@@ -277,20 +285,20 @@ class OptionsController {
    */
   async loadLearningData() {
     try {
-      console.log('📚 Loading learning data from storage...');
+      console.log('📚 Loading learning data from LearningService...');
 
-      // Get learning data from sync storage
-      const syncResult = await chrome.storage.sync.get(['bookmarkMindLearning']);
-      const learningData = syncResult.bookmarkMindLearning || {};
+      // Get learning statistics
+      const response = await chrome.runtime.sendMessage({
+        action: 'getLearningStatistics'
+      });
 
-      // Get last update timestamp from local storage
-      const localResult = await chrome.storage.local.get(['learningDataLastUpdate']);
-      const lastUpdate = localResult.learningDataLastUpdate;
-
-      console.log('📚 Loaded learning data:', learningData);
-      console.log('📚 Last update:', lastUpdate);
-
-      this.displayLearningData(learningData, lastUpdate);
+      if (response && response.success) {
+        const stats = response.data;
+        console.log('📚 Loaded learning statistics:', stats);
+        this.displayLearningStatistics(stats);
+      } else {
+        throw new Error('Failed to load learning statistics');
+      }
     } catch (error) {
       console.error('Error loading learning data:', error);
       this.showToast('Failed to load learning data', 'error');
@@ -298,82 +306,180 @@ class OptionsController {
   }
 
   /**
-   * Display learning data in the UI
+   * Display learning statistics in the UI
    */
-  displayLearningData(learningData, lastUpdate = null) {
-    const patterns = Object.entries(learningData);
-
+  displayLearningStatistics(stats) {
     // Update summary
-    this.totalLearningPatterns.textContent = patterns.length;
+    this.totalLearningPatterns.textContent = stats.totalPatterns || 0;
 
     // Update last modified timestamp
-    if (lastUpdate) {
-      const date = new Date(lastUpdate);
+    if (stats.lastUpdated) {
+      const date = new Date(stats.lastUpdated);
       this.lastLearningUpdate.textContent = date.toLocaleString();
     } else {
       this.lastLearningUpdate.textContent = 'Never';
     }
 
+    // Update learning patterns count in stats section
+    this.learningPatternsCount.textContent = stats.totalPatterns || 0;
+
     // Clear existing patterns
     this.learningPatternsList.innerHTML = '';
 
-    if (patterns.length === 0) {
+    if (stats.totalPatterns === 0) {
       // Show no patterns message
       const noPatterns = document.createElement('div');
       noPatterns.className = 'no-patterns';
       noPatterns.innerHTML = `
         <p>No learning patterns collected yet. The extension will learn from your manual bookmark corrections and categorizations.</p>
-        <p><strong>How it works:</strong> When you manually move bookmarks to different categories, the extension learns these patterns and applies them to future categorizations.</p>
+        <p><strong>How it works:</strong> When you manually recategorize bookmarks using the "Recategorize Bookmarks" feature in the popup, the extension learns these patterns and applies them to future categorizations.</p>
+        <p><strong>Note:</strong> The system does NOT learn from automatic AI categorization to prevent feedback loops.</p>
       `;
       this.learningPatternsList.appendChild(noPatterns);
     } else {
-      // Show patterns
-      patterns.forEach(([pattern, category]) => {
-        const patternItem = document.createElement('div');
-        patternItem.className = 'pattern-item';
-        patternItem.innerHTML = `
-          <div class="pattern-info">
-            <div class="pattern-text">"${pattern}"</div>
-            <div class="pattern-category">${category}</div>
-          </div>
-          <div class="pattern-actions">
-            <button class="pattern-delete" onclick="optionsController.deleteLearningPattern('${pattern}')" title="Delete this pattern">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor"/>
-              </svg>
-            </button>
+      // Show pattern statistics by type
+      const statsContainer = document.createElement('div');
+      statsContainer.className = 'pattern-stats';
+      statsContainer.innerHTML = `
+        <h4>Pattern Statistics</h4>
+        <div class="stat-row">
+          <span class="stat-label">Total Patterns:</span>
+          <span class="stat-value">${stats.totalPatterns}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Corrections:</span>
+          <span class="stat-value">${stats.totalCorrections || 0}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Domain Patterns:</span>
+          <span class="stat-value">${stats.patternsByType?.domain || 0}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Keyword Patterns:</span>
+          <span class="stat-value">${stats.patternsByType?.keyword || 0}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">URL Patterns:</span>
+          <span class="stat-value">${stats.patternsByType?.url_pattern || 0}</span>
+        </div>
+      `;
+
+      if (stats.mostCorrectedCategory) {
+        statsContainer.innerHTML += `
+          <div class="stat-row">
+            <span class="stat-label">Most Corrected Category:</span>
+            <span class="stat-value">${stats.mostCorrectedCategory}</span>
           </div>
         `;
-        this.learningPatternsList.appendChild(patternItem);
-      });
+      }
+
+      this.learningPatternsList.appendChild(statsContainer);
+
+      // Show category distribution
+      if (stats.categoryDistribution && Object.keys(stats.categoryDistribution).length > 0) {
+        const distContainer = document.createElement('div');
+        distContainer.className = 'category-distribution';
+        distContainer.innerHTML = '<h4>Category Distribution</h4>';
+
+        const sortedCategories = Object.entries(stats.categoryDistribution)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        sortedCategories.forEach(([category, count]) => {
+          const catRow = document.createElement('div');
+          catRow.className = 'category-row';
+          catRow.innerHTML = `
+            <span class="category-name">${category}</span>
+            <span class="category-count">${count} corrections</span>
+          `;
+          distContainer.appendChild(catRow);
+        });
+
+        this.learningPatternsList.appendChild(distContainer);
+      }
     }
   }
 
   /**
-   * Delete a specific learning pattern
+   * Export learning data
    */
-  async deleteLearningPattern(pattern) {
-    if (!confirm(`Delete learning pattern "${pattern}"?`)) {
-      return;
-    }
-
+  async exportLearningData() {
     try {
-      const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
-      const learningData = result.bookmarkMindLearning || {};
-
-      delete learningData[pattern];
-
-      await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
-
-      // Update last modified timestamp in local storage
-      await chrome.storage.local.set({
-        learningDataLastUpdate: new Date().toISOString()
+      const response = await chrome.runtime.sendMessage({
+        action: 'exportLearningData'
       });
 
-      this.showToast('Learning pattern deleted', 'success');
-      this.loadLearningData(); // Refresh display
+      if (response && response.success) {
+        const dataStr = JSON.stringify(response.data, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bookmarkmind-learning-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
+        this.showToast('Learning data exported successfully', 'success');
+      } else {
+        throw new Error('Failed to export learning data');
+      }
     } catch (error) {
+      console.error('Error exporting learning data:', error);
+      this.showToast('Failed to export learning data', 'error');
+    }
+  }
+
+  /**
+   * Import learning data
+   */
+  async importLearningData() {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result);
+            
+            const merge = confirm('Merge with existing learning data? Click OK to merge, Cancel to replace.');
+            
+            const response = await chrome.runtime.sendMessage({
+              action: 'importLearningData',
+              data: {
+                learningData: importedData,
+                merge: merge
+              }
+            });
+
+            if (response && response.success) {
+              this.showToast(`Imported ${response.data.patternsCount} patterns`, 'success');
+              this.loadLearningData();
+              this.loadStats();
+            } else {
+              throw new Error('Failed to import learning data');
+            }
+          } catch (error) {
+            console.error('Error importing learning data:', error);
+            this.showToast('Failed to import learning data: Invalid file format', 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      input.click();
+    } catch (error) {
+      console.error('Error importing learning data:', error);
+      this.showToast('Failed to import learning data', 'error');
+    }
+  }
       console.error('Error deleting learning pattern:', error);
       this.showToast('Failed to delete learning pattern', 'error');
     }
@@ -905,21 +1011,30 @@ class OptionsController {
   }
 
   /**
-   * Export extension data
+   * Export all extension data (settings + learning)
    */
-  async exportData() {
+  async exportAllData() {
     try {
       const allData = await chrome.storage.sync.get(null);
+      
+      // Get learning data from LearningService
+      const learningResponse = await chrome.runtime.sendMessage({
+        action: 'exportLearningData'
+      });
+
       const exportData = {
         exportDate: new Date().toISOString(),
         version: '1.0.0',
         settings: allData.bookmarkMindSettings || {},
-        learningData: allData.bookmarkMindLearning || {}
+        learningData: learningResponse.success ? learningResponse.data : {}
       };
 
       // Remove sensitive data
       if (exportData.settings.apiKey) {
         exportData.settings.apiKey = '[REDACTED]';
+      }
+      if (exportData.settings.agentRouterApiKey) {
+        exportData.settings.agentRouterApiKey = '[REDACTED]';
       }
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -929,16 +1044,16 @@ class OptionsController {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `bookmarkmind-settings-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `bookmarkmind-full-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      this.showToast('Settings exported successfully!', 'success');
+      this.showToast('Settings and learning data exported successfully!', 'success');
     } catch (error) {
       console.error('Export error:', error);
-      this.showToast('Failed to export settings', 'error');
+      this.showToast('Failed to export data', 'error');
     }
   }
 
@@ -948,16 +1063,17 @@ class OptionsController {
   async clearLearningData() {
     if (confirm('Are you sure you want to clear all learning data? This will reset the AI\'s learned preferences.')) {
       try {
-        await chrome.storage.sync.set({ bookmarkMindLearning: {} });
-
-        // Update last modified timestamp in local storage
-        await chrome.storage.local.set({
-          learningDataLastUpdate: new Date().toISOString()
+        const response = await chrome.runtime.sendMessage({
+          action: 'clearLearningData'
         });
 
-        this.showToast('Learning data cleared', 'success');
-        this.loadStats(); // Refresh stats
-        this.loadLearningData(); // Refresh learning data display
+        if (response && response.success) {
+          this.showToast('Learning data cleared', 'success');
+          this.loadStats(); // Refresh stats
+          this.loadLearningData(); // Refresh learning data display
+        } else {
+          throw new Error('Failed to clear learning data');
+        }
       } catch (error) {
         console.error('Error clearing learning data:', error);
         this.showToast('Failed to clear learning data', 'error');

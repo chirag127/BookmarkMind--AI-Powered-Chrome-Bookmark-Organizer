@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Learning Service Test</title>
+</head>
+<body>
+  <h1>Learning Service Test</h1>
+  <div id="output"></div>
+  
+  <script src="scripts/learningService.js"></script>
+  <script>
+    // Simple test of LearningService
+    const output = document.getElementById('output');
+    
+    try {
+      const learningService = new LearningService();
+      output.innerHTML += '<p>✅ LearningService class loaded successfully</p>';
+      
+      // Test pattern extraction
+      const keywords = learningService._extractKeywords('JavaScript Tutorial for Beginners');
+      output.innerHTML += `<p>✅ Keyword extraction: ${keywords.join(', ')}</p>`;
+      
+      const domain = learningService._extractDomain('https://www.example.com/path/to/page');
+      output.innerHTML += `<p>✅ Domain extraction: ${domain}</p>`;
+      
+      const urlPattern = learningService._extractUrlPattern('https://www.example.com/blog/posts/article-1');
+      output.innerHTML += `<p>✅ URL pattern extraction: ${urlPattern}</p>`;
+      
+      output.innerHTML += '<p style="color: green; font-weight: bold;">✅ All basic tests passed!</p>';
+    } catch (error) {
+      output.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+    }
+  </script>
+</body>
+</html>

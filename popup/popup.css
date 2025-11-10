@@ -654,6 +654,109 @@ body {
     color: #9aa0a6;
 }
 
+/* Recategorization Section */
+#recategorizeSection .section-header h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 4px;
+}
+
+#recategorizeSection .section-header p {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.recategorize-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Bookmark item with category selector */
+.bookmark-item-recategorize {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #e8eaed;
+    border-radius: 6px;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.bookmark-item-recategorize:hover {
+    border-color: #1a73e8;
+    background: #f8f9fa;
+}
+
+.bookmark-item-recategorize .bookmark-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.bookmark-item-recategorize .bookmark-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.bookmark-item-recategorize .bookmark-title {
+    font-weight: 500;
+    color: #202124;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-item-recategorize .bookmark-current-category {
+    font-size: 11px;
+    color: #5f6368;
+    margin-top: 2px;
+}
+
+.bookmark-item-recategorize .category-selector {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.bookmark-item-recategorize select {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+    cursor: pointer;
+}
+
+.bookmark-item-recategorize select:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+.bookmark-item-recategorize .apply-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #1a73e8;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.bookmark-item-recategorize .apply-btn:hover {
+    background: #1557b0;
+}
+
+.bookmark-item-recategorize .apply-btn:disabled {
+    background: #e8eaed;
+    color: #5f6368;
+    cursor: not-allowed;
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;

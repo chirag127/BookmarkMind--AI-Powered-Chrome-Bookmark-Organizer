@@ -106,7 +106,7 @@ _Extension will be available on the Chrome Web Store after review process_
 -   **Smart Analysis:** Advanced AI analyzes bookmark titles, URLs, and content context
 -   **Hierarchical Organization:** Creates deep folder structures (up to 7 levels)
 -   **Batch Processing:** Processes up to 50 bookmarks simultaneously
--   **Learning System:** Improves accuracy based on your manual corrections
+-   **Learning System:** Improves accuracy based on your manual corrections (learns ONLY from user input, not from AI categorization)
 
 ### ✨ Title Enhancement
 
@@ -134,7 +134,9 @@ _Extension will be available on the Chrome Web Store after review process_
 
 -   **One-Click Organization:** Simple interface for immediate results
 -   **Customizable Categories:** Add, edit, or remove categories as needed
+-   **Manual Recategorization:** Easily recategorize bookmarks to train the AI
 -   **Export/Import:** Backup and restore your settings and learning data
+-   **Learning Analytics:** View detailed statistics about learned patterns
 -   **Mobile Responsive:** Works seamlessly across all devices
 
 ### 📊 Performance Monitoring

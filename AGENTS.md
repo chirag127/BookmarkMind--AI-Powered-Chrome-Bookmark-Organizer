@@ -1,40 +1,37 @@
-# AGENTS.md - BookmarkMind Developer Guide
+# AGENTS.md - BookmarkMind Extension
 
 ## Commands
 
-### Initial Setup
-No package installation or virtual environment needed - pure vanilla JS extension.
+**Setup:** No package installation needed. Load extension in Chrome at `chrome://extensions/` (enable Developer mode → Load unpacked)
 
-### Build
-`npm run build` (no build step required)
+**Build:** `npm run build` (no-op for vanilla JS)
 
-### Lint
-`npm run lint` (not configured yet)
+**Lint:** `npm run lint` (not configured)
 
-### Tests
-`npm run test` (not implemented yet)
+**Test:** `npm run test` (not implemented)
 
-### Dev Server
-Load extension in Chrome at `chrome://extensions/` in Developer Mode using "Load unpacked"
+**Dev Server:** Load extension at `chrome://extensions/` and click reload icon after changes
 
-## Tech Stack & Architecture
+## Tech Stack
 
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
-- **Platform**: Chrome Extension Manifest V3
-- **AI**: Google Gemini API (primary), AgentRouter API (fallback)
-- **Storage**: Chrome Storage API (sync & local)
-- **Architecture**: Modular service-based design with service worker background script
+- **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3
+- **APIs:** Chrome Extension Manifest V3, Chrome Bookmarks API, Chrome Storage API
+- **AI:** Google Gemini API (primary), AgentRouter API (fallback)
+- **Architecture:** Service Worker background script, popup UI, options page
 
 ## Repo Structure
 
-- `scripts/` - Core logic (background.js service worker, AI processor, categorizer, folder manager, bookmark service)
-- `popup/` - Extension popup UI (HTML, CSS, JS)
-- `options/` - Settings page (HTML, CSS, JS)
+- `scripts/` - Core modules: background.js (service worker), aiProcessor.js, categorizer.js, bookmarkService.js, folderManager.js, snapshotManager.js, analyticsService.js, learningService.js
+- `popup/` - Extension popup UI (popup.html, popup.js, popup.css)
+- `options/` - Settings page (options.html, options.js, options.css)
 - `icons/` - Extension icons
+- `manifest.json` - Extension manifest (MV3)
 
-## Code Style
+## Code Conventions
 
-- ES6+ JavaScript with async/await patterns
-- JSDoc comments for classes and complex functions
-- Modular class-based architecture
-- No build tools - direct browser execution
+- Use classes for modules (e.g., `class Categorizer`, `class BookmarkService`)
+- Async/await for asynchronous operations
+- JSDoc comments for public methods
+- importScripts() in background.js for service worker module loading
+- Chrome API promises (chrome.bookmarks, chrome.storage)
+- Modular architecture with clear separation of concerns

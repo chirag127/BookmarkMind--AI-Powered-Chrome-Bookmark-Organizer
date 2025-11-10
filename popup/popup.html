@@ -227,6 +227,34 @@
         </div>
       </div>
 
+      <!-- Manual Recategorization Section -->
+      <div id="recategorizeSection" class="section hidden">
+        <div class="section-header">
+          <h3>Manual Recategorization</h3>
+          <p>Select bookmarks to manually recategorize and improve AI learning</p>
+        </div>
+
+        <div class="bookmark-search">
+          <input type="text" id="recategorizeSearchInput" placeholder="Search bookmarks to recategorize..." />
+        </div>
+
+        <div id="recategorizeBookmarkList" class="bookmark-list">
+          <!-- Bookmarks will be populated here -->
+        </div>
+
+        <div class="recategorize-actions">
+          <button id="showRecategorizeBtn" class="secondary-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor" />
+            </svg>
+            Recategorize Bookmarks
+          </button>
+          <button id="closeRecategorizeBtn" class="secondary-btn hidden">
+            Cancel
+          </button>
+        </div>
+      </div>
+
       <!-- Last Sort Info -->
       <div id="lastSortSection" class="section">
         <div class="last-sort-info">
@@ -278,6 +306,7 @@
   <script src="../scripts/categorizer.js"></script>
   <script src="../scripts/folderManager.js"></script>
   <script src="../scripts/snapshotManager.js"></script>
+  <script src="../scripts/learningService.js"></script>
   <script src="popup.js"></script>
 </body>
 
