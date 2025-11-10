@@ -6,6 +6,7 @@
 class AIProcessor {
     constructor() {
         this.apiKey = null;
+        this.cerebrasApiKey = null;
         this.bookmarkService = null;
         this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
 
@@ -21,6 +22,20 @@ class AIProcessor {
         ];
         this.currentModelIndex = 0;
         this.baseUrlTemplate = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
+
+        // Cerebras model fallback sequence - OpenAI-compatible API
+        this.cerebrasModels = [
+            'gpt-oss-120b',
+            'llama-3.3-70b',
+            'qwen-3-32b',
+            'llama3.1-8b'
+        ];
+        this.cerebrasBaseUrl = 'https://api.cerebras.ai/v1/chat/completions';
+
+        // Retry configuration for exponential backoff
+        this.maxRetries = 3;
+        this.baseRetryDelay = 1000; // 1 second
+        this.maxRetryDelay = 30000; // 30 seconds
     }
 
     /**
@@ -378,9 +393,12 @@ class AIProcessor {
     /**
      * Initialize with API key
      * @param {string} apiKey - Gemini API key
+     * @param {string} cerebrasKey - Cerebras API key (optional)
      */
-    setApiKey(apiKey) {
+    setApiKey(apiKey, cerebrasKey = null) {
         this.apiKey = apiKey;
+        this.cerebrasApiKey = cerebrasKey;
+        console.log(`🔑 API Keys configured: Gemini=${!!apiKey}, Cerebras=${!!cerebrasKey}`);
         // Initialize BookmarkService for folder creation
         if (typeof BookmarkService !== 'undefined') {
             this.bookmarkService = new BookmarkService();
@@ -1448,7 +1466,48 @@ Return only the JSON array with properly formatted category names, no additional
      * @returns {Promise<Array>} Batch results
      */
     async _processBatch(batch, categories, learningData) {
-        return await this._processBatchWithModelFallback(batch, categories, learningData);
+        return await this._processBatchWithProviderFallback(batch, categories, learningData);
+    }
+
+    /**
+     * Process batch with provider fallback: Gemini models → Cerebras models
+     * @param {Array} batch - Batch of bookmarks
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processBatchWithProviderFallback(batch, categories, learningData) {
+        console.log(`\n🔄 === PROVIDER FALLBACK ORCHESTRATOR ===`);
+        console.log(`📦 Processing batch of ${batch.length} bookmarks`);
+        console.log(`🔑 Available providers: Gemini=${!!this.apiKey}, Cerebras=${!!this.cerebrasApiKey}`);
+
+        // Phase 1: Try all Gemini models
+        console.log(`\n📍 PHASE 1: Trying Gemini models (${this.geminiModels.length} models available)`);
+        try {
+            const result = await this._processBatchWithGeminiModels(batch, categories, learningData);
+            console.log(`✅ SUCCESS: Batch processed with Gemini provider`);
+            return result;
+        } catch (geminiError) {
+            console.log(`❌ PHASE 1 FAILED: All Gemini models exhausted`);
+            console.log(`   Failure reason: ${geminiError.message}`);
+
+            // Phase 2: Try Cerebras models if available
+            if (this.cerebrasApiKey) {
+                console.log(`\n📍 PHASE 2: Trying Cerebras models (${this.cerebrasModels.length} models available)`);
+                try {
+                    const result = await this._processBatchWithCerebrasModels(batch, categories, learningData);
+                    console.log(`✅ SUCCESS: Batch processed with Cerebras provider`);
+                    return result;
+                } catch (cerebrasError) {
+                    console.log(`❌ PHASE 2 FAILED: All Cerebras models exhausted`);
+                    console.log(`   Failure reason: ${cerebrasError.message}`);
+                    throw new Error(`All AI providers failed. Gemini: ${geminiError.message}. Cerebras: ${cerebrasError.message}`);
+                }
+            } else {
+                console.log(`⚠️ PHASE 2 SKIPPED: No Cerebras API key configured`);
+                throw new Error(`All Gemini models failed and no Cerebras fallback available: ${geminiError.message}`);
+            }
+        }
     }
 
     /**
@@ -1458,7 +1517,7 @@ Return only the JSON array with properly formatted category names, no additional
      * @param {Object} learningData - Learning data
      * @returns {Promise<Array>} Batch results
      */
-    async _processBatchWithModelFallback(batch, categories, learningData) {
+    async _processBatchWithGeminiModels(batch, categories, learningData) {
         const prompt = await this._buildPrompt(batch, categories, learningData);
         const requestBody = {
             contents: [{
@@ -1581,6 +1640,197 @@ Return only the JSON array with properly formatted category names, no additional
         this.currentModelIndex = originalModelIndex;
 
         throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
+    }
+
+    /**
+     * Process batch with Cerebras model fallback sequence
+     * @param {Array} batch - Batch of bookmarks
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processBatchWithCerebrasModels(batch, categories, learningData) {
+        const prompt = await this._buildPrompt(batch, categories, learningData);
+        let lastError = null;
+
+        // Try each Cerebras model in sequence
+        for (let modelIndex = 0; modelIndex < this.cerebrasModels.length; modelIndex++) {
+            const currentModel = this.cerebrasModels[modelIndex];
+            console.log(`🧠 Trying Cerebras model: ${currentModel} (${modelIndex + 1}/${this.cerebrasModels.length})`);
+
+            try {
+                const result = await this._processWithCerebras(prompt, batch, currentModel);
+                console.log(`✅ SUCCESS with Cerebras ${currentModel}`);
+                return result;
+            } catch (error) {
+                console.log(`❌ Cerebras ${currentModel} failed: ${error.message}`);
+                lastError = error;
+
+                // If it's a non-retryable error, don't try other models
+                if (error.message.includes('Invalid API key') ||
+                    error.message.includes('API access denied') ||
+                    error.message.includes('Unauthorized')) {
+                    throw error;
+                }
+
+                // Small delay between model attempts
+                if (modelIndex < this.cerebrasModels.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+
+        throw new Error(`All Cerebras models failed. Last error: ${lastError?.message}`);
+    }
+
+    /**
+     * Process batch with Cerebras API (OpenAI-compatible format) with exponential backoff
+     * @param {string} prompt - Formatted prompt
+     * @param {Array} batch - Batch of bookmarks
+     * @param {string} model - Cerebras model name
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processWithCerebras(prompt, batch, model) {
+        const requestBody = {
+            model: model,
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a bookmark categorization expert. Always return valid JSON arrays."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.3,
+            max_tokens: 4000
+        };
+
+        // Exponential backoff retry logic
+        for (let retryAttempt = 0; retryAttempt <= this.maxRetries; retryAttempt++) {
+            try {
+                const requestStart = Date.now();
+                console.log(`   🔄 Cerebras ${model} request attempt ${retryAttempt + 1}/${this.maxRetries + 1}`);
+
+                const response = await fetch(this.cerebrasBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.cerebrasApiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const responseTime = Date.now() - requestStart;
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.choices && data.choices[0] && data.choices[0].message) {
+                        const responseText = data.choices[0].message.content;
+                        console.log(`   ✅ Cerebras ${model} SUCCESS (${responseTime}ms)`);
+
+                        // Record API usage analytics
+                        if (this.analyticsService) {
+                            await this.analyticsService.recordApiUsage({
+                                provider: 'cerebras',
+                                model: model,
+                                success: true,
+                                responseTime,
+                                batchSize: batch.length,
+                                tokensUsed: data.usage?.total_tokens || 0,
+                                retryAttempt: retryAttempt
+                            });
+                        }
+
+                        return this._parseResponse(responseText, batch);
+                    } else {
+                        throw new Error('Invalid Cerebras API response format');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    const isRateLimitError = response.status === 429;
+                    const isServerError = response.status === 503 || response.status === 500 || 
+                                         response.status === 502 || response.status === 504;
+
+                    console.log(`   ❌ Cerebras ${model} failed: ${response.status} (attempt ${retryAttempt + 1}/${this.maxRetries + 1})`);
+                    console.log(`   Error details: ${errorText.substring(0, 200)}`);
+
+                    // Record API failure analytics
+                    if (this.analyticsService) {
+                        await this.analyticsService.recordApiUsage({
+                            provider: 'cerebras',
+                            model: model,
+                            success: false,
+                            responseTime,
+                            batchSize: batch.length,
+                            errorType: `${response.status}`,
+                            retryAttempt: retryAttempt
+                        });
+                    }
+
+                    // Check if this is a retryable error
+                    const isRetryableError = isRateLimitError || isServerError;
+
+                    if (!isRetryableError) {
+                        // Non-retryable errors (auth, bad request, etc.)
+                        if (response.status === 401) {
+                            throw new Error('Invalid Cerebras API key. Please check your API key (should start with "csk-").');
+                        } else if (response.status === 403) {
+                            throw new Error('Cerebras API access denied. Please check your API key permissions.');
+                        } else if (response.status === 400) {
+                            throw new Error('Bad request to Cerebras API. Please check your configuration.');
+                        } else {
+                            throw new Error(`Cerebras API request failed: ${response.status}. ${errorText}`);
+                        }
+                    }
+
+                    // If this is the last retry, throw the error
+                    if (retryAttempt >= this.maxRetries) {
+                        if (isRateLimitError) {
+                            throw new Error(`Cerebras rate limit exceeded after ${this.maxRetries + 1} attempts`);
+                        } else {
+                            throw new Error(`Cerebras server error (${response.status}) after ${this.maxRetries + 1} attempts`);
+                        }
+                    }
+
+                    // Calculate exponential backoff delay with jitter
+                    const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
+                    const jitter = Math.random() * 1000; // Add 0-1s jitter
+                    const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
+
+                    console.log(`   ⏳ Rate limit/server error detected. Retrying in ${Math.round(retryDelay / 1000)}s...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+
+                } 
+            } catch (error) {
+                console.log(`   ❌ Cerebras ${model} error on attempt ${retryAttempt + 1}: ${error.message}`);
+
+                // If it's a non-retryable error, throw immediately
+                if (error.message.includes('Invalid') || 
+                    error.message.includes('denied') ||
+                    error.message.includes('Unauthorized') ||
+                    error.message.includes('Bad request')) {
+                    throw error;
+                }
+
+                // If this is the last retry, throw the error
+                if (retryAttempt >= this.maxRetries) {
+                    throw error;
+                }
+
+                // Retry with exponential backoff
+                const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
+                const jitter = Math.random() * 1000;
+                const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
+
+                console.log(`   ⏳ Network/timeout error. Retrying in ${Math.round(retryDelay / 1000)}s...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+        }
+
+        throw new Error(`Cerebras ${model} failed after ${this.maxRetries + 1} attempts`);
     }
 
     /**

@@ -111,6 +111,18 @@ class OptionsController {
       console.log('Clear button clicked');
       this.clearApiKey();
     });
+
+    // Cerebras API Key events
+    this.cerebrasApiKeyInput.addEventListener('input', () => {
+      this.onApiKeyChange();
+    });
+    this.toggleCerebrasApiKeyBtn.addEventListener('click', () => {
+      this.toggleCerebrasApiKeyVisibility();
+    });
+    this.clearCerebrasApiKeyBtn.addEventListener('click', () => {
+      this.clearCerebrasApiKey();
+    });
+
     this.testApiKeyBtn.addEventListener('click', () => {
       console.log('Test button clicked');
       this.testApiKey();
@@ -222,7 +234,7 @@ class OptionsController {
    * Update settings UI with current values
    */
   updateSettingsUI() {
-    // API Key (show masked or empty)
+    // Gemini API Key (show masked or empty)
     if (this.settings.apiKey) {
       this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
       this.apiKeyInput.dataset.hasKey = 'true';
@@ -574,6 +586,20 @@ class OptionsController {
   }
 
   /**
+   * Clear Cerebras API key
+   */
+  clearCerebrasApiKey() {
+    this.cerebrasApiKeyInput.value = '';
+    this.cerebrasApiKeyInput.type = 'password';
+    this.cerebrasApiKeyInput.dataset.hasKey = 'false';
+    this.isCerebrasApiKeyVisible = false;
+    this.hideCerebrasApiKeyStatus();
+    this.updateButtonStates();
+    this.cerebrasApiKeyInput.focus();
+    console.log('Cerebras API key input cleared');
+  }
+
+  /**
    * Toggle API key visibility
    */
   toggleApiKeyVisibility() {
@@ -602,6 +628,36 @@ class OptionsController {
       `;
     }
     this.isApiKeyVisible = !this.isApiKeyVisible;
+    this.updateButtonStates();
+  }
+
+  /**
+   * Toggle Cerebras API key visibility
+   */
+  toggleCerebrasApiKeyVisibility() {
+    if (this.isCerebrasApiKeyVisible) {
+      if (this.settings.cerebrasApiKey) {
+        this.cerebrasApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+        this.cerebrasApiKeyInput.type = 'password';
+      }
+      this.toggleCerebrasApiKeyBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
+        </svg>
+      `;
+    } else {
+      if (this.settings.cerebrasApiKey) {
+        this.cerebrasApiKeyInput.value = this.settings.cerebrasApiKey;
+        this.cerebrasApiKeyInput.type = 'text';
+      }
+      this.toggleCerebrasApiKeyBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 7C12.55 7 13 7.45 13 8C13 8.55 12.55 9 12 9C11.45 9 11 8.55 11 8C11 7.45 11.45 7 12 7ZM2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12ZM12 17C15.87 17 19.5 13.87 19.5 12C19.5 10.13 15.87 7 12 7C8.13 7 4.5 10.13 4.5 12C4.5 13.87 8.13 17 12 17Z" fill="currentColor"/>
+          <path d="M3 3L21 21" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      `;
+    }
+    this.isCerebrasApiKeyVisible = !this.isCerebrasApiKeyVisible;
     this.updateButtonStates();
   }
 
@@ -848,19 +904,28 @@ class OptionsController {
    */
   async saveApiKey() {
     const apiKey = this.apiKeyInput.value.trim();
+    const cerebrasApiKey = this.cerebrasApiKeyInput.value.trim();
 
     // Save Gemini API key if provided
     if (apiKey && !apiKey.startsWith('••••')) {
       this.settings.apiKey = apiKey;
     }
 
+    // Save Cerebras API key if provided
+    if (cerebrasApiKey && !cerebrasApiKey.startsWith('••••')) {
+      this.settings.cerebrasApiKey = cerebrasApiKey;
+    }
+
     try {
       await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
 
-      this.showToast('API key saved successfully!', 'success');
-      this.showApiKeyStatus('API key saved', 'success');
+      this.showToast('API keys saved successfully!', 'success');
+      this.showApiKeyStatus('API keys saved', 'success');
+      if (cerebrasApiKey && !cerebrasApiKey.startsWith('••••')) {
+        this.showCerebrasApiKeyStatus('Cerebras API key saved', 'success');
+      }
 
-      // Update UI to show masked key
+      // Update UI to show masked keys
       setTimeout(() => {
         if (apiKey && !apiKey.startsWith('••••')) {
           this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
@@ -869,12 +934,19 @@ class OptionsController {
           this.isApiKeyVisible = false;
         }
 
+        if (cerebrasApiKey && !cerebrasApiKey.startsWith('••••')) {
+          this.cerebrasApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+          this.cerebrasApiKeyInput.type = 'password';
+          this.cerebrasApiKeyInput.dataset.hasKey = 'true';
+          this.isCerebrasApiKeyVisible = false;
+        }
+
         this.updateButtonStates();
       }, 1000);
 
     } catch (error) {
-      console.error('Error saving API key:', error);
-      this.showToast('Failed to save API key', 'error');
+      console.error('Error saving API keys:', error);
+      this.showToast('Failed to save API keys', 'error');
     }
   }
 
@@ -889,6 +961,19 @@ class OptionsController {
 
   hideApiKeyStatus() {
     this.apiKeyStatus.classList.add('hidden');
+  }
+
+  /**
+   * Show/hide Cerebras API key status
+   */
+  showCerebrasApiKeyStatus(message, type) {
+    this.cerebrasApiKeyStatus.className = `status-indicator ${type}`;
+    this.cerebrasApiKeyStatus.querySelector('.status-text').textContent = message;
+    this.cerebrasApiKeyStatus.classList.remove('hidden');
+  }
+
+  hideCerebrasApiKeyStatus() {
+    this.cerebrasApiKeyStatus.classList.add('hidden');
   }
 
   /**

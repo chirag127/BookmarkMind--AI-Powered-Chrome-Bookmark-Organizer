@@ -20,7 +20,7 @@ class Categorizer {
    */
   async initialize(settings) {
     if (settings.apiKey) {
-      this.aiProcessor.setApiKey(settings.apiKey);
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
     }
   }
 
@@ -70,8 +70,8 @@ class Categorizer {
         throw new Error('API key not configured. Please set up your Gemini API key in settings.');
       }
 
-      console.log('Categorizer: Setting API key...');
-      this.aiProcessor.setApiKey(settings.apiKey);
+      console.log('Categorizer: Setting API keys...');
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
 
       // Get all bookmarks
       console.log('Categorizer: Loading bookmarks...');
@@ -247,8 +247,8 @@ class Categorizer {
         throw new Error('API key not configured. Please set up your Gemini API key in settings.');
       }
 
-      console.log('Categorizer: Setting API key...');
-      this.aiProcessor.setApiKey(settings.apiKey);
+      console.log('Categorizer: Setting API keys...');
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
 
       // Validate selected bookmarks exist in Chrome
       console.log('Categorizer: Validating selected bookmarks...');
