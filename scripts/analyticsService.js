@@ -387,7 +387,27 @@ class AnalyticsService {
     async _getAnalytics() {
         try {
             const result = await chrome.storage.local.get([this.storageKey]);
-            return result[this.storageKey] || this._getDefaultAnalytics();
+            const stored = result[this.storageKey];
+            
+            // If no stored data, return defaults
+            if (!stored) {
+                return this._getDefaultAnalytics();
+            }
+            
+            // Merge stored data with defaults to ensure all properties exist
+            const defaults = this._getDefaultAnalytics();
+            return {
+                ...defaults,
+                ...stored,
+                // Ensure arrays exist
+                sessions: Array.isArray(stored.sessions) ? stored.sessions : [],
+                apiCalls: Array.isArray(stored.apiCalls) ? stored.apiCalls : [],
+                consolidations: Array.isArray(stored.consolidations) ? stored.consolidations : [],
+                // Ensure objects exist
+                categoryUsage: stored.categoryUsage || {},
+                apiByProvider: stored.apiByProvider || {},
+                processingTimes: stored.processingTimes || {}
+            };
         } catch (error) {
             console.error('Error getting analytics:', error);
             return this._getDefaultAnalytics();
