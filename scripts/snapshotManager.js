@@ -370,8 +370,25 @@ class SnapshotManager {
    * @returns {Promise<Object>} Restoration results
    */
   async restoreSnapshot(snapshotId, progressCallback) {
+    // Initialize counting variables at the start of the function
+    const results = {
+      foldersCreated: 0,
+      foldersDeleted: 0,
+      bookmarksRestored: 0,
+      bookmarksRemoved: 0,
+      errors: []
+    };
+
     try {
       console.log(`🔄 Restoring snapshot: ${snapshotId}`);
+      
+      // Notify background script to disable bookmark move listener
+      try {
+        await chrome.runtime.sendMessage({ action: 'startSnapshotRestore' });
+      } catch (error) {
+        console.warn('Could not notify background script about snapshot restore start:', error);
+      }
+
       progressCallback?.({ stage: 'loading', progress: 0, message: 'Loading snapshot...' });
 
       const snapshot = await this.getSnapshot(snapshotId);
@@ -382,13 +399,6 @@ class SnapshotManager {
       progressCallback?.({ stage: 'preparing', progress: 10, message: 'Preparing restoration...' });
 
       const currentTree = await chrome.bookmarks.getTree();
-      const results = {
-        foldersCreated: 0,
-        foldersDeleted: 0,
-        bookmarksRestored: 0,
-        bookmarksRemoved: 0,
-        errors: []
-      };
 
       progressCallback?.({ stage: 'clearing', progress: 20, message: 'Clearing current bookmarks...' });
       await this._clearCurrentBookmarks(currentTree[0], results, progressCallback);
@@ -399,8 +409,23 @@ class SnapshotManager {
       progressCallback?.({ stage: 'complete', progress: 100, message: 'Restoration complete' });
       
       console.log(`✅ Snapshot restored successfully:`, results);
+      
+      // Notify background script to re-enable bookmark move listener
+      try {
+        await chrome.runtime.sendMessage({ action: 'endSnapshotRestore' });
+      } catch (error) {
+        console.warn('Could not notify background script about snapshot restore end:', error);
+      }
+      
       return results;
     } catch (error) {
+      // Ensure listener is re-enabled even on error
+      try {
+        await chrome.runtime.sendMessage({ action: 'endSnapshotRestore' });
+      } catch (msgError) {
+        console.warn('Could not notify background script about snapshot restore end (error case):', msgError);
+      }
+      
       await this._logDetailedError('restoreSnapshot', error, { snapshotId });
       throw new Error(`Failed to restore snapshot: ${error.message}`);
     }

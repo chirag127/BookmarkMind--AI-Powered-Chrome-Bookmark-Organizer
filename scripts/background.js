@@ -37,6 +37,9 @@ let isAICategorizing = false;
 let aiCategorizedBookmarks = new Set(); // Track bookmarks moved by AI
 let aiCategorizationStartTime = null; // Track when AI categorization started
 
+// Global flag to track snapshot restoration state
+let isRestoringSnapshot = false;
+
 // Debug function to log AI state
 function logAIState(context) {
   console.log(`🤖 AI State [${context}]:`, {
@@ -274,6 +277,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'getSnapshots':
         await handleGetSnapshots(sendResponse);
+        break;
+
+      case 'startSnapshotRestore':
+        // Disable bookmark move listener during restoration
+        isRestoringSnapshot = true;
+        try {
+          chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+          console.log('🔄 Bookmark move listener DISABLED during snapshot restore');
+        } catch (error) {
+          console.warn('Failed to disable bookmark move listener:', error);
+        }
+        sendResponse({ success: true });
+        break;
+
+      case 'endSnapshotRestore':
+        // Re-enable bookmark move listener after restoration
+        isRestoringSnapshot = false;
+        setTimeout(() => {
+          try {
+            chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+            chrome.bookmarks.onMoved.addListener(bookmarkMoveListener);
+            console.log('🔄 Bookmark move listener RE-ENABLED after snapshot restore');
+          } catch (error) {
+            console.warn('Failed to re-enable bookmark move listener:', error);
+          }
+        }, 5000);
+        sendResponse({ success: true });
         break;
 
       case 'restoreSnapshot':
@@ -968,6 +998,12 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
     // This prevents the AI from training on its own output, which would create feedback loops
 
     // MULTIPLE LAYERS OF PROTECTION AGAINST AI LEARNING:
+
+    // Layer 0: Skip learning if snapshot restoration is in progress
+    if (isRestoringSnapshot) {
+      console.log('📚 ❌ BLOCKED (Layer 0): Snapshot restoration in progress - preventing learning');
+      return;
+    }
 
     // Layer 1: Skip learning if AI categorization is in progress (global flag)
     if (isAICategorizing) {
