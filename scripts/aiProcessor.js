@@ -1914,6 +1914,22 @@ Return only the JSON array, no additional text or formatting`;
     async _processWithAgentRouter(batch, categories, learningData) {
         console.log('🌐 Using AgentRouter fallback API...');
 
+        // Validate API key format
+        if (!this.agentRouterApiKey) {
+            const error = new Error('AgentRouter API key not configured');
+            console.error('❌ Authentication Error:', error.message);
+            throw error;
+        }
+
+        if (!this.agentRouterApiKey.startsWith('sk-or-')) {
+            const error = new Error('Invalid AgentRouter API key format. Key must start with "sk-or-"');
+            console.error('❌ Authentication Error:', error.message);
+            console.error('🔑 Provided key prefix:', this.agentRouterApiKey.substring(0, 10) + '...');
+            throw error;
+        }
+
+        console.log('✅ API key format validated (sk-or- prefix)');
+
         const prompt = await this._buildPrompt(batch, categories, learningData);
 
         const requestBody = {
@@ -1928,38 +1944,154 @@ Return only the JSON array, no additional text or formatting`;
             max_tokens: 4000
         };
 
-        try {
-            const response = await fetch(this.agentRouterBaseUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.agentRouterApiKey}`,
-                    'HTTP-Referer': 'https://bookmarkmind.extension',
-                    'X-Title': 'BookmarkMind Extension'
-                },
-                body: JSON.stringify(requestBody)
-            });
+        // Retry configuration for 401 errors
+        const maxRetries = 3;
+        let retryCount = 0;
+        let lastError = null;
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('AgentRouter API Error:', response.status, errorText);
-                throw new Error(`AgentRouter API request failed: ${response.status}. ${errorText}`);
+        while (retryCount <= maxRetries) {
+            try {
+                // Calculate exponential backoff delay (0ms for first attempt, then 1s, 2s, 4s)
+                if (retryCount > 0) {
+                    const backoffDelay = Math.pow(2, retryCount - 1) * 1000;
+                    console.log(`⏳ Retry attempt ${retryCount}/${maxRetries} after ${backoffDelay}ms backoff...`);
+                    await this._delay(backoffDelay);
+                }
+
+                // Log detailed request information
+                console.log('📤 AgentRouter Request:', {
+                    url: this.agentRouterBaseUrl,
+                    model: this.fallbackModel,
+                    messageCount: requestBody.messages.length,
+                    promptLength: prompt.length,
+                    temperature: requestBody.temperature,
+                    maxTokens: requestBody.max_tokens,
+                    batchSize: batch.length,
+                    apiKeyPrefix: this.agentRouterApiKey.substring(0, 10) + '...',
+                    timestamp: new Date().toISOString()
+                });
+
+                const response = await fetch(this.agentRouterBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.agentRouterApiKey}`,
+                        'HTTP-Referer': 'https://bookmarkmind.extension',
+                        'X-Title': 'BookmarkMind Extension'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                // Log detailed response information
+                console.log('📥 AgentRouter Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    headers: {
+                        contentType: response.headers.get('content-type'),
+                        contentLength: response.headers.get('content-length')
+                    },
+                    timestamp: new Date().toISOString()
+                });
+
+                // Handle authentication errors (401) with retry logic
+                if (response.status === 401) {
+                    const errorText = await response.text();
+                    console.error('🔐 Authentication Error (401):', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        body: errorText,
+                        retryAttempt: retryCount + 1,
+                        maxRetries: maxRetries
+                    });
+
+                    lastError = new Error(`Authentication failed: Invalid or expired API key. ${errorText}`);
+
+                    // Retry on 401 errors
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        console.warn(`🔄 Retrying due to 401 authentication error (attempt ${retryCount}/${maxRetries})...`);
+                        continue; // Retry with exponential backoff
+                    } else {
+                        console.error('❌ Authentication failed after all retry attempts');
+                        throw new Error(`Authentication Error: API key is invalid or expired. Please verify your AgentRouter API key in settings. (Retried ${maxRetries} times)`);
+                    }
+                }
+
+                // Handle other error status codes
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ API Request Failed:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        body: errorText,
+                        errorType: response.status >= 500 ? 'Server Error' : 'Client Error'
+                    });
+
+                    // Distinguish between different error types
+                    if (response.status >= 500) {
+                        throw new Error(`Server Error (${response.status}): AgentRouter service is experiencing issues. ${errorText}`);
+                    } else if (response.status === 429) {
+                        throw new Error(`Rate Limit Error (429): Too many requests. Please wait and try again. ${errorText}`);
+                    } else if (response.status === 400) {
+                        throw new Error(`Bad Request (400): Invalid request format. ${errorText}`);
+                    } else {
+                        throw new Error(`API Error (${response.status}): ${response.statusText}. ${errorText}`);
+                    }
+                }
+
+                // Parse and validate response
+                const data = await response.json();
+                console.log('📦 AgentRouter Response Data:', {
+                    hasChoices: !!data.choices,
+                    choicesCount: data.choices?.length || 0,
+                    hasMessage: !!data.choices?.[0]?.message,
+                    contentLength: data.choices?.[0]?.message?.content?.length || 0,
+                    model: data.model,
+                    usage: data.usage
+                });
+
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    console.error('❌ Invalid Response Format:', data);
+                    throw new Error('API Response Error: Invalid response format (missing choices or message)');
+                }
+
+                const responseText = data.choices[0].message.content;
+                console.log('✅ AgentRouter request successful:', {
+                    responseLength: responseText.length,
+                    model: data.model,
+                    tokensUsed: data.usage
+                });
+
+                return this._parseResponse(responseText, batch);
+
+            } catch (error) {
+                // If this is not a retry-able error, throw immediately
+                if (error.message.includes('Authentication Error') && retryCount >= maxRetries) {
+                    throw error;
+                }
+
+                // Log other errors
+                console.error('❌ AgentRouter Request Error:', {
+                    errorMessage: error.message,
+                    errorType: error.constructor.name,
+                    retryAttempt: retryCount,
+                    maxRetries: maxRetries
+                });
+
+                // For network errors or other failures, don't retry
+                if (!error.message.includes('401')) {
+                    throw new Error(`API Request Failed: ${error.message}`);
+                }
+
+                lastError = error;
+                retryCount++;
             }
-
-            const data = await response.json();
-
-            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-                throw new Error('Invalid AgentRouter API response format');
-            }
-
-            const responseText = data.choices[0].message.content;
-            console.log('✅ AgentRouter fallback successful');
-            return this._parseResponse(responseText, batch);
-
-        } catch (error) {
-            console.error('AgentRouter fallback failed:', error);
-            throw new Error(`AgentRouter API failed: ${error.message}`);
         }
+
+        // If we exhausted all retries
+        console.error('❌ All retry attempts exhausted');
+        throw lastError || new Error('AgentRouter API failed after all retry attempts');
     }
 
     /**
