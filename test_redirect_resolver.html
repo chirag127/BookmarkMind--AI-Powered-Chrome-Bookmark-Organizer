@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedirectResolver Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #f44336;
+            border-left-color: #f44336;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .warning {
+            color: #ff9800;
+        }
+        .info {
+            color: #2196F3;
+        }
+        .progress {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .console-output .log { color: #d4d4d4; }
+        .console-output .info { color: #4FC3F7; }
+        .console-output .warn { color: #FFB74D; }
+        .console-output .error { color: #E57373; }
+        .console-output .success { color: #81C784; }
+    </style>
+</head>
+<body>
+    <h1>🔗 RedirectResolver Service Test Suite</h1>
+    
+    <div class="section">
+        <h2>📋 Test Configuration</h2>
+        <p><strong>Note:</strong> This test requires the extension to be loaded in Chrome with proper permissions.</p>
+        <p>The test will use real URLs to verify redirect resolution functionality.</p>
+        
+        <div>
+            <button class="test-button" onclick="testSingleUrl()">Test Single URL Resolution</button>
+            <button class="test-button" onclick="testBatchUrls()">Test Batch URL Resolution</button>
+            <button class="test-button" onclick="testSingleBookmark()">Test Single Bookmark Processing</button>
+            <button class="test-button" onclick="testBatchBookmarks()">Test Batch Bookmark Processing</button>
+            <button class="test-button" onclick="testCaching()">Test URL Caching</button>
+            <button class="test-button" onclick="testRetryLogic()">Test Retry Logic</button>
+            <button class="test-button" onclick="testCacheManagement()">Test Cache Management</button>
+            <button class="test-button" onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div id="progress-container" style="display: none;">
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar">0%</div>
+            </div>
+            <p id="progress-text"></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Statistics</h2>
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Processed</div>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Resolved</div>
+                <div class="stat-value" id="stat-resolved">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Failed</div>
+                <div class="stat-value" id="stat-failed">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Cached</div>
+                <div class="stat-value" id="stat-cached">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Updated</div>
+                <div class="stat-value" id="stat-updated">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📝 Test Results</h2>
+        <div class="results" id="results">No tests run yet. Click a test button to start.</div>
+    </div>
+
+    <div class="section">
+        <h2>💻 Console Output</h2>
+        <div class="console-output" id="console">Waiting for test execution...</div>
+    </div>
+
+    <script src="scripts/redirectResolver.js"></script>
+    <script>
+        let resolver;
+        const results = document.getElementById('results');
+        const consoleOutput = document.getElementById('console');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        // Override console methods to capture output
+        const originalConsole = {
+            log: console.log,
+            warn: console.warn,
+            error: console.error,
+            info: console.info
+        };
+
+        function captureConsole(method, type) {
+            console[method] = function(...args) {
+                originalConsole[method].apply(console, args);
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                const line = document.createElement('div');
+                line.className = type;
+                line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                consoleOutput.appendChild(line);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            };
+        }
+
+        captureConsole('log', 'log');
+        captureConsole('info', 'info');
+        captureConsole('warn', 'warn');
+        captureConsole('error', 'error');
+
+        // Initialize resolver
+        function initResolver() {
+            try {
+                resolver = new RedirectResolver();
+                log('✅ RedirectResolver initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Failed to initialize RedirectResolver: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            
+            results.innerHTML += logMessage;
+            results.scrollTop = results.scrollHeight;
+            
+            if (type === 'error') {
+                results.classList.add('error');
+            }
+        }
+
+        function updateStats(stats) {
+            if (!stats) return;
+            
+            document.getElementById('stat-total').textContent = stats.total || 0;
+            document.getElementById('stat-resolved').textContent = stats.resolved || 0;
+            document.getElementById('stat-failed').textContent = stats.failed || 0;
+            document.getElementById('stat-cached').textContent = stats.cached || 0;
+            document.getElementById('stat-updated').textContent = stats.updated || 0;
+        }
+
+        function showProgress(show = true) {
+            progressContainer.style.display = show ? 'block' : 'none';
+            if (!show) {
+                progressBar.style.width = '0%';
+                progressBar.textContent = '0%';
+                progressText.textContent = '';
+            }
+        }
+
+        function updateProgress(completed, total) {
+            const percentage = Math.round((completed / total) * 100);
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage}%`;
+            progressText.textContent = `Processing ${completed} of ${total}...`;
+        }
+
+        // Test 1: Single URL Resolution
+        async function testSingleUrl() {
+            if (!initResolver()) return;
+            
+            log('\n🔍 TEST 1: Single URL Resolution', 'info');
+            log('═══════════════════════════════════════════\n');
+            
+            const testUrl = 'https://bit.ly/3wX7Y8Z'; // Example short URL
+            
+            try {
+                log(`Testing URL: ${testUrl}`);
+                const result = await resolver.resolveUrl(testUrl);
+                
+                log(`\n✅ Resolution Result:`);
+                log(`   Original: ${result.originalUrl}`);
+                log(`   Final: ${result.finalUrl}`);
+                log(`   Chain: ${result.chain.join(' → ')}`);
+                log(`   Success: ${result.success}`);
+                log(`   Cached: ${result.cached || false}`);
+                
+                updateStats(resolver.getCurrentStats());
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 2: Batch URL Resolution
+        async function testBatchUrls() {
+            if (!initResolver()) return;
+            
+            log('\n📦 TEST 2: Batch URL Resolution', 'info');
+            log('═══════════════════════════════════════════\n');
+            
+            const testUrls = [
+                'https://github.com',
+                'https://stackoverflow.com',
+                'https://www.google.com',
+                'https://www.youtube.com',
+                'https://www.reddit.com'
+            ];
+            
+            try {
+                log(`Testing ${testUrls.length} URLs with concurrent processing...`);
+                showProgress(true);
+                
+                const results = await resolver.resolveUrls(testUrls, (progress) => {
+                    updateProgress(progress.completed, progress.total);
+                });
+                
+                showProgress(false);
+                
+                log(`\n✅ Batch Resolution Complete:`);
+                log(`   Total URLs: ${results.length}`);
+                log(`   Successful: ${results.filter(r => r.success).length}`);
+                log(`   Failed: ${results.filter(r => !r.success).length}`);
+                
+                results.forEach((result, index) => {
+                    log(`\n   ${index + 1}. ${result.originalUrl}`);
+                    log(`      → ${result.finalUrl}`);
+                    log(`      Status: ${result.success ? '✅' : '❌'}`);
+                });
+                
+                updateStats(resolver.getCurrentStats());
+                
+            } catch (error) {
+                showProgress(false);
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 3: Single Bookmark Processing
+        async function testSingleBookmark() {
+            log('\n🔖 TEST 3: Single Bookmark Processing', 'info');
+            log('═══════════════════════════════════════════\n');
+            log('⚠️  Note: This test requires Chrome bookmarks API');
+            log('Please run this test from the extension context (popup or options page)');
+        }
+
+        // Test 4: Batch Bookmark Processing
+        async function testBatchBookmarks() {
+            log('\n📚 TEST 4: Batch Bookmark Processing', 'info');
+            log('═══════════════════════════════════════════\n');
+            log('⚠️  Note: This test requires Chrome bookmarks API');
+            log('Please run this test from the extension context (popup or options page)');
+        }
+
+        // Test 5: URL Caching
+        async function testCaching() {
+            if (!initResolver()) return;
+            
+            log('\n💾 TEST 5: URL Caching', 'info');
+            log('═══════════════════════════════════════════\n');
+            
+            const testUrl = 'https://www.github.com';
+            
+            try {
+                log('First resolution (should be uncached)...');
+                const result1 = await resolver.resolveUrl(testUrl);
+                log(`   Cached: ${result1.cached || false}`);
+                
+                log('\nSecond resolution (should be cached)...');
+                const result2 = await resolver.resolveUrl(testUrl);
+                log(`   Cached: ${result2.cached || false}`);
+                
+                log('\n✅ Caching Test Complete');
+                log(`   First call cached: ${result1.cached || false}`);
+                log(`   Second call cached: ${result2.cached || false}`);
+                
+                if (result2.cached) {
+                    log('   ✅ Caching is working correctly!', 'success');
+                } else {
+                    log('   ⚠️  Warning: Second call was not cached', 'warning');
+                }
+                
+                updateStats(resolver.getCurrentStats());
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 6: Retry Logic
+        async function testRetryLogic() {
+            if (!initResolver()) return;
+            
+            log('\n🔄 TEST 6: Retry Logic', 'info');
+            log('═══════════════════════════════════════════\n');
+            
+            const invalidUrl = 'https://this-domain-definitely-does-not-exist-12345.com';
+            
+            try {
+                log(`Testing with invalid URL: ${invalidUrl}`);
+                log('This should trigger retry logic and eventually fail...\n');
+                
+                const result = await resolver.resolveUrl(invalidUrl);
+                
+                log(`\nResult:`);
+                log(`   Success: ${result.success}`);
+                log(`   Error: ${result.error || 'None'}`);
+                
+                if (!result.success) {
+                    log('   ✅ Retry logic handled failure correctly', 'success');
+                } else {
+                    log('   ⚠️  Unexpected success', 'warning');
+                }
+                
+                updateStats(resolver.getCurrentStats());
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 7: Cache Management
+        async function testCacheManagement() {
+            if (!initResolver()) return;
+            
+            log('\n🗂️ TEST 7: Cache Management', 'info');
+            log('═══════════════════════════════════════════\n');
+            
+            try {
+                log('Getting cache info...');
+                const cacheInfo = await resolver.getCacheInfo();
+                
+                log(`\nCache Information:`);
+                log(`   Total entries: ${cacheInfo.totalEntries}`);
+                log(`   Valid entries: ${cacheInfo.validEntries}`);
+                log(`   Expired entries: ${cacheInfo.expiredEntries}`);
+                log(`   Expiry days: ${cacheInfo.expiryDays}`);
+                
+                if (cacheInfo.expiredEntries > 0) {
+                    log('\nCleaning expired cache entries...');
+                    const removed = await resolver.cleanExpiredCache();
+                    log(`   Removed: ${removed} entries`);
+                }
+                
+                log('\n✅ Cache Management Test Complete', 'success');
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearResults() {
+            results.innerHTML = 'Results cleared. Click a test button to start.\n';
+            consoleOutput.innerHTML = 'Console cleared.\n';
+            results.classList.remove('error');
+            updateStats({
+                total: 0,
+                resolved: 0,
+                failed: 0,
+                cached: 0,
+                updated: 0
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            log('🚀 RedirectResolver Test Suite Loaded', 'success');
+            log('Click a test button to begin testing.\n');
+        });
+    </script>
+</body>
+</html>
