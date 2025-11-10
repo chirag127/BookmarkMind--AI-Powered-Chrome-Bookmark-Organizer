@@ -32,10 +32,10 @@ build/
 .env.test
 .env.production
 
-# Test files
+# Test coverage and results
 coverage/
-*.test.js
 test-results/
+.nyc_output/
 
 # Temporary files
 temp/
