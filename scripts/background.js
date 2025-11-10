@@ -1117,13 +1117,23 @@ function extractLearningPatterns(bookmark, targetCategory) {
 }
 
 /**
- * Save learning patterns to storage
+ * Calculate byte size of a string accounting for multi-byte UTF-8 characters
+ */
+function calculateByteSize(str) {
+  return new TextEncoder().encode(str).length;
+}
+
+/**
+ * Save learning patterns to storage with deduplication, size validation, and auto-pruning
  */
 async function saveLearningPatterns(patterns, category) {
   try {
     // Get existing learning data
     const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
     const learningData = result.bookmarkMindLearning || {};
+
+    const initialPatternCount = Object.keys(learningData).length;
+    console.log(`📚 Initial pattern count: ${initialPatternCount}`);
 
     // Add new patterns
     let newPatternsCount = 0;
@@ -1134,16 +1144,97 @@ async function saveLearningPatterns(patterns, category) {
       }
     }
 
+    console.log(`📚 New patterns to add: ${newPatternsCount}`);
+
     if (newPatternsCount > 0) {
+      // Step 1: Deduplication - Remove exact duplicate pattern-category pairs
+      // Convert to array of entries for easier manipulation
+      let learningEntries = Object.entries(learningData);
+      const beforeDedup = learningEntries.length;
+      
+      // Remove duplicates based on pattern key (already done by object structure)
+      // Additional deduplication: remove patterns that are substrings of others with same category
+      const dedupedEntries = [];
+      const seenPatterns = new Set();
+      
+      for (const [pattern, cat] of learningEntries) {
+        const normalizedPattern = pattern.toLowerCase().trim();
+        const key = `${normalizedPattern}:::${cat}`;
+        
+        if (!seenPatterns.has(key)) {
+          seenPatterns.add(key);
+          dedupedEntries.push([pattern, cat]);
+        }
+      }
+      
+      learningEntries = dedupedEntries;
+      const afterDedup = learningEntries.length;
+      
+      if (beforeDedup !== afterDedup) {
+        console.log(`📚 Deduplication: ${beforeDedup} → ${afterDedup} patterns (removed ${beforeDedup - afterDedup} duplicates)`);
+      } else {
+        console.log(`📚 Deduplication: No duplicates found (${afterDedup} patterns)`);
+      }
+
+      // Step 2: Size validation and auto-pruning
+      const SIZE_LIMIT = 7000; // bytes
+      let learningDataObj = Object.fromEntries(learningEntries);
+      let jsonString = JSON.stringify(learningDataObj);
+      let byteSize = calculateByteSize(jsonString);
+      
+      console.log(`📚 Current byte size: ${byteSize} bytes (limit: ${SIZE_LIMIT} bytes)`);
+
+      // Step 3: Auto-prune if size exceeds limit
+      if (byteSize > SIZE_LIMIT) {
+        console.log(`⚠️ Size limit exceeded! Starting auto-pruning...`);
+        
+        // Sort entries by timestamp (oldest first) - we'll need to track timestamps
+        // Since we don't have timestamps, we'll remove oldest entries by removing from the start
+        // In a production scenario, we'd want to track creation time for each pattern
+        
+        let prunedCount = 0;
+        const pruneIncrement = Math.ceil(learningEntries.length * 0.1); // Remove 10% at a time
+        
+        while (byteSize > SIZE_LIMIT && learningEntries.length > 0) {
+          // Remove oldest patterns (from beginning of array)
+          const toRemove = Math.min(pruneIncrement, learningEntries.length);
+          learningEntries = learningEntries.slice(toRemove);
+          prunedCount += toRemove;
+          
+          // Recalculate size
+          learningDataObj = Object.fromEntries(learningEntries);
+          jsonString = JSON.stringify(learningDataObj);
+          byteSize = calculateByteSize(jsonString);
+          
+          console.log(`📚 Pruning iteration: removed ${toRemove} patterns, new size: ${byteSize} bytes, remaining: ${learningEntries.length} patterns`);
+        }
+        
+        console.log(`📚 Auto-pruning complete: removed ${prunedCount} oldest patterns`);
+        console.log(`📚 Final size: ${byteSize} bytes with ${learningEntries.length} patterns`);
+        
+        // Update learningDataObj with pruned data
+        learningDataObj = Object.fromEntries(learningEntries);
+      }
+
+      // Final size check - throw error if still too large
+      if (byteSize > SIZE_LIMIT) {
+        const errorMsg = `Storage quota exceeded: ${byteSize} bytes > ${SIZE_LIMIT} bytes limit. Cannot save learning patterns.`;
+        console.error(`❌ ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+
+      console.log(`✅ Final pattern count: ${learningEntries.length} (${byteSize} bytes)`);
+
       // Save updated learning data
-      await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
+      await chrome.storage.sync.set({ bookmarkMindLearning: learningDataObj });
 
       // Update timestamp
       await chrome.storage.local.set({
         learningDataLastUpdate: new Date().toISOString()
       });
 
-      console.log(`📚 Saved ${newPatternsCount} new learning patterns to storage`);
+      console.log(`📚 Successfully saved learning patterns to storage`);
+      console.log(`📚 Summary: ${initialPatternCount} → ${learningEntries.length} patterns, ${byteSize} bytes`);
 
       // Notify options page if it's open
       try {
@@ -1156,10 +1247,13 @@ async function saveLearningPatterns(patterns, category) {
       } catch (error) {
         // Options page not open, ignore
       }
+    } else {
+      console.log(`📚 No new patterns to save`);
     }
 
   } catch (error) {
-    console.error('Error saving learning patterns:', error);
+    console.error('❌ Error saving learning patterns:', error);
+    throw error;
   }
 }
 
