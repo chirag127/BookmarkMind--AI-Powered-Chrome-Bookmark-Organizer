@@ -11,7 +11,7 @@
         "test:e2e": "jest tests/categorizer.e2e.test.js",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
-        "lint": "echo 'Linting not configured yet'",
+        "lint": "eslint scripts/",
         "package": "zip -r bookmarkmind-v1.0.0.zip . -x '*.git*' 'node_modules/*' '*.zip' '*.md' 'package*.json' 'create_simple_icons.html' 'icons/create_icons.py'"
     },
     "repository": {
@@ -40,6 +40,8 @@
     "devDependencies": {
         "@testing-library/jest-dom": "^6.9.1",
         "@types/chrome": "^0.1.27",
+        "eslint": "^9.39.1",
+        "globals": "^16.5.0",
         "jest": "^30.2.0",
         "jest-environment-jsdom": "^30.2.0",
         "sinon-chrome": "^3.0.1"

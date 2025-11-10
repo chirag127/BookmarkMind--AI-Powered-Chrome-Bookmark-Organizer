@@ -112,7 +112,7 @@ class LearningService {
         learningData.patterns[domainKey] = {
           type: 'domain',
           value: correction.domain,
-          category: correctedCategory,
+          category: correction.correctedCategory,
           confidence: 1,
           count: 1
         };
