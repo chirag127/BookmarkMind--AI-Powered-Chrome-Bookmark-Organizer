@@ -9,7 +9,8 @@
         "activeTab"
     ],
     "host_permissions": [
-        "https://generativelanguage.googleapis.com/*"
+        "https://generativelanguage.googleapis.com/*",
+        "https://agentrouter.org/*"
     ],
     "background": {
         "service_worker": "scripts/background.js"
