@@ -202,6 +202,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await handleGetLearningStatistics(sendResponse);
         break;
 
+      case 'getSnapshots':
+        await handleGetSnapshots(sendResponse);
+        break;
+
       case 'ping':
         // Simple heartbeat check
         sendResponse({ success: true, message: 'Background script is running' });
