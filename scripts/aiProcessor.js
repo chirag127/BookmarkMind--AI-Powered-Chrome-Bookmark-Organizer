@@ -7,6 +7,7 @@ class AIProcessor {
     constructor() {
         this.apiKey = null;
         this.bookmarkService = null;
+        this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
 
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
@@ -1485,6 +1486,7 @@ Return only the JSON array with properly formatted category names, no additional
             console.log(`🤖 Trying Gemini model: ${currentModel} (attempt ${attempt + 1}/${this.geminiModels.length})`);
 
             try {
+                const requestStart = Date.now();
                 const response = await fetch(currentUrl, {
                     method: 'POST',
                     headers: {
@@ -1493,6 +1495,7 @@ Return only the JSON array with properly formatted category names, no additional
                     },
                     body: JSON.stringify(requestBody)
                 });
+                const responseTime = Date.now() - requestStart;
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1500,6 +1503,19 @@ Return only the JSON array with properly formatted category names, no additional
                     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                         const responseText = data.candidates[0].content.parts[0].text;
                         console.log(`✅ SUCCESS with ${currentModel}`);
+
+                        // Record API usage analytics
+                        if (this.analyticsService) {
+                            await this.analyticsService.recordApiUsage({
+                                provider: 'gemini',
+                                model: currentModel,
+                                success: true,
+                                responseTime,
+                                batchSize: batch.length,
+                                tokensUsed: data.usageMetadata?.totalTokenCount || 0
+                            });
+                        }
+
                         return this._parseResponse(responseText, batch);
                     } else {
                         throw new Error('Invalid API response format');
@@ -1507,6 +1523,18 @@ Return only the JSON array with properly formatted category names, no additional
                 } else {
                     const errorText = await response.text();
                     console.error(`❌ ${currentModel} failed:`, response.status, errorText);
+
+                    // Record API failure analytics
+                    if (this.analyticsService) {
+                        await this.analyticsService.recordApiUsage({
+                            provider: 'gemini',
+                            model: currentModel,
+                            success: false,
+                            responseTime,
+                            batchSize: batch.length,
+                            errorType: `${response.status}`
+                        });
+                    }
 
                     // Check if this is a retryable error (rate limit, server overload, etc.)
                     const isRetryableError = response.status === 429 || // Rate limit

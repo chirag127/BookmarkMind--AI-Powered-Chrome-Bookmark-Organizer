@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookmarkMind - Analytics Dashboard</title>
+    <link rel="stylesheet" href="analytics.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Analytics Dashboard</h1>
+            <p class="subtitle">Performance Monitoring & Insights</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab active" data-tab="overview">Overview</button>
+            <button class="tab" data-tab="categorization">Categorization</button>
+            <button class="tab" data-tab="api">API Usage</button>
+            <button class="tab" data-tab="performance">Performance</button>
+            <button class="tab" data-tab="consolidation">Consolidation</button>
+        </nav>
+
+        <div class="actions">
+            <button id="refreshBtn" class="btn-secondary">🔄 Refresh</button>
+            <button id="exportBtn" class="btn-secondary">📥 Export Data</button>
+            <button id="clearBtn" class="btn-danger">🗑️ Clear Analytics</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalCategorizations">0</div>
+                        <div class="stat-label">Total Categorizations</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="successRate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔌</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalApiCalls">0</div>
+                        <div class="stat-label">API Calls</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📁</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="foldersConsolidated">0</div>
+                        <div class="stat-label">Folders Consolidated</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chart-section">
+                <h2>Recent Activity</h2>
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="last24h">Last 24h</button>
+                    <button class="period-btn" data-period="last7d">Last 7 Days</button>
+                    <button class="period-btn" data-period="last30d">Last 30 Days</button>
+                </div>
+                <div class="activity-stats">
+                    <div class="activity-item">
+                        <span class="activity-label">Sessions:</span>
+                        <span class="activity-value" id="periodSessions">0</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Bookmarks Processed:</span>
+                        <span class="activity-value" id="periodBookmarks">0</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Success Rate:</span>
+                        <span class="activity-value" id="periodSuccessRate">0%</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Avg Duration:</span>
+                        <span class="activity-value" id="periodAvgDuration">0s</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Categorization Tab -->
+        <div id="categorization" class="tab-content">
+            <section>
+                <h2>Categorization Performance</h2>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Processed</div>
+                        <div class="stat-box-value" id="catProcessed">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Successfully Categorized</div>
+                        <div class="stat-box-value" id="catSuccess">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Errors</div>
+                        <div class="stat-box-value error" id="catErrors">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Success Rate</div>
+                        <div class="stat-box-value" id="catSuccessRate">0%</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Top Categories Used</h2>
+                <div id="topCategories" class="category-list">
+                    <p class="empty-state">No category data available</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Recent Sessions</h2>
+                <div id="recentSessions" class="sessions-list">
+                    <p class="empty-state">No sessions recorded</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- API Usage Tab -->
+        <div id="api" class="tab-content">
+            <section>
+                <h2>API Statistics</h2>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Calls</div>
+                        <div class="stat-box-value" id="apiTotal">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Successful</div>
+                        <div class="stat-box-value success" id="apiSuccess">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Failed</div>
+                        <div class="stat-box-value error" id="apiFailed">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Avg Response Time</div>
+                        <div class="stat-box-value" id="apiAvgResponse">0ms</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>API Providers</h2>
+                <div id="apiProviders" class="provider-list">
+                    <p class="empty-state">No API usage data available</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Recent API Activity (Last 24h)</h2>
+                <div class="activity-stats">
+                    <div class="activity-item">
+                        <span class="activity-label">Calls:</span>
+                        <span class="activity-value" id="apiRecent24hTotal">0</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Success Rate:</span>
+                        <span class="activity-value" id="apiRecent24hSuccess">0%</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Tokens Used:</span>
+                        <span class="activity-value" id="apiRecent24hTokens">0</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">Avg Response:</span>
+                        <span class="activity-value" id="apiRecent24hAvgResponse">0ms</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Performance Tab -->
+        <div id="performance" class="tab-content">
+            <section>
+                <h2>Processing Times</h2>
+                <p class="info-text">Average time taken for different operations</p>
+                <div id="processingTimes" class="processing-list">
+                    <p class="empty-state">No processing time data available</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Performance Insights</h2>
+                <div id="performanceInsights" class="insights-list">
+                    <p class="empty-state">No performance insights available</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Consolidation Tab -->
+        <div id="consolidation" class="tab-content">
+            <section>
+                <h2>Folder Consolidation Metrics</h2>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Consolidations</div>
+                        <div class="stat-box-value" id="consolTotal">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Folders Removed</div>
+                        <div class="stat-box-value" id="consolFolders">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Bookmarks Moved</div>
+                        <div class="stat-box-value" id="consolBookmarks">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Space Saved</div>
+                        <div class="stat-box-value" id="consolSpaceSaved">N/A</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Recent Consolidations</h2>
+                <div id="recentConsolidations" class="consolidation-list">
+                    <p class="empty-state">No consolidation history available</p>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p class="footer-text">Analytics data is stored locally and never sent to external servers</p>
+            <p class="footer-link"><a href="options.html">← Back to Settings</a></p>
+        </footer>
+    </div>
+
+    <script src="../scripts/analyticsService.js"></script>
+    <script src="analytics.js"></script>
+</body>
+</html>

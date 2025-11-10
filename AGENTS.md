@@ -1,47 +1,40 @@
-# AGENTS.md - BookmarkMind Development Guide
+# AGENTS.md - BookmarkMind Developer Guide
 
 ## Commands
 
 ### Initial Setup
-```bash
-# No dependencies to install - pure vanilla JS Chrome extension
-git clone <repository-url>
-cd BookmarkMind--AI-Powered-Chrome-Bookmark-Organizer
-```
+No package installation or virtual environment needed - pure vanilla JS extension.
 
 ### Build
-```bash
-npm run build  # No build needed - vanilla JS
-```
+`npm run build` (no build step required)
 
 ### Lint
-```bash
-npm run lint  # Not configured
-```
+`npm run lint` (not configured yet)
 
 ### Tests
-```bash
-npm run test  # Not implemented
-```
+`npm run test` (not implemented yet)
 
-### Dev Server / Load Extension
-1. Open Chrome at `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked" and select the repo directory
-4. Extension runs directly from source files
+### Dev Server
+Load extension in Chrome at `chrome://extensions/` in Developer Mode using "Load unpacked"
 
 ## Tech Stack & Architecture
 
-- **Manifest V3** Chrome extension with vanilla JavaScript (ES6+)
-- **Core modules**: Service worker (`scripts/background.js`), popup UI (`popup/`), options page (`options/`)
-- **AI Integration**: Google Gemini API (primary) + AgentRouter (fallback)
+- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
+- **Platform**: Chrome Extension Manifest V3
+- **AI**: Google Gemini API (primary), AgentRouter API (fallback)
 - **Storage**: Chrome Storage API (sync & local)
-- **Scripts**: `aiProcessor.js`, `categorizer.js`, `bookmarkService.js`, `folderManager.js`, `folderConsolidator.js`
+- **Architecture**: Modular service-based design with service worker background script
 
-## Code Style & Conventions
+## Repo Structure
 
-- Pure vanilla JS - no frameworks or build tools
-- Modular class-based architecture with JSDoc comments
-- Async/await for asynchronous operations
-- Chrome Extension APIs for bookmarks, storage, and messaging
-- Service worker pattern for background processing
+- `scripts/` - Core logic (background.js service worker, AI processor, categorizer, folder manager, bookmark service)
+- `popup/` - Extension popup UI (HTML, CSS, JS)
+- `options/` - Settings page (HTML, CSS, JS)
+- `icons/` - Extension icons
+
+## Code Style
+
+- ES6+ JavaScript with async/await patterns
+- JSDoc comments for classes and complex functions
+- Modular class-based architecture
+- No build tools - direct browser execution

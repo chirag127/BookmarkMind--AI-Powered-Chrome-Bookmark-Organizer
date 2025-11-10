@@ -10,7 +10,8 @@ try {
     'aiProcessor.js',
     'categorizer.js',
     'folderManager.js',
-    'snapshotManager.js'
+    'snapshotManager.js',
+    'analyticsService.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -20,7 +21,8 @@ try {
     AIProcessor: typeof AIProcessor !== 'undefined',
     Categorizer: typeof Categorizer !== 'undefined',
     FolderManager: typeof FolderManager !== 'undefined',
-    SnapshotManager: typeof SnapshotManager !== 'undefined'
+    SnapshotManager: typeof SnapshotManager !== 'undefined',
+    AnalyticsService: typeof AnalyticsService !== 'undefined'
   });
 
 } catch (error) {
@@ -118,7 +120,9 @@ async function ensureClassesLoaded() {
   if (typeof Categorizer === 'undefined' ||
     typeof BookmarkService === 'undefined' ||
     typeof AIProcessor === 'undefined' ||
-    typeof FolderManager === 'undefined') {
+    typeof FolderManager === 'undefined' ||
+    typeof SnapshotManager === 'undefined' ||
+    typeof AnalyticsService === 'undefined') {
 
     console.log('Classes not loaded, attempting to reload...');
     try {
@@ -126,7 +130,9 @@ async function ensureClassesLoaded() {
         'bookmarkService.js',
         'aiProcessor.js',
         'categorizer.js',
-        'folderManager.js'
+        'folderManager.js',
+        'snapshotManager.js',
+        'analyticsService.js'
       );
       console.log('Classes reloaded successfully');
     } catch (error) {
@@ -180,6 +186,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'deleteSnapshot':
         await handleDeleteSnapshot(message.data, sendResponse);
+        break;
+
+      case 'getAnalytics':
+        await handleGetAnalytics(sendResponse);
+        break;
+
+      case 'clearAnalytics':
+        await handleClearAnalytics(sendResponse);
         break;
 
       case 'ping':
@@ -635,6 +649,52 @@ async function handleDeleteSnapshot(data, sendResponse) {
     sendResponse({
       success: false,
       error: error.message || 'Failed to delete snapshot'
+    });
+  }
+}
+
+/**
+ * Handle analytics request
+ */
+async function handleGetAnalytics(sendResponse) {
+  try {
+    if (typeof AnalyticsService === 'undefined') {
+      throw new Error('AnalyticsService class not loaded. Please reload the extension.');
+    }
+
+    const analyticsService = new AnalyticsService();
+    const report = await analyticsService.getAnalyticsReport();
+
+    sendResponse({ success: true, data: report });
+
+  } catch (error) {
+    console.error('Analytics error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to get analytics'
+    });
+  }
+}
+
+/**
+ * Handle clear analytics request
+ */
+async function handleClearAnalytics(sendResponse) {
+  try {
+    if (typeof AnalyticsService === 'undefined') {
+      throw new Error('AnalyticsService class not loaded. Please reload the extension.');
+    }
+
+    const analyticsService = new AnalyticsService();
+    await analyticsService.clearAnalytics();
+
+    sendResponse({ success: true });
+
+  } catch (error) {
+    console.error('Clear analytics error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to clear analytics'
     });
   }
 }

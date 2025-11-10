@@ -9,7 +9,9 @@ class Categorizer {
     this.aiProcessor = new AIProcessor();
     this.folderManager = new FolderManager();
     this.snapshotManager = typeof SnapshotManager !== 'undefined' ? new SnapshotManager() : null;
+    this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
     this.isProcessing = false;
+    this.sessionStartTime = null;
   }
 
   /**
@@ -34,6 +36,7 @@ class Categorizer {
     }
 
     this.isProcessing = true;
+    this.sessionStartTime = Date.now();
 
     try {
       console.log('Categorizer: Starting categorization...');
@@ -166,7 +169,7 @@ class Categorizer {
 
       progressCallback?.({ stage: 'complete', progress: 100 });
 
-      return {
+      const finalResults = {
         processed: uncategorizedBookmarks.length,
         categorized: results.success,
         errors: results.errors,
@@ -174,11 +177,27 @@ class Categorizer {
         generatedCategories: generatedCategories
       };
 
+      // Record analytics
+      if (this.analyticsService) {
+        const sessionDuration = Date.now() - this.sessionStartTime;
+        await this.analyticsService.recordCategorizationSession({
+          processed: finalResults.processed,
+          categorized: finalResults.categorized,
+          errors: finalResults.errors,
+          duration: sessionDuration,
+          categories: Array.from(results.categoriesUsed),
+          mode: 'full'
+        });
+      }
+
+      return finalResults;
+
     } catch (error) {
       console.error('Categorization error:', error);
       throw error;
     } finally {
       this.isProcessing = false;
+      this.sessionStartTime = null;
     }
   }
 
@@ -195,6 +214,7 @@ class Categorizer {
     }
 
     this.isProcessing = true;
+    this.sessionStartTime = Date.now();
 
     try {
       console.log(`Categorizer: Starting bulk categorization of ${selectedBookmarks.length} bookmarks...`);
@@ -360,6 +380,19 @@ class Categorizer {
       console.log('Bulk categorization results:', results);
       progressCallback?.({ stage: 'complete', progress: 100 });
 
+      // Record analytics
+      if (this.analyticsService) {
+        const sessionDuration = Date.now() - this.sessionStartTime;
+        await this.analyticsService.recordCategorizationSession({
+          processed: results.processed,
+          categorized: results.categorized,
+          errors: results.errors,
+          duration: sessionDuration,
+          categories: results.generatedCategories,
+          mode: 'bulk'
+        });
+      }
+
       return results;
 
     } catch (error) {
@@ -367,6 +400,7 @@ class Categorizer {
       throw error;
     } finally {
       this.isProcessing = false;
+      this.sessionStartTime = null;
     }
   }
 

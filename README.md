@@ -12,6 +12,8 @@ Say goodbye to bookmark chaos and hello to intelligent organization that learns 
 
 **📱 Extension Demo:** Install the extension and try it with your own bookmarks!
 
+**📊 Analytics Dashboard:** Monitor your categorization performance, API usage, and folder consolidation metrics in real-time
+
 ## 🛠️ Tech Stack / Tools Used
 
 -   **🤖 AI Services:**
@@ -134,6 +136,15 @@ _Extension will be available on the Chrome Web Store after review process_
 -   **Customizable Categories:** Add, edit, or remove categories as needed
 -   **Export/Import:** Backup and restore your settings and learning data
 -   **Mobile Responsive:** Works seamlessly across all devices
+
+### 📊 Performance Monitoring
+
+-   **Analytics Dashboard:** Real-time insights into categorization performance
+-   **Success Rate Tracking:** Monitor categorization accuracy over time
+-   **API Usage Statistics:** Track API calls, tokens used, and response times
+-   **Processing Time Metrics:** Analyze performance for different operations
+-   **Folder Consolidation Reports:** View folder optimization history
+-   **Performance Insights:** AI-generated recommendations for optimization
 
 ## 📸 Screenshots
 

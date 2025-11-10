@@ -6,6 +6,7 @@
 class FolderConsolidator {
     constructor() {
         this.minBookmarksThreshold = 3; // Minimum bookmarks required to keep a folder
+        this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
         this.consolidationResults = {
             foldersProcessed: 0,
             bookmarksMoved: 0,
@@ -38,6 +39,15 @@ class FolderConsolidator {
             }
 
             console.log('✅ Folder consolidation completed:', this.consolidationResults);
+
+            // Record analytics
+            if (this.analyticsService) {
+                await this.analyticsService.recordConsolidation({
+                    ...this.consolidationResults,
+                    timestamp: Date.now()
+                });
+            }
+
             return this.consolidationResults;
 
         } catch (error) {
