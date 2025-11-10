@@ -11,7 +11,7 @@ class RedirectResolver {
     this.CONCURRENT_LIMIT = 20;
     this.REQUEST_TIMEOUT = 10000; // 10 seconds
     this.MAX_RETRIES = 3;
-    this.CACHE_EXPIRY_DAYS = 30;
+    this.CACHE_EXPIRY_DAYS = 7;
     
     // Statistics tracking
     this.stats = {
@@ -35,14 +35,19 @@ class RedirectResolver {
       const cachedResult = await this._getCachedUrl(url);
       if (cachedResult) {
         console.log(`📦 Cache hit for: ${url}`);
-        console.log(`   └─ Cached final URL: ${cachedResult.finalUrl}`);
+        console.log(`   ├─ Final URL: ${cachedResult.finalUrl}`);
+        console.log(`   ├─ Status: ${cachedResult.status}`);
+        console.log(`   ├─ Cached: ${this._formatCacheAge(cachedResult.timestamp)}`);
+        console.log(`   └─ Redirect chain: ${this._formatRedirectChain(cachedResult.redirectChain)}`);
         this.stats.cached++;
         return {
           originalUrl: url,
           finalUrl: cachedResult.finalUrl,
-          chain: cachedResult.chain,
+          chain: cachedResult.redirectChain.map(r => r.url),
+          redirectChain: cachedResult.redirectChain,
           success: true,
-          cached: true
+          cached: true,
+          status: cachedResult.status
         };
       }
 
@@ -53,37 +58,27 @@ class RedirectResolver {
       const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT);
 
       try {
-        // Use fetch with HEAD request and redirect: 'follow' mode
-        const response = await fetch(url, {
-          method: 'HEAD',
-          redirect: 'follow',
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-
+        // Use fetch with manual redirect handling to capture intermediate URLs
+        const redirectChain = await this._followRedirects(url, controller.signal);
+        
         clearTimeout(timeoutId);
 
-        const finalUrl = response.url;
+        const finalUrl = redirectChain[redirectChain.length - 1].url;
+        const finalStatus = redirectChain[redirectChain.length - 1].status;
         
-        // Build redirect chain (we can only see the final URL in fetch API)
-        const chain = [url];
-        if (finalUrl !== url) {
-          chain.push(finalUrl);
-        }
-
         console.log(`✅ Successfully resolved: ${url}`);
-        console.log(`   ├─ Original URL: ${url}`);
         console.log(`   ├─ Final URL: ${finalUrl}`);
-        console.log(`   └─ Redirect chain: ${chain.join(' → ')}`);
+        console.log(`   ├─ Status: ${finalStatus}`);
+        console.log(`   └─ Redirect chain: ${this._formatRedirectChain(redirectChain)}`);
 
         const result = {
           originalUrl: url,
           finalUrl: finalUrl,
-          chain: chain,
+          chain: redirectChain.map(r => r.url),
+          redirectChain: redirectChain,
           success: true,
-          cached: false
+          cached: false,
+          status: finalStatus
         };
 
         // Cache the result
@@ -112,10 +107,113 @@ class RedirectResolver {
         originalUrl: url,
         finalUrl: url,
         chain: [url],
+        redirectChain: [{ url: url, status: 'error' }],
         success: false,
         error: error.message
       };
     }
+  }
+
+  /**
+   * Follow redirects manually to capture all intermediate URLs and status codes
+   * @param {string} url - Starting URL
+   * @param {AbortSignal} signal - Abort signal for timeout
+   * @returns {Promise<Array>} Array of {url, status} objects
+   */
+  async _followRedirects(url, signal) {
+    const redirectChain = [];
+    let currentUrl = url;
+    const maxRedirects = 20;
+    let redirectCount = 0;
+
+    while (redirectCount < maxRedirects) {
+      try {
+        const response = await fetch(currentUrl, {
+          method: 'HEAD',
+          redirect: 'manual',
+          signal: signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+
+        const status = response.status;
+        redirectChain.push({ url: currentUrl, status: status });
+
+        // Check if this is a redirect
+        if (status >= 300 && status < 400 && response.headers.get('location')) {
+          const location = response.headers.get('location');
+          // Handle relative URLs
+          currentUrl = new URL(location, currentUrl).href;
+          redirectCount++;
+        } else {
+          // Final destination reached
+          break;
+        }
+      } catch (error) {
+        // If HEAD fails, try GET
+        try {
+          const response = await fetch(currentUrl, {
+            method: 'GET',
+            redirect: 'manual',
+            signal: signal,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+          });
+
+          const status = response.status;
+          redirectChain.push({ url: currentUrl, status: status });
+
+          if (status >= 300 && status < 400 && response.headers.get('location')) {
+            const location = response.headers.get('location');
+            currentUrl = new URL(location, currentUrl).href;
+            redirectCount++;
+          } else {
+            break;
+          }
+        } catch (getError) {
+          // If both fail, add error status and break
+          if (redirectChain.length === 0 || redirectChain[redirectChain.length - 1].url !== currentUrl) {
+            redirectChain.push({ url: currentUrl, status: 'error' });
+          }
+          throw getError;
+        }
+      }
+    }
+
+    // If no redirects were found, ensure at least the original URL is in the chain
+    if (redirectChain.length === 0) {
+      redirectChain.push({ url: url, status: 200 });
+    }
+
+    return redirectChain;
+  }
+
+  /**
+   * Format redirect chain for console output
+   * @param {Array} redirectChain - Array of {url, status} objects
+   * @returns {string} Formatted redirect chain
+   */
+  _formatRedirectChain(redirectChain) {
+    return redirectChain.map(r => `${r.url} [${r.status}]`).join(' → ');
+  }
+
+  /**
+   * Format cache age for console output
+   * @param {number} timestamp - Cache timestamp
+   * @returns {string} Formatted age
+   */
+  _formatCacheAge(timestamp) {
+    const ageMs = Date.now() - timestamp;
+    const ageMinutes = Math.floor(ageMs / (1000 * 60));
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+    if (ageDays > 0) return `${ageDays} day${ageDays > 1 ? 's' : ''} ago`;
+    if (ageHours > 0) return `${ageHours} hour${ageHours > 1 ? 's' : ''} ago`;
+    if (ageMinutes > 0) return `${ageMinutes} minute${ageMinutes > 1 ? 's' : ''} ago`;
+    return 'just now';
   }
 
   /**
@@ -322,14 +420,16 @@ class RedirectResolver {
         const cached = cacheData[url];
         const ageInDays = (Date.now() - cached.timestamp) / (1000 * 60 * 60 * 24);
 
-        // Check if cache entry is still valid
+        // Check if cache entry is still valid (7 days)
         if (ageInDays < this.CACHE_EXPIRY_DAYS) {
           return {
             finalUrl: cached.finalUrl,
-            chain: cached.chain
+            redirectChain: cached.redirectChain || [{ url: cached.finalUrl, status: cached.status || 200 }],
+            timestamp: cached.timestamp,
+            status: cached.status || 200
           };
         } else {
-          console.log(`🗑️ Cache expired for: ${url} (${Math.round(ageInDays)} days old)`);
+          console.log(`🗑️ Cache expired for: ${url} (${Math.round(ageInDays)} days old, max: ${this.CACHE_EXPIRY_DAYS} days)`);
           // Remove expired entry
           delete cacheData[url];
           await chrome.storage.local.set({ [this.CACHE_KEY]: cacheData });
@@ -346,7 +446,7 @@ class RedirectResolver {
   /**
    * Cache URL resolution result
    * @param {string} url - Original URL
-   * @param {Object} result - Resolution result
+   * @param {Object} result - Resolution result with {finalUrl, redirectChain, status}
    */
   async _cacheUrl(url, result) {
     try {
@@ -355,12 +455,13 @@ class RedirectResolver {
 
       cacheData[url] = {
         finalUrl: result.finalUrl,
-        chain: result.chain,
-        timestamp: Date.now()
+        redirectChain: result.redirectChain || [{ url: result.finalUrl, status: result.status || 200 }],
+        timestamp: Date.now(),
+        status: result.status || 200
       };
 
       await chrome.storage.local.set({ [this.CACHE_KEY]: cacheData });
-      console.log(`💾 Cached result for: ${url}`);
+      console.log(`💾 Cached result for: ${url} (expires in ${this.CACHE_EXPIRY_DAYS} days)`);
 
     } catch (error) {
       console.error('Error writing cache:', error);
