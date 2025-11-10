@@ -521,7 +521,7 @@ async function handleApiKeyTest(data, sendResponse) {
     }
 
     const aiProcessor = new AIProcessor();
-    aiProcessor.setApiKey(data.apiKey, data.cerebrasApiKey || null);
+    aiProcessor.setApiKey(data.apiKey, data.cerebrasApiKey || null, data.groqApiKey || null);
 
     const isValid = await aiProcessor.testApiKey();
     sendResponse({ success: true, valid: isValid });

@@ -20,7 +20,7 @@ class Categorizer {
    */
   async initialize(settings) {
     if (settings.apiKey) {
-      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null, settings.groqApiKey || null);
     }
   }
 
@@ -71,7 +71,7 @@ class Categorizer {
       }
 
       console.log('Categorizer: Setting API keys...');
-      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null, settings.groqApiKey || null);
 
       // Get all bookmarks
       console.log('Categorizer: Loading bookmarks...');
@@ -248,7 +248,7 @@ class Categorizer {
       }
 
       console.log('Categorizer: Setting API keys...');
-      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null);
+      this.aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey || null, settings.groqApiKey || null);
 
       // Validate selected bookmarks exist in Chrome
       console.log('Categorizer: Validating selected bookmarks...');

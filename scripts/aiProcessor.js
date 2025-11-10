@@ -7,30 +7,41 @@ class AIProcessor {
     constructor() {
         this.apiKey = null;
         this.cerebrasApiKey = null;
+        this.groqApiKey = null;
         this.bookmarkService = null;
         this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
 
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
-            'gemini-2.5-pro',
-            'gemini-2.5-flash-preview-09-2025',
-            'gemini-2.5-flash',
-            'gemini-2.5-flash-image',
-            'gemini-2.0-flash',
-            'gemini-2.5-flash-lite-preview-09-2025',
-            'gemini-2.5-flash-lite'
+            { name: 'gemini-2.5-pro', provider: 'gemini', sizeCategory: 'ultra' },
+            { name: 'gemini-2.5-flash-preview-09-2025', provider: 'gemini', sizeCategory: 'large' },
+            { name: 'gemini-2.5-flash', provider: 'gemini', sizeCategory: 'large' },
+            { name: 'gemini-2.5-flash-image', provider: 'gemini', sizeCategory: 'medium' },
+            { name: 'gemini-2.0-flash', provider: 'gemini', sizeCategory: 'medium' },
+            { name: 'gemini-2.5-flash-lite-preview-09-2025', provider: 'gemini', sizeCategory: 'small' },
+            { name: 'gemini-2.5-flash-lite', provider: 'gemini', sizeCategory: 'small' }
         ];
         this.currentModelIndex = 0;
         this.baseUrlTemplate = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
 
         // Cerebras model fallback sequence - OpenAI-compatible API
         this.cerebrasModels = [
-            'gpt-oss-120b',
-            'llama-3.3-70b',
-            'qwen-3-32b',
-            'llama3.1-8b'
+            { name: 'gpt-oss-120b', provider: 'cerebras', paramCount: 120 },
+            { name: 'llama-3.3-70b', provider: 'cerebras', paramCount: 70 },
+            { name: 'qwen-3-32b', provider: 'cerebras', paramCount: 32 },
+            { name: 'llama3.1-8b', provider: 'cerebras', paramCount: 8 }
         ];
         this.cerebrasBaseUrl = 'https://api.cerebras.ai/v1/chat/completions';
+
+        // Groq model fallback sequence - OpenAI-compatible API (size-descending)
+        this.groqModels = [
+            { name: 'openai/gpt-oss-120b', provider: 'groq', paramCount: 120 },
+            { name: 'llama-3.3-70b-versatile', provider: 'groq', paramCount: 70 },
+            { name: 'qwen/qwen3-32b', provider: 'groq', paramCount: 32 },
+            { name: 'openai/gpt-oss-20b', provider: 'groq', paramCount: 20 },
+            { name: 'llama-3.1-8b-instant', provider: 'groq', paramCount: 8 }
+        ];
+        this.groqBaseUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
         // Retry configuration for exponential backoff
         this.maxRetries = 3;
@@ -43,7 +54,7 @@ class AIProcessor {
      * @returns {string} Current model URL
      */
     getCurrentModelUrl() {
-        const currentModel = this.geminiModels[this.currentModelIndex];
+        const currentModel = this.geminiModels[this.currentModelIndex].name;
         return this.baseUrlTemplate.replace('{model}', currentModel);
     }
 
@@ -52,7 +63,7 @@ class AIProcessor {
      * @returns {string} Current model name
      */
     getCurrentModelName() {
-        return this.geminiModels[this.currentModelIndex];
+        return this.geminiModels[this.currentModelIndex].name;
     }
 
     /**
@@ -394,11 +405,13 @@ class AIProcessor {
      * Initialize with API key
      * @param {string} apiKey - Gemini API key
      * @param {string} cerebrasKey - Cerebras API key (optional)
+     * @param {string} groqKey - Groq API key (optional)
      */
-    setApiKey(apiKey, cerebrasKey = null) {
+    setApiKey(apiKey, cerebrasKey = null, groqKey = null) {
         this.apiKey = apiKey;
         this.cerebrasApiKey = cerebrasKey;
-        console.log(`🔑 API Keys configured: Gemini=${!!apiKey}, Cerebras=${!!cerebrasKey}`);
+        this.groqApiKey = groqKey;
+        console.log(`🔑 API Keys configured: Gemini=${!!apiKey}, Cerebras=${!!cerebrasKey}, Groq=${!!groqKey}`);
         // Initialize BookmarkService for folder creation
         if (typeof BookmarkService !== 'undefined') {
             this.bookmarkService = new BookmarkService();
@@ -1480,44 +1493,92 @@ Return only the JSON array with properly formatted category names, no additional
     }
 
     /**
-     * Process batch with provider fallback: Gemini models → Cerebras models
+     * Process batch with provider fallback (cross-provider model size ordering)
      * @param {Array} batch - Batch of bookmarks
      * @param {Array} categories - Available categories
      * @param {Object} learningData - Learning data
      * @returns {Promise<Array>} Batch results
      */
     async _processBatchWithProviderFallback(batch, categories, learningData) {
-        console.log(`\n🔄 === PROVIDER FALLBACK ORCHESTRATOR ===`);
+        console.log(`\n🔄 === PROVIDER FALLBACK ORCHESTRATOR (Size-Based Model Ordering) ===`);
         console.log(`📦 Processing batch of ${batch.length} bookmarks`);
-        console.log(`🔑 Available providers: Gemini=${!!this.apiKey}, Cerebras=${!!this.cerebrasApiKey}`);
+        console.log(`🔑 Available providers: Gemini=${!!this.apiKey}, Cerebras=${!!this.cerebrasApiKey}, Groq=${!!this.groqApiKey}`);
 
-        // Phase 1: Try all Gemini models
-        console.log(`\n📍 PHASE 1: Trying Gemini models (${this.geminiModels.length} models available)`);
-        try {
-            const result = await this._processBatchWithGeminiModels(batch, categories, learningData);
-            console.log(`✅ SUCCESS: Batch processed with Gemini provider`);
-            return result;
-        } catch (geminiError) {
-            console.log(`❌ PHASE 1 FAILED: All Gemini models exhausted`);
-            console.log(`   Failure reason: ${geminiError.message}`);
+        // Build unified model list sorted by size descending
+        const allModels = [];
 
-            // Phase 2: Try Cerebras models if available
-            if (this.cerebrasApiKey) {
-                console.log(`\n📍 PHASE 2: Trying Cerebras models (${this.cerebrasModels.length} models available)`);
-                try {
-                    const result = await this._processBatchWithCerebrasModels(batch, categories, learningData);
-                    console.log(`✅ SUCCESS: Batch processed with Cerebras provider`);
-                    return result;
-                } catch (cerebrasError) {
-                    console.log(`❌ PHASE 2 FAILED: All Cerebras models exhausted`);
-                    console.log(`   Failure reason: ${cerebrasError.message}`);
-                    throw new Error(`All AI providers failed. Gemini: ${geminiError.message}. Cerebras: ${cerebrasError.message}`);
+        // Add Gemini models (always available with apiKey)
+        if (this.apiKey) {
+            this.geminiModels.forEach(model => allModels.push({ ...model, provider: 'gemini' }));
+        }
+
+        // Add Cerebras models if key available
+        if (this.cerebrasApiKey) {
+            this.cerebrasModels.forEach(model => allModels.push(model));
+        }
+
+        // Add Groq models if key available
+        if (this.groqApiKey) {
+            this.groqModels.forEach(model => allModels.push(model));
+        }
+
+        // Sort models by parameter count (largest first), with Gemini categories mapped
+        const sizeOrder = { 'ultra': 1000, 'large': 100, 'medium': 50, 'small': 10 };
+        allModels.sort((a, b) => {
+            const aSize = a.paramCount || sizeOrder[a.sizeCategory] || 0;
+            const bSize = b.paramCount || sizeOrder[b.sizeCategory] || 0;
+            return bSize - aSize;
+        });
+
+        console.log(`\n📊 Sorted model sequence (largest to smallest):`);
+        allModels.forEach((model, idx) => {
+            const size = model.paramCount ? `${model.paramCount}B` : model.sizeCategory;
+            console.log(`   ${idx + 1}. ${model.provider.toUpperCase()}: ${model.name} (${size})`);
+        });
+
+        // Try models in order
+        let lastError = null;
+        for (let i = 0; i < allModels.length; i++) {
+            const model = allModels[i];
+            console.log(`\n🔄 Trying model ${i + 1}/${allModels.length}: ${model.provider.toUpperCase()} - ${model.name}`);
+
+            try {
+                let result;
+                if (model.provider === 'gemini') {
+                    result = await this._processWithGemini(batch, categories, learningData, model.name);
+                } else if (model.provider === 'cerebras') {
+                    const prompt = await this._buildPrompt(batch, categories, learningData);
+                    result = await this._processWithCerebras(prompt, batch, model.name);
+                } else if (model.provider === 'groq') {
+                    const prompt = await this._buildPrompt(batch, categories, learningData);
+                    result = await this._processWithGroq(prompt, batch, model.name);
                 }
-            } else {
-                console.log(`⚠️ PHASE 2 SKIPPED: No Cerebras API key configured`);
-                throw new Error(`All Gemini models failed and no Cerebras fallback available: ${geminiError.message}`);
+
+                if (result) {
+                    console.log(`✅ SUCCESS: Batch processed with ${model.provider.toUpperCase()} - ${model.name}`);
+                    return result;
+                }
+            } catch (error) {
+                console.log(`❌ ${model.provider.toUpperCase()} - ${model.name} failed: ${error.message}`);
+                lastError = error;
+
+                // Stop trying if it's a non-retryable error
+                if (error.message.includes('Invalid API key') ||
+                    error.message.includes('API access denied') ||
+                    error.message.includes('Unauthorized')) {
+                    console.log(`⚠️ Non-retryable error detected, stopping model fallback for ${model.provider}`);
+                }
+
+                // Small delay between attempts
+                if (i < allModels.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
             }
         }
+
+        // All models failed
+        console.error(`❌ All models across all providers failed`);
+        throw new Error(`All AI providers exhausted. Last error: ${lastError?.message}`);
     }
 
     /**
@@ -1841,6 +1902,239 @@ Return only the JSON array with properly formatted category names, no additional
         }
 
         throw new Error(`Cerebras ${model} failed after ${this.maxRetries + 1} attempts`);
+    }
+
+    /**
+     * Process batch with Groq API (OpenAI-compatible format) with exponential backoff
+     * @param {string} prompt - Formatted prompt
+     * @param {Array} batch - Batch of bookmarks
+     * @param {string} model - Groq model name
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processWithGroq(prompt, batch, model) {
+        const requestBody = {
+            model: model,
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a bookmark categorization expert. Always return valid JSON arrays."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.3,
+            max_tokens: 4000
+        };
+
+        // Exponential backoff retry logic
+        for (let retryAttempt = 0; retryAttempt <= this.maxRetries; retryAttempt++) {
+            try {
+                const requestStart = Date.now();
+                console.log(`   🔄 Groq ${model} request attempt ${retryAttempt + 1}/${this.maxRetries + 1}`);
+
+                const response = await fetch(this.groqBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.groqApiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const responseTime = Date.now() - requestStart;
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.choices && data.choices[0] && data.choices[0].message) {
+                        const responseText = data.choices[0].message.content;
+                        console.log(`   ✅ Groq ${model} SUCCESS (${responseTime}ms)`);
+
+                        // Record API usage analytics
+                        if (this.analyticsService) {
+                            await this.analyticsService.recordApiUsage({
+                                provider: 'groq',
+                                model: model,
+                                success: true,
+                                responseTime,
+                                batchSize: batch.length,
+                                tokensUsed: data.usage?.total_tokens || 0,
+                                retryAttempt: retryAttempt
+                            });
+                        }
+
+                        return this._parseResponse(responseText, batch);
+                    } else {
+                        throw new Error('Invalid Groq API response format');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    const isRateLimitError = response.status === 429;
+                    const isServerError = response.status === 503 || response.status === 500 || 
+                                         response.status === 502 || response.status === 504;
+
+                    console.log(`   ❌ Groq ${model} failed: ${response.status} (attempt ${retryAttempt + 1}/${this.maxRetries + 1})`);
+                    console.log(`   Error details: ${errorText.substring(0, 200)}`);
+
+                    // Record API failure analytics
+                    if (this.analyticsService) {
+                        await this.analyticsService.recordApiUsage({
+                            provider: 'groq',
+                            model: model,
+                            success: false,
+                            responseTime,
+                            batchSize: batch.length,
+                            errorType: `${response.status}`,
+                            retryAttempt: retryAttempt
+                        });
+                    }
+
+                    // Check if this is a retryable error
+                    const isRetryableError = isRateLimitError || isServerError;
+
+                    if (!isRetryableError) {
+                        // Non-retryable errors (auth, bad request, etc.)
+                        if (response.status === 401) {
+                            throw new Error('Invalid Groq API key. Please check your API key (should start with "gsk-").');
+                        } else if (response.status === 403) {
+                            throw new Error('Groq API access denied. Please check your API key permissions.');
+                        } else if (response.status === 400) {
+                            throw new Error('Bad request to Groq API. Please check your configuration.');
+                        } else {
+                            throw new Error(`Groq API request failed: ${response.status}. ${errorText}`);
+                        }
+                    }
+
+                    // If this is the last retry, throw the error
+                    if (retryAttempt >= this.maxRetries) {
+                        if (isRateLimitError) {
+                            throw new Error(`Groq rate limit exceeded after ${this.maxRetries + 1} attempts`);
+                        } else {
+                            throw new Error(`Groq server error (${response.status}) after ${this.maxRetries + 1} attempts`);
+                        }
+                    }
+
+                    // Calculate exponential backoff delay with jitter
+                    const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
+                    const jitter = Math.random() * 1000; // Add 0-1s jitter
+                    const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
+
+                    console.log(`   ⏳ Rate limit/server error detected. Retrying in ${Math.round(retryDelay / 1000)}s...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+
+                } 
+            } catch (error) {
+                console.log(`   ❌ Groq ${model} error on attempt ${retryAttempt + 1}: ${error.message}`);
+
+                // If it's a non-retryable error, throw immediately
+                if (error.message.includes('Invalid') || 
+                    error.message.includes('denied') ||
+                    error.message.includes('Unauthorized') ||
+                    error.message.includes('Bad request')) {
+                    throw error;
+                }
+
+                // If this is the last retry, throw the error
+                if (retryAttempt >= this.maxRetries) {
+                    throw error;
+                }
+
+                // Retry with exponential backoff
+                const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
+                const jitter = Math.random() * 1000;
+                const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
+
+                console.log(`   ⏳ Network/timeout error. Retrying in ${Math.round(retryDelay / 1000)}s...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+        }
+
+        throw new Error(`Groq ${model} failed after ${this.maxRetries + 1} attempts`);
+    }
+
+    /**
+     * Process single Gemini model request
+     * @param {Array} batch - Batch of bookmarks
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @param {string} modelName - Gemini model name
+     * @returns {Promise<Array>} Batch results
+     */
+    async _processWithGemini(batch, categories, learningData, modelName) {
+        const prompt = await this._buildPrompt(batch, categories, learningData);
+        const requestBody = {
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }]
+        };
+
+        const url = this.baseUrlTemplate.replace('{model}', modelName);
+
+        const requestStart = Date.now();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': this.apiKey
+            },
+            body: JSON.stringify(requestBody)
+        });
+        const responseTime = Date.now() - requestStart;
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                const responseText = data.candidates[0].content.parts[0].text;
+                console.log(`✅ SUCCESS with ${modelName}`);
+
+                // Record API usage analytics
+                if (this.analyticsService) {
+                    await this.analyticsService.recordApiUsage({
+                        provider: 'gemini',
+                        model: modelName,
+                        success: true,
+                        responseTime,
+                        batchSize: batch.length,
+                        tokensUsed: data.usageMetadata?.totalTokenCount || 0
+                    });
+                }
+
+                return this._parseResponse(responseText, batch);
+            } else {
+                throw new Error('Invalid API response format');
+            }
+        } else {
+            const errorText = await response.text();
+            console.error(`❌ ${modelName} failed:`, response.status, errorText);
+
+            // Record API failure analytics
+            if (this.analyticsService) {
+                await this.analyticsService.recordApiUsage({
+                    provider: 'gemini',
+                    model: modelName,
+                    success: false,
+                    responseTime,
+                    batchSize: batch.length,
+                    errorType: `${response.status}`
+                });
+            }
+
+            // Handle specific error types
+            if (response.status === 401) {
+                throw new Error('Invalid API key. Please check your Gemini API key in settings.');
+            } else if (response.status === 403) {
+                throw new Error('API access denied. Please check your API key permissions.');
+            } else if (response.status === 400) {
+                throw new Error('Bad request. Please check your API key format.');
+            } else {
+                throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
+            }
+        }
     }
 
     /**

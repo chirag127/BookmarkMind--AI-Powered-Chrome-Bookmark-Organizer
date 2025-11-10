@@ -9,6 +9,7 @@ class OptionsController {
     this.stats = {};
     this.isApiKeyVisible = false;
     this.isCerebrasApiKeyVisible = false;
+    this.isGroqApiKeyVisible = false;
 
     this.initializeElements();
     this.attachEventListeners();
@@ -44,6 +45,14 @@ class OptionsController {
     this.testCerebrasKeyBtn = document.getElementById('testCerebrasKey');
     this.saveCerebrasKeyBtn = document.getElementById('saveCerebrasKey');
     this.cerebrasApiKeyStatus = document.getElementById('cerebrasApiKeyStatus');
+
+    // Groq API Key elements
+    this.groqApiKeyInput = document.getElementById('groqApiKey');
+    this.toggleGroqApiKeyBtn = document.getElementById('toggleGroqApiKey');
+    this.clearGroqApiKeyBtn = document.getElementById('clearGroqApiKey');
+    this.testGroqKeyBtn = document.getElementById('testGroqKey');
+    this.saveGroqKeyBtn = document.getElementById('saveGroqKey');
+    this.groqApiKeyStatus = document.getElementById('groqApiKeyStatus');
 
     // Categories elements
     this.categoriesList = document.getElementById('categoriesList');
@@ -101,6 +110,13 @@ class OptionsController {
     this.clearCerebrasApiKeyBtn.addEventListener('click', () => this.clearCerebrasApiKey());
     this.testCerebrasKeyBtn.addEventListener('click', () => this.testCerebrasKey());
     this.saveCerebrasKeyBtn.addEventListener('click', () => this.saveCerebrasKey());
+
+    // Groq API Key events
+    this.groqApiKeyInput.addEventListener('input', () => this.onGroqApiKeyChange());
+    this.toggleGroqApiKeyBtn.addEventListener('click', () => this.toggleGroqApiKeyVisibility());
+    this.clearGroqApiKeyBtn.addEventListener('click', () => this.clearGroqApiKey());
+    this.testGroqKeyBtn.addEventListener('click', () => this.testGroqKey());
+    this.saveGroqKeyBtn.addEventListener('click', () => this.saveGroqKey());
 
     // Categories events
     this.newCategoryInput.addEventListener('input', () => this.onNewCategoryChange());
@@ -169,6 +185,7 @@ class OptionsController {
     return {
       apiKey: '',
       cerebrasApiKey: '',
+      groqApiKey: '',
       categories: ['Work', 'Personal', 'Shopping', 'Entertainment', 'News', 'Social', 'Learning', 'Other'],
       lastSortTime: 0,
       batchSize: 50,
@@ -204,6 +221,17 @@ class OptionsController {
       this.cerebrasApiKeyInput.type = 'password';
     }
 
+    // Groq API Key (show masked or empty)
+    if (this.settings.groqApiKey) {
+      this.groqApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+      this.groqApiKeyInput.dataset.hasKey = 'true';
+      this.groqApiKeyInput.type = 'password';
+    } else {
+      this.groqApiKeyInput.value = '';
+      this.groqApiKeyInput.dataset.hasKey = 'false';
+      this.groqApiKeyInput.type = 'password';
+    }
+
     // Categories
     this.renderCategories();
 
@@ -218,6 +246,7 @@ class OptionsController {
     setTimeout(() => {
       this.updateGeminiButtonStates();
       this.updateCerebrasButtonStates();
+      this.updateGroqButtonStates();
     }, 100);
   }
 
@@ -873,6 +902,179 @@ class OptionsController {
 
   hideCerebrasApiKeyStatus() {
     this.cerebrasApiKeyStatus.classList.add('hidden');
+  }
+
+  /**
+   * Handle Groq API key input change
+   */
+  onGroqApiKeyChange() {
+    this.updateGroqButtonStates();
+  }
+
+  /**
+   * Update Groq button states
+   */
+  updateGroqButtonStates() {
+    const value = this.groqApiKeyInput.value.trim();
+    const hasValue = value.length > 0;
+    const isPlaceholder = value.startsWith('••••');
+    const isValidFormat = value.startsWith('gsk-') && value.length >= 10;
+    const shouldEnable = hasValue && !isPlaceholder && isValidFormat;
+
+    this.testGroqKeyBtn.disabled = !shouldEnable;
+    this.saveGroqKeyBtn.disabled = !shouldEnable;
+
+    if (hasValue && !isPlaceholder && !isValidFormat) {
+      this.showGroqApiKeyStatus('Invalid format. Groq API keys should start with "gsk-"', 'error');
+    } else {
+      this.hideGroqApiKeyStatus();
+    }
+  }
+
+  /**
+   * Clear Groq API key
+   */
+  clearGroqApiKey() {
+    this.groqApiKeyInput.value = '';
+    this.groqApiKeyInput.type = 'password';
+    this.groqApiKeyInput.dataset.hasKey = 'false';
+    this.groqApiKeyInput.placeholder = 'Enter your Groq API key (starts with gsk-...)';
+    this.isGroqApiKeyVisible = false;
+    this.updateGroqButtonStates();
+  }
+
+  /**
+   * Toggle Groq API key visibility
+   */
+  toggleGroqApiKeyVisibility() {
+    if (this.groqApiKeyInput.dataset.hasKey === 'true' && this.groqApiKeyInput.value.startsWith('••••')) {
+      this.showToast('Please clear the key first to enter a new one', 'info');
+      return;
+    }
+
+    this.isGroqApiKeyVisible = !this.isGroqApiKeyVisible;
+    this.groqApiKeyInput.type = this.isGroqApiKeyVisible ? 'text' : 'password';
+
+    const eyeIcon = this.toggleGroqApiKeyBtn.querySelector('svg path');
+    if (this.isGroqApiKeyVisible) {
+      eyeIcon.setAttribute('d', 'M12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7ZM2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z');
+    } else {
+      eyeIcon.setAttribute('d', 'M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z');
+    }
+
+    this.updateGroqButtonStates();
+  }
+
+  /**
+   * Test Groq API key
+   */
+  async testGroqKey() {
+    const apiKey = this.groqApiKeyInput.value.trim();
+    if (!apiKey || apiKey.startsWith('••••')) return;
+
+    this.showGroqApiKeyStatus('Testing Groq API key...', 'loading');
+    this.testGroqKeyBtn.disabled = true;
+
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: 'Test' }],
+          max_tokens: 5
+        })
+      });
+
+      if (response.ok) {
+        this.showGroqApiKeyStatus('Groq API key is valid!', 'success');
+        setTimeout(() => {
+          this.hideGroqApiKeyStatus();
+          this.updateGroqButtonStates();
+        }, 3000);
+        this.showToast('Groq API key validated successfully', 'success');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error?.message || `Error ${response.status}`;
+        this.showGroqApiKeyStatus(`Invalid API key: ${errorMsg}`, 'error');
+        this.showToast(`Groq API key validation failed: ${errorMsg}`, 'error');
+      }
+    } catch (error) {
+      console.error('Groq API test error:', error);
+      this.showGroqApiKeyStatus('Network error. Please check your connection.', 'error');
+      this.showToast('Failed to test Groq API key', 'error');
+    } finally {
+      this.testGroqKeyBtn.disabled = false;
+    }
+  }
+
+  /**
+   * Save Groq API key
+   */
+  async saveGroqKey() {
+    const apiKey = this.groqApiKeyInput.value.trim();
+    if (!apiKey || apiKey.startsWith('••••')) return;
+
+    if (!apiKey.startsWith('gsk-') || apiKey.length < 10) {
+      this.showGroqApiKeyStatus('Invalid API key format. Key should start with "gsk-"', 'error');
+      return;
+    }
+
+    this.showGroqApiKeyStatus('Saving Groq API key...', 'loading');
+    this.saveGroqKeyBtn.disabled = true;
+
+    try {
+      this.settings.groqApiKey = apiKey;
+      await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
+
+      this.showGroqApiKeyStatus('Groq API key saved successfully!', 'success');
+
+      setTimeout(() => {
+        this.groqApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+        this.groqApiKeyInput.type = 'password';
+        this.groqApiKeyInput.dataset.hasKey = 'true';
+        this.isGroqApiKeyVisible = false;
+        this.hideGroqApiKeyStatus();
+        this.updateGroqButtonStates();
+      }, 2000);
+
+      this.showToast('Groq API key saved successfully', 'success');
+    } catch (error) {
+      console.error('Failed to save Groq API key:', error);
+      this.showGroqApiKeyStatus('Failed to save API key', 'error');
+      this.saveGroqKeyBtn.disabled = false;
+    }
+  }
+
+  /**
+   * Show Groq API key status message
+   */
+  showGroqApiKeyStatus(message, type) {
+    this.groqApiKeyStatus.classList.remove('hidden', 'success', 'error', 'loading');
+    this.groqApiKeyStatus.classList.add(type);
+
+    const icon = this.groqApiKeyStatus.querySelector('.status-icon');
+    const text = this.groqApiKeyStatus.querySelector('.status-text');
+
+    text.textContent = message;
+
+    if (type === 'success') {
+      icon.textContent = '✓';
+    } else if (type === 'error') {
+      icon.textContent = '✗';
+    } else if (type === 'loading') {
+      icon.textContent = '⟳';
+    }
+  }
+
+  /**
+   * Hide Groq API key status message
+   */
+  hideGroqApiKeyStatus() {
+    this.groqApiKeyStatus.classList.add('hidden');
   }
 
   /**
