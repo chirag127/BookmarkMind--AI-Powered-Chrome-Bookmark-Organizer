@@ -467,10 +467,6 @@ class OptionsController {
       this.showToast('Failed to import learning data', 'error');
     }
   }
-      console.error('Error deleting learning pattern:', error);
-      this.showToast('Failed to delete learning pattern', 'error');
-    }
-  }
 
   /**
    * Render categories list
@@ -522,13 +518,21 @@ class OptionsController {
     const value = this.apiKeyInput.value.trim();
     const hasValue = value.length > 0;
     const isPlaceholder = value.startsWith('••••');
-    const isValidFormat = value.startsWith('AIza') && value.length >= 35;
-    const shouldEnable = hasValue && !isPlaceholder && isValidFormat;
+    const hasExistingKey = this.apiKeyInput.dataset.hasKey === 'true';
+    
+    let shouldEnable = false;
+    
+    if (isPlaceholder && hasExistingKey) {
+      shouldEnable = false;
+    } else if (hasValue && !isPlaceholder) {
+      const isValidFormat = value.startsWith('AIza') && value.length >= 35;
+      shouldEnable = isValidFormat;
+    }
 
     this.testGeminiKeyBtn.disabled = !shouldEnable;
     this.saveGeminiKeyBtn.disabled = !shouldEnable;
 
-    if (hasValue && !isPlaceholder && !isValidFormat) {
+    if (hasValue && !isPlaceholder && !(value.startsWith('AIza') && value.length >= 35)) {
       this.showApiKeyStatus('API key should start with "AIza" and be ~39 characters long', 'error');
     } else if (!isPlaceholder && hasValue && isValidFormat) {
       this.hideApiKeyStatus();
@@ -579,20 +583,21 @@ class OptionsController {
       </svg>
     `;
 
+    this.isApiKeyVisible = !this.isApiKeyVisible;
+
     if (this.isApiKeyVisible) {
-      if (this.settings.apiKey) {
-        this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
-      }
-      this.apiKeyInput.type = 'password';
-      this.toggleApiKeyBtn.innerHTML = eyeIconOpen;
-    } else {
       if (this.settings.apiKey) {
         this.apiKeyInput.value = this.settings.apiKey;
       }
       this.apiKeyInput.type = 'text';
       this.toggleApiKeyBtn.innerHTML = eyeIconClosed;
+    } else {
+      if (this.settings.apiKey) {
+        this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
+      }
+      this.apiKeyInput.type = 'password';
+      this.toggleApiKeyBtn.innerHTML = eyeIconOpen;
     }
-    this.isApiKeyVisible = !this.isApiKeyVisible;
     this.updateGeminiButtonStates();
   }
 
@@ -600,29 +605,33 @@ class OptionsController {
    * Toggle Cerebras API key visibility
    */
   toggleCerebrasApiKeyVisibility() {
+    const eyeIconOpen = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
+      </svg>
+    `;
+    const eyeIconClosed = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 7C12.55 7 13 7.45 13 8C13 8.55 12.55 9 12 9C11.45 9 11 8.55 11 8C11 7.45 11.45 7 12 7ZM2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12ZM12 17C15.87 17 19.5 13.87 19.5 12C19.5 10.13 15.87 7 12 7C8.13 7 4.5 10.13 4.5 12C4.5 13.87 8.13 17 12 17Z" fill="currentColor"/>
+        <path d="M3 3L21 21" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    `;
+
+    this.isCerebrasApiKeyVisible = !this.isCerebrasApiKeyVisible;
+
     if (this.isCerebrasApiKeyVisible) {
       if (this.settings.cerebrasApiKey) {
-        this.cerebrasApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
-        this.cerebrasApiKeyInput.type = 'password';
+        this.cerebrasApiKeyInput.value = this.settings.cerebrasApiKey;
       }
-      this.toggleCerebrasApiKeyBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor"/>
-        </svg>
-      `;
+      this.cerebrasApiKeyInput.type = 'text';
+      this.toggleCerebrasApiKeyBtn.innerHTML = eyeIconClosed;
     } else {
       if (this.settings.cerebrasApiKey) {
-        this.cerebrasApiKeyInput.value = this.settings.cerebrasApiKey;
-        this.cerebrasApiKeyInput.type = 'text';
+        this.cerebrasApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
       }
-      this.toggleCerebrasApiKeyBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 7C12.55 7 13 7.45 13 8C13 8.55 12.55 9 12 9C11.45 9 11 8.55 11 8C11 7.45 11.45 7 12 7ZM2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12ZM12 17C15.87 17 19.5 13.87 19.5 12C19.5 10.13 15.87 7 12 7C8.13 7 4.5 10.13 4.5 12C4.5 13.87 8.13 17 12 17Z" fill="currentColor"/>
-          <path d="M3 3L21 21" stroke="currentColor" stroke-width="2"/>
-        </svg>
-      `;
+      this.cerebrasApiKeyInput.type = 'password';
+      this.toggleCerebrasApiKeyBtn.innerHTML = eyeIconOpen;
     }
-    this.isCerebrasApiKeyVisible = !this.isCerebrasApiKeyVisible;
     this.updateCerebrasButtonStates();
   }
 
