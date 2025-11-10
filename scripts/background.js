@@ -68,6 +68,7 @@ async function initializeExtension() {
   try {
     const defaultSettings = {
       apiKey: '',
+      cerebrasApiKey: '',
       categories: [
         'Work',
         'Personal',
