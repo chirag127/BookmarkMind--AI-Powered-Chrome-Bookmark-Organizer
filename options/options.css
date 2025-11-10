@@ -92,6 +92,18 @@ body {
     font-size: 14px;
 }
 
+/* Provider Section */
+.provider-section {
+    margin-bottom: 24px;
+}
+
+.provider-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 12px;
+}
+
 /* Form Elements */
 .form-group {
     margin-bottom: 24px;
