@@ -1,29 +1,81 @@
-const globals = require('globals');
+import js from '@eslint/js';
+import globals from 'globals';
 
-module.exports = [
-    {
-        files: ['scripts/**/*.js'],
-        languageOptions: {
-            ecmaVersion: 2021,
-            sourceType: 'script',
-            globals: {
-                ...globals.browser,
-                ...globals.webextensions,
-                chrome: 'readonly',
-                importScripts: 'readonly',
-                AIProcessor: 'readonly',
-                AnalyticsService: 'readonly',
-                BookmarkService: 'readonly',
-                Categorizer: 'readonly',
-                FolderManager: 'readonly',
-                LearningService: 'readonly',
-                SnapshotManager: 'readonly'
-            }
-        },
-        rules: {
-            'no-console': 'off',
-            'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-            'no-undef': 'error'
+export default [
+  js.configs.recommended,
+  {
+    files: ['scripts/**/*.js', 'popup/**/*.js', 'options/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.webextensions,
+        chrome: 'readonly',
+        importScripts: 'readonly',
+        AIProcessor: 'readonly',
+        AnalyticsService: 'readonly',
+        BookmarkService: 'readonly',
+        Categorizer: 'readonly',
+        FolderManager: 'readonly',
+        LearningService: 'readonly',
+        SnapshotManager: 'readonly'
+      }
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
         }
+      ],
+      'no-console': 'warn',
+      'semi': ['error', 'always'],
+      'quotes': ['error', 'single', { avoidEscape: true }],
+      'indent': ['error', 2],
+      'comma-dangle': ['error', 'never'],
+      'no-trailing-spaces': 'error',
+      'eol-last': ['error', 'always'],
+      'no-multiple-empty-lines': ['error', { max: 1 }],
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'arrow-spacing': 'error',
+      'object-curly-spacing': ['error', 'always'],
+      'array-bracket-spacing': ['error', 'never'],
+      'brace-style': ['error', '1tbs'],
+      'keyword-spacing': 'error',
+      'space-before-function-paren': ['error', {
+        anonymous: 'always',
+        named: 'never',
+        asyncArrow: 'always'
+      }]
     }
+  },
+  {
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'build/',
+      '*.zip',
+      '*.crx',
+      'coverage/',
+      '.nyc_output/',
+      'temp/',
+      'tmp/',
+      '*.log',
+      'tests/**/*.js',
+      'debug_*.js',
+      'test_*.js',
+      'verify_*.js',
+      'manual_*.js',
+      'simple_*.js',
+      'quick_*.js',
+      'force_*.js',
+      'disable_*.js',
+      'check_*.js',
+      'bypass_*.js',
+      'configure_*.js'
+    ]
+  }
 ];
