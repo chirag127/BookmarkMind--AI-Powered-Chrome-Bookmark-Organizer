@@ -980,6 +980,28 @@ function extractLearningPatterns(bookmark, targetCategory) {
 }
 
 /**
+ * Calculate UTF-8 byte size of a string
+ * @param {string} str - String to measure
+ * @returns {number} - Byte size in UTF-8 encoding
+ */
+function getUtf8ByteSize(str) {
+  let byteSize = 0;
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i);
+    if (charCode <= 0x7F) {
+      byteSize += 1;
+    } else if (charCode <= 0x7FF) {
+      byteSize += 2;
+    } else if (charCode <= 0xFFFF) {
+      byteSize += 3;
+    } else {
+      byteSize += 4;
+    }
+  }
+  return byteSize;
+}
+
+/**
  * Save learning patterns to storage
  */
 async function saveLearningPatterns(patterns, category) {
@@ -988,16 +1010,86 @@ async function saveLearningPatterns(patterns, category) {
     const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
     const learningData = result.bookmarkMindLearning || {};
 
-    // Add new patterns
+    // Add new patterns with timestamp for pruning
     let newPatternsCount = 0;
+    const timestamp = Date.now();
+    
+    // Ensure all existing patterns have timestamps
+    for (const pattern in learningData) {
+      if (typeof learningData[pattern] === 'string') {
+        // Convert old format to new format with timestamp
+        learningData[pattern] = {
+          category: learningData[pattern],
+          timestamp: timestamp - 1 // Older than new entries
+        };
+      }
+    }
+    
     for (const pattern of patterns) {
-      if (!learningData[pattern] || learningData[pattern] !== category) {
-        learningData[pattern] = category;
+      const existing = learningData[pattern];
+      if (!existing || existing.category !== category) {
+        learningData[pattern] = {
+          category: category,
+          timestamp: timestamp
+        };
         newPatternsCount++;
       }
     }
 
     if (newPatternsCount > 0) {
+      // Calculate byte size
+      const jsonString = JSON.stringify(learningData);
+      const charLength = jsonString.length;
+      const byteSize = getUtf8ByteSize(jsonString);
+      
+      console.log(`📊 Learning patterns data size - Char length: ${charLength}, Byte size: ${byteSize} bytes`);
+      
+      // Chrome's sync storage limit is 8192 bytes per item
+      const QUOTA_BYTES_PER_ITEM = 8192;
+      const SAFETY_THRESHOLD = 0.85; // Start pruning at 85% capacity
+      const TARGET_SIZE = 0.75; // Prune down to 75% capacity
+      
+      // Check if we need to prune
+      if (byteSize >= QUOTA_BYTES_PER_ITEM * SAFETY_THRESHOLD) {
+        console.log(`⚠️ Learning patterns approaching size limit (${byteSize}/${QUOTA_BYTES_PER_ITEM} bytes, ${Math.round(byteSize/QUOTA_BYTES_PER_ITEM*100)}% full)`);
+        
+        // Sort patterns by timestamp (oldest first)
+        const sortedPatterns = Object.entries(learningData)
+          .sort((a, b) => a[1].timestamp - b[1].timestamp);
+        
+        const targetByteSize = QUOTA_BYTES_PER_ITEM * TARGET_SIZE;
+        const prunedData = {};
+        let prunedCount = 0;
+        let currentByteSize = 0;
+        
+        // Add patterns from newest to oldest until we reach target size
+        for (let i = sortedPatterns.length - 1; i >= 0; i--) {
+          const [pattern, data] = sortedPatterns[i];
+          const testData = { ...prunedData, [pattern]: data };
+          const testJsonString = JSON.stringify(testData);
+          const testByteSize = getUtf8ByteSize(testJsonString);
+          
+          if (testByteSize <= targetByteSize) {
+            prunedData[pattern] = data;
+            currentByteSize = testByteSize;
+          } else {
+            prunedCount++;
+            console.log(`🗑️ Pruning pattern: "${pattern}" -> "${data.category}" (timestamp: ${new Date(data.timestamp).toISOString()})`);
+          }
+        }
+        
+        Object.assign(learningData, {}); // Clear
+        Object.assign(learningData, prunedData); // Replace with pruned data
+        
+        const newByteSize = getUtf8ByteSize(JSON.stringify(learningData));
+        console.log(`✂️ Pruned ${prunedCount} oldest patterns. New size: ${newByteSize} bytes (${Math.round(newByteSize/QUOTA_BYTES_PER_ITEM*100)}% full)`);
+      }
+      
+      // Final size check before save
+      const finalJsonString = JSON.stringify(learningData);
+      const finalByteSize = getUtf8ByteSize(finalJsonString);
+      console.log(`💾 Saving learning patterns - Char length: ${finalJsonString.length}, Byte size: ${finalByteSize} bytes`);
+
       // Save updated learning data
       await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
 
