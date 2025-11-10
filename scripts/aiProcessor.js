@@ -1875,7 +1875,7 @@ Return only the JSON array, no additional text or formatting`;
 
         try {
             // Simple test request
-            const testResponse = await fetch(this.baseUrl, {
+            const testResponse = await fetch(this.getCurrentModelUrl(), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
