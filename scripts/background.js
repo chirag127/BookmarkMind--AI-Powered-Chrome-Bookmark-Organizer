@@ -604,21 +604,23 @@ async function handleExportBookmarks(sendResponse) {
  */
 async function handleGetSnapshots(sendResponse) {
   try {
-    if (typeof SnapshotManager === 'undefined') {
-      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
-    }
-
-    const snapshotManager = new SnapshotManager();
-    const snapshots = await snapshotManager.getSnapshots();
-    const storageInfo = await snapshotManager.getStorageInfo();
-
-    sendResponse({ success: true, data: { snapshots, storageInfo } });
+    console.log('Retrieving snapshots from storage...');
+    
+    const result = await chrome.storage.local.get(['bookmarkSnapshots']);
+    const snapshots = result.bookmarkSnapshots || [];
+    
+    console.log(`Retrieved ${snapshots.length} snapshots from storage`);
+    
+    sendResponse({ 
+      success: true, 
+      data: snapshots
+    });
 
   } catch (error) {
     console.error('Get snapshots error:', error);
     sendResponse({
       success: false,
-      error: error.message || 'Failed to get snapshots'
+      error: error.message || 'Failed to retrieve snapshots from storage'
     });
   }
 }

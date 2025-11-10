@@ -638,7 +638,7 @@ class PopupController {
           }
 
           urlGroups.get(normalizedUrl).push(bookmark);
-        } catch (error) {
+        } catch (_error) {
           console.warn(`Invalid URL for bookmark "${bookmark.title}": ${bookmark.url}`);
           // Keep invalid URLs as unique
           const invalidKey = `invalid_${bookmark.url}`;
@@ -1642,7 +1642,19 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       const response = await chrome.runtime.sendMessage({ action: 'getSnapshots' });
 
       if (response && response.success) {
-        const { snapshots, storageInfo } = response.data;
+        const snapshots = Array.isArray(response.data) ? response.data : [];
+
+        const storageInfo = {
+          snapshotCount: snapshots.length,
+          maxSnapshots: 10,
+          totalSizeMB: '0.00'
+        };
+
+        if (snapshots.length > 0) {
+          const snapshotsSize = new Blob([JSON.stringify(snapshots)]).size;
+          storageInfo.totalSizeMB = (snapshotsSize / (1024 * 1024)).toFixed(2);
+        }
+
         this.displaySnapshots(snapshots, storageInfo);
       } else {
         console.error('Failed to load snapshots:', response?.error);
@@ -1811,7 +1823,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         const diagnostics = response.data;
         console.log('📊 Diagnostics results:', diagnostics);
 
-        let message = `Diagnostics Report:\n\n`;
+        let message = 'Diagnostics Report:\n\n';
         message += `Health Status: ${diagnostics.health}\n`;
         message += `Snapshot Count: ${diagnostics.storageInfo?.snapshotCount || 0}\n`;
         message += `Storage Usage: ${diagnostics.storageState?.usagePercent || 0}%\n`;
@@ -1819,7 +1831,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         message += `Quota Remaining: ${diagnostics.storageState?.quotaRemainingMB || 0}MB\n`;
 
         if (diagnostics.repairResult && diagnostics.repairResult.repaired) {
-          message += `\n⚠️ Repairs Made:\n`;
+          message += '\n⚠️ Repairs Made:\n';
           message += `Corrupted snapshots removed: ${diagnostics.repairResult.removed}\n`;
           if (diagnostics.repairResult.validRemaining !== undefined) {
             message += `Valid snapshots remaining: ${diagnostics.repairResult.validRemaining}\n`;
