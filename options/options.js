@@ -8,7 +8,6 @@ class OptionsController {
     this.settings = {};
     this.stats = {};
     this.isApiKeyVisible = false;
-    this.isAgentRouterKeyVisible = false;
 
     this.initializeElements();
     this.attachEventListeners();
@@ -31,11 +30,7 @@ class OptionsController {
       toggleBtn: !!this.toggleApiKeyBtn,
       clearBtn: !!this.clearApiKeyBtn,
       testBtn: !!this.testApiKeyBtn,
-      saveBtn: !!this.saveApiKeyBtn,
-      agentRouterInput: !!this.agentRouterApiKeyInput,
-      agentRouterToggle: !!this.toggleAgentRouterKeyBtn,
-      agentRouterClear: !!this.clearAgentRouterKeyBtn,
-      agentRouterTest: !!this.testAgentRouterKeyBtn
+      saveBtn: !!this.saveApiKeyBtn
     });
   }
 
@@ -50,13 +45,6 @@ class OptionsController {
     this.testApiKeyBtn = document.getElementById('testApiKey');
     this.saveApiKeyBtn = document.getElementById('saveApiKey');
     this.apiKeyStatus = document.getElementById('apiKeyStatus');
-
-    // AgentRouter API Key elements
-    this.agentRouterApiKeyInput = document.getElementById('agentRouterApiKey');
-    this.toggleAgentRouterKeyBtn = document.getElementById('toggleAgentRouterKey');
-    this.clearAgentRouterKeyBtn = document.getElementById('clearAgentRouterKey');
-    this.testAgentRouterKeyBtn = document.getElementById('testAgentRouterKey');
-    this.agentRouterKeyStatus = document.getElementById('agentRouterKeyStatus');
 
     // Categories elements
     this.categoriesList = document.getElementById('categoriesList');
@@ -121,20 +109,6 @@ class OptionsController {
     this.saveApiKeyBtn.addEventListener('click', () => {
       console.log('Save button clicked');
       this.saveApiKey();
-    });
-
-    // AgentRouter API Key events
-    this.agentRouterApiKeyInput.addEventListener('input', () => {
-      this.onAgentRouterKeyChange();
-    });
-    this.toggleAgentRouterKeyBtn.addEventListener('click', () => {
-      this.toggleAgentRouterKeyVisibility();
-    });
-    this.clearAgentRouterKeyBtn.addEventListener('click', () => {
-      this.clearAgentRouterKey();
-    });
-    this.testAgentRouterKeyBtn.addEventListener('click', () => {
-      this.testAgentRouterKey();
     });
 
     // Categories events
@@ -207,7 +181,6 @@ class OptionsController {
       lastSortTime: 0,
       batchSize: 50,
       cleanupEmptyFolders: false,
-      agentRouterApiKey: '',
       maxCategoryDepth: 2,
       minBookmarksThreshold: 3
     };
@@ -226,17 +199,6 @@ class OptionsController {
       this.apiKeyInput.value = '';
       this.apiKeyInput.dataset.hasKey = 'false';
       this.apiKeyInput.type = 'password';
-    }
-
-    // AgentRouter API Key (show masked or empty)
-    if (this.settings.agentRouterApiKey) {
-      this.agentRouterApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
-      this.agentRouterApiKeyInput.dataset.hasKey = 'true';
-      this.agentRouterApiKeyInput.type = 'password';
-    } else {
-      this.agentRouterApiKeyInput.value = '';
-      this.agentRouterApiKeyInput.dataset.hasKey = 'false';
-      this.agentRouterApiKeyInput.type = 'password';
     }
 
     // Categories
@@ -569,130 +531,6 @@ class OptionsController {
   }
 
   /**
-   * Clear AgentRouter API key input
-   */
-  clearAgentRouterKey() {
-    this.agentRouterApiKeyInput.value = '';
-    this.agentRouterApiKeyInput.type = 'password';
-    this.agentRouterApiKeyInput.dataset.hasKey = 'false';
-    this.isAgentRouterKeyVisible = false;
-    this.hideAgentRouterKeyStatus();
-    this.updateButtonStates();
-    this.agentRouterApiKeyInput.focus();
-    console.log('AgentRouter API key input cleared');
-  }
-
-  /**
-   * Toggle AgentRouter API key visibility
-   */
-  toggleAgentRouterKeyVisibility() {
-    if (this.isAgentRouterKeyVisible) {
-      // Hide AgentRouter key
-      if (this.settings.agentRouterApiKey) {
-        this.agentRouterApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
-        this.agentRouterApiKeyInput.type = 'password';
-      }
-      this.isAgentRouterKeyVisible = false;
-    } else {
-      // Show AgentRouter key
-      if (this.settings.agentRouterApiKey) {
-        this.agentRouterApiKeyInput.value = this.settings.agentRouterApiKey;
-        this.agentRouterApiKeyInput.type = 'text';
-      }
-      this.isAgentRouterKeyVisible = true;
-    }
-  }
-
-  /**
-   * Handle AgentRouter API key input changes
-   */
-  onAgentRouterKeyChange() {
-    const value = this.agentRouterApiKeyInput.value.trim();
-    const hasValue = value.length > 0;
-    const isPlaceholder = value.includes('••••');
-
-    // Update dataset
-    this.agentRouterApiKeyInput.dataset.hasKey = hasValue && !isPlaceholder ? 'true' : 'false';
-
-    // Validate AgentRouter key format (starts with "sk-or-")
-    const isValidFormat = value.startsWith('sk-or-') && value.length >= 20;
-    const shouldEnable = hasValue && !isPlaceholder && isValidFormat;
-
-    // Update button states
-    this.testAgentRouterKeyBtn.disabled = !shouldEnable;
-    this.updateButtonStates();
-
-    // Hide status when typing
-    this.hideAgentRouterKeyStatus();
-  }
-
-  /**
-   * Test AgentRouter API key
-   */
-  async testAgentRouterKey() {
-    const apiKey = this.agentRouterApiKeyInput.value.trim();
-
-    if (!apiKey || apiKey.includes('••••')) {
-      this.showAgentRouterKeyStatus('error', 'Please enter a valid AgentRouter API key');
-      return;
-    }
-
-    this.showAgentRouterKeyStatus('loading', 'Testing AgentRouter API key...');
-    this.testAgentRouterKeyBtn.disabled = true;
-
-    try {
-      // Test AgentRouter API
-      const response = await fetch('https://agentrouter.org/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': 'https://bookmarkmind.extension',
-          'X-Title': 'BookmarkMind Extension'
-        },
-        body: JSON.stringify({
-          model: 'gpt-5',
-          messages: [
-            {
-              role: 'user',
-              content: 'Hello, this is a test message.'
-            }
-          ],
-          max_tokens: 50
-        })
-      });
-
-      if (response.ok) {
-        this.showAgentRouterKeyStatus('success', 'AgentRouter API key is valid and working!');
-      } else {
-        const errorData = await response.text();
-        this.showAgentRouterKeyStatus('error', `AgentRouter API test failed: ${response.status}`);
-      }
-
-    } catch (error) {
-      this.showAgentRouterKeyStatus('error', `AgentRouter API test failed: ${error.message}`);
-    } finally {
-      this.testAgentRouterKeyBtn.disabled = false;
-    }
-  }
-
-  /**
-   * Show AgentRouter API key status
-   */
-  showAgentRouterKeyStatus(type, message) {
-    this.agentRouterKeyStatus.className = `status-indicator ${type}`;
-    this.agentRouterKeyStatus.querySelector('.status-text').textContent = message;
-    this.agentRouterKeyStatus.classList.remove('hidden');
-  }
-
-  /**
-   * Hide AgentRouter API key status
-   */
-  hideAgentRouterKeyStatus() {
-    this.agentRouterKeyStatus.classList.add('hidden');
-  }
-
-  /**
    * Toggle API key visibility
    */
   toggleApiKeyVisibility() {
@@ -772,25 +610,19 @@ class OptionsController {
    */
   async saveApiKey() {
     const apiKey = this.apiKeyInput.value.trim();
-    const agentRouterKey = this.agentRouterApiKeyInput.value.trim();
 
     // Save Gemini API key if provided
     if (apiKey && !apiKey.startsWith('••••')) {
       this.settings.apiKey = apiKey;
     }
 
-    // Save AgentRouter API key if provided
-    if (agentRouterKey && !agentRouterKey.startsWith('••••')) {
-      this.settings.agentRouterApiKey = agentRouterKey;
-    }
-
     try {
       await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
 
-      this.showToast('API keys saved successfully!', 'success');
-      this.showApiKeyStatus('API keys saved', 'success');
+      this.showToast('API key saved successfully!', 'success');
+      this.showApiKeyStatus('API key saved', 'success');
 
-      // Update UI to show masked keys
+      // Update UI to show masked key
       setTimeout(() => {
         if (apiKey && !apiKey.startsWith('••••')) {
           this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
@@ -799,19 +631,12 @@ class OptionsController {
           this.isApiKeyVisible = false;
         }
 
-        if (agentRouterKey && !agentRouterKey.startsWith('••••')) {
-          this.agentRouterApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
-          this.agentRouterApiKeyInput.type = 'password';
-          this.agentRouterApiKeyInput.dataset.hasKey = 'true';
-          this.isAgentRouterKeyVisible = false;
-        }
-
         this.updateButtonStates();
       }, 1000);
 
     } catch (error) {
-      console.error('Error saving API keys:', error);
-      this.showToast('Failed to save API keys', 'error');
+      console.error('Error saving API key:', error);
+      this.showToast('Failed to save API key', 'error');
     }
   }
 
@@ -1033,9 +858,6 @@ class OptionsController {
       if (exportData.settings.apiKey) {
         exportData.settings.apiKey = '[REDACTED]';
       }
-      if (exportData.settings.agentRouterApiKey) {
-        exportData.settings.agentRouterApiKey = '[REDACTED]';
-      }
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
         type: 'application/json'
@@ -1112,17 +934,9 @@ class OptionsController {
     const hasApiKey = apiKeyValue.length > 0 && !apiKeyValue.includes('••••');
     const isValidApiKey = apiKeyValue.startsWith('AIza') && apiKeyValue.length >= 35;
 
-    const agentRouterKeyValue = this.agentRouterApiKeyInput.value.trim();
-    const hasAgentRouterKey = agentRouterKeyValue.length > 0 && !agentRouterKeyValue.includes('••••');
-    const isValidAgentRouterKey = agentRouterKeyValue.startsWith('sk-or-') && agentRouterKeyValue.length >= 20;
-
     // Enable/disable buttons based on API key validity
     this.testApiKeyBtn.disabled = !hasApiKey || !isValidApiKey;
-    this.testAgentRouterKeyBtn.disabled = !hasAgentRouterKey || !isValidAgentRouterKey;
-
-    // Enable save button if at least one valid key is provided
-    const canSave = (hasApiKey && isValidApiKey) || (hasAgentRouterKey && isValidAgentRouterKey);
-    this.saveApiKeyBtn.disabled = !canSave;
+    this.saveApiKeyBtn.disabled = !hasApiKey || !isValidApiKey;
   }
 
   /**

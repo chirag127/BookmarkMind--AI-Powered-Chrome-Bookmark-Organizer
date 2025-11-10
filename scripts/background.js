@@ -85,8 +85,7 @@ async function initializeExtension() {
       lastSortTime: 0,
       autoSort: false,
       batchSize: 50,
-      cleanupEmptyFolders: false,
-      agentRouterApiKey: '' // AgentRouter fallback API key
+      cleanupEmptyFolders: false
     };
 
     // Check if settings already exist

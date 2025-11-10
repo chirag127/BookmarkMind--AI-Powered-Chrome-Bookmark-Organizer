@@ -71,7 +71,7 @@ class Categorizer {
       }
 
       console.log('Categorizer: Setting API key...');
-      this.aiProcessor.setApiKey(settings.apiKey, settings.agentRouterApiKey);
+      this.aiProcessor.setApiKey(settings.apiKey);
 
       // Get all bookmarks
       console.log('Categorizer: Loading bookmarks...');
@@ -248,7 +248,7 @@ class Categorizer {
       }
 
       console.log('Categorizer: Setting API key...');
-      this.aiProcessor.setApiKey(settings.apiKey, settings.agentRouterApiKey);
+      this.aiProcessor.setApiKey(settings.apiKey);
 
       // Validate selected bookmarks exist in Chrome
       console.log('Categorizer: Validating selected bookmarks...');
