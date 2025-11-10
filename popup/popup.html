@@ -85,6 +85,12 @@
         </button>
 
         <div class="secondary-actions">
+          <button id="viewSnapshotsBtn" class="secondary-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z" fill="currentColor" />
+            </svg>
+            View Snapshots & Undo
+          </button>
           <button id="deleteEmptyFoldersBtn" class="secondary-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"
@@ -198,6 +204,29 @@
         </div>
       </div>
 
+      <!-- Snapshots Section -->
+      <div id="snapshotsSection" class="section hidden">
+        <div class="snapshots-header">
+          <h3>Bookmark Snapshots</h3>
+          <button id="closeSnapshotsBtn" class="control-btn">Close</button>
+        </div>
+
+        <div class="storage-info" id="storageInfo">
+          <span class="storage-label">Snapshots:</span>
+          <span id="snapshotCount">0</span> /
+          <span id="maxSnapshots">10</span>
+          <span class="storage-size">(<span id="storageSize">0</span> MB)</span>
+        </div>
+
+        <div id="snapshotsList" class="snapshots-list">
+          <!-- Snapshots will be populated here -->
+        </div>
+
+        <div class="snapshots-help">
+          <p>💡 Snapshots are created automatically before AI categorization. You can restore any snapshot to undo changes.</p>
+        </div>
+      </div>
+
       <!-- Last Sort Info -->
       <div id="lastSortSection" class="section">
         <div class="last-sort-info">
@@ -248,6 +277,7 @@
   <script src="../scripts/aiProcessor.js"></script>
   <script src="../scripts/categorizer.js"></script>
   <script src="../scripts/folderManager.js"></script>
+  <script src="../scripts/snapshotManager.js"></script>
   <script src="popup.js"></script>
 </body>
 

@@ -8,6 +8,7 @@ class Categorizer {
     this.bookmarkService = new BookmarkService();
     this.aiProcessor = new AIProcessor();
     this.folderManager = new FolderManager();
+    this.snapshotManager = typeof SnapshotManager !== 'undefined' ? new SnapshotManager() : null;
     this.isProcessing = false;
   }
 
@@ -37,6 +38,25 @@ class Categorizer {
     try {
       console.log('Categorizer: Starting categorization...');
       progressCallback?.({ stage: 'starting', progress: 0 });
+
+      // Create snapshot before starting categorization
+      if (this.snapshotManager) {
+        try {
+          progressCallback?.({ stage: 'snapshot', progress: 5, message: 'Creating backup snapshot...' });
+          const bookmarks = await this.bookmarkService.getAllBookmarks();
+          await this.snapshotManager.createSnapshot(
+            forceReorganize ? 'Before Force Reorganization' : 'Before AI Categorization',
+            {
+              operationType: forceReorganize ? 'force_reorganize' : 'categorization',
+              bookmarkCount: bookmarks.length,
+              uncategorizedCount: bookmarks.filter(b => ['1', '2', '3'].includes(b.parentId)).length
+            }
+          );
+          console.log('✅ Snapshot created successfully');
+        } catch (snapshotError) {
+          console.warn('Failed to create snapshot, continuing anyway:', snapshotError);
+        }
+      }
 
       // Get user settings
       console.log('Categorizer: Getting settings...');
@@ -179,6 +199,24 @@ class Categorizer {
     try {
       console.log(`Categorizer: Starting bulk categorization of ${selectedBookmarks.length} bookmarks...`);
       progressCallback?.({ stage: 'starting', progress: 0 });
+
+      // Create snapshot before starting bulk categorization
+      if (this.snapshotManager) {
+        try {
+          progressCallback?.({ stage: 'snapshot', progress: 5, message: 'Creating backup snapshot...' });
+          await this.snapshotManager.createSnapshot(
+            'Before Bulk Categorization',
+            {
+              operationType: 'bulk_categorization',
+              bookmarkCount: selectedBookmarks.length,
+              selectedIds: selectedIds
+            }
+          );
+          console.log('✅ Snapshot created successfully');
+        } catch (snapshotError) {
+          console.warn('Failed to create snapshot, continuing anyway:', snapshotError);
+        }
+      }
 
       // Get user settings
       console.log('Categorizer: Getting settings...');

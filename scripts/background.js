@@ -9,7 +9,8 @@ try {
     'bookmarkService.js',
     'aiProcessor.js',
     'categorizer.js',
-    'folderManager.js'
+    'folderManager.js',
+    'snapshotManager.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -18,7 +19,8 @@ try {
     BookmarkService: typeof BookmarkService !== 'undefined',
     AIProcessor: typeof AIProcessor !== 'undefined',
     Categorizer: typeof Categorizer !== 'undefined',
-    FolderManager: typeof FolderManager !== 'undefined'
+    FolderManager: typeof FolderManager !== 'undefined',
+    SnapshotManager: typeof SnapshotManager !== 'undefined'
   });
 
 } catch (error) {
@@ -166,6 +168,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'exportBookmarks':
         await handleExportBookmarks(sendResponse);
+        break;
+
+      case 'getSnapshots':
+        await handleGetSnapshots(sendResponse);
+        break;
+
+      case 'restoreSnapshot':
+        await handleRestoreSnapshot(message.data, sendResponse);
+        break;
+
+      case 'deleteSnapshot':
+        await handleDeleteSnapshot(message.data, sendResponse);
         break;
 
       case 'ping':
@@ -533,6 +547,94 @@ async function handleExportBookmarks(sendResponse) {
     sendResponse({
       success: false,
       error: error.message || 'Export failed'
+    });
+  }
+}
+
+/**
+ * Handle get snapshots request
+ */
+async function handleGetSnapshots(sendResponse) {
+  try {
+    if (typeof SnapshotManager === 'undefined') {
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
+    }
+
+    const snapshotManager = new SnapshotManager();
+    const snapshots = await snapshotManager.getSnapshots();
+    const storageInfo = await snapshotManager.getStorageInfo();
+
+    sendResponse({ success: true, data: { snapshots, storageInfo } });
+
+  } catch (error) {
+    console.error('Get snapshots error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to get snapshots'
+    });
+  }
+}
+
+/**
+ * Handle restore snapshot request
+ */
+async function handleRestoreSnapshot(data, sendResponse) {
+  try {
+    if (typeof SnapshotManager === 'undefined') {
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
+    }
+
+    if (!data.snapshotId) {
+      throw new Error('Snapshot ID is required');
+    }
+
+    const snapshotManager = new SnapshotManager();
+    
+    const results = await snapshotManager.restoreSnapshot(data.snapshotId, (progress) => {
+      try {
+        chrome.runtime.sendMessage({
+          action: 'restoreProgress',
+          data: progress
+        }).catch(() => {});
+      } catch (error) {
+        console.log('Progress callback error:', error.message);
+      }
+    });
+
+    sendResponse({ success: true, data: results });
+
+  } catch (error) {
+    console.error('Restore snapshot error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to restore snapshot'
+    });
+  }
+}
+
+/**
+ * Handle delete snapshot request
+ */
+async function handleDeleteSnapshot(data, sendResponse) {
+  try {
+    if (typeof SnapshotManager === 'undefined') {
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
+    }
+
+    if (!data.snapshotId) {
+      throw new Error('Snapshot ID is required');
+    }
+
+    const snapshotManager = new SnapshotManager();
+    const success = await snapshotManager.deleteSnapshot(data.snapshotId);
+
+    sendResponse({ success: success, message: 'Snapshot deleted successfully' });
+
+  } catch (error) {
+    console.error('Delete snapshot error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to delete snapshot'
     });
   }
 }

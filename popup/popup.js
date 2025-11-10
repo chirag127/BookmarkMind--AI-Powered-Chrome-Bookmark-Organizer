@@ -35,6 +35,7 @@ class PopupController {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
     this.bulkCategorizeBtn = document.getElementById('bulkCategorizeBtn');
+    this.viewSnapshotsBtn = document.getElementById('viewSnapshotsBtn');
     this.deleteEmptyFoldersBtn = document.getElementById('deleteEmptyFoldersBtn');
     this.removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
     this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
@@ -68,8 +69,16 @@ class PopupController {
     this.apiKeyWarning = document.getElementById('apiKeyWarning');
     this.actionSection = document.getElementById('actionSection');
     this.bulkSelectionSection = document.getElementById('bulkSelectionSection');
+    this.snapshotsSection = document.getElementById('snapshotsSection');
     this.progressSection = document.getElementById('progressSection');
     this.resultsSection = document.getElementById('resultsSection');
+
+    // Snapshot elements
+    this.closeSnapshotsBtn = document.getElementById('closeSnapshotsBtn');
+    this.snapshotsList = document.getElementById('snapshotsList');
+    this.snapshotCount = document.getElementById('snapshotCount');
+    this.maxSnapshots = document.getElementById('maxSnapshots');
+    this.storageSize = document.getElementById('storageSize');
 
     // Progress elements
     this.progressText = document.getElementById('progressText');
@@ -89,6 +98,8 @@ class PopupController {
   attachEventListeners() {
     this.sortBtn.addEventListener('click', () => this.startCategorization());
     this.bulkCategorizeBtn.addEventListener('click', () => this.showBulkSelection());
+    this.viewSnapshotsBtn.addEventListener('click', () => this.showSnapshots());
+    this.closeSnapshotsBtn.addEventListener('click', () => this.hideSnapshots());
     this.deleteEmptyFoldersBtn.addEventListener('click', () => this.deleteEmptyFolders());
     this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
@@ -123,6 +134,8 @@ class PopupController {
     // Listen for progress updates and error notifications from background script
     chrome.runtime.onMessage.addListener((message) => {
       if (message.action === 'categorizationProgress') {
+        this.updateProgress(message.data);
+      } else if (message.action === 'restoreProgress') {
         this.updateProgress(message.data);
       } else if (message.type === 'CATEGORIZATION_ERROR_NOTIFICATION') {
         this.handleCategorizationError(message.error);
@@ -1596,6 +1609,171 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
 
     // Stop processing state
     this.isProcessing = false;
+  }
+
+  /**
+   * Show snapshots view
+   */
+  async showSnapshots() {
+    try {
+      this.actionSection.classList.add('hidden');
+      this.snapshotsSection.classList.remove('hidden');
+
+      const response = await chrome.runtime.sendMessage({ action: 'getSnapshots' });
+
+      if (response && response.success) {
+        const { snapshots, storageInfo } = response.data;
+        this.displaySnapshots(snapshots, storageInfo);
+      } else {
+        this.showError('Failed to load snapshots');
+      }
+    } catch (error) {
+      console.error('Error loading snapshots:', error);
+      this.showError('Failed to load snapshots');
+    }
+  }
+
+  /**
+   * Hide snapshots view
+   */
+  hideSnapshots() {
+    this.snapshotsSection.classList.add('hidden');
+    this.actionSection.classList.remove('hidden');
+  }
+
+  /**
+   * Display snapshots list
+   */
+  displaySnapshots(snapshots, storageInfo) {
+    this.snapshotCount.textContent = storageInfo.snapshotCount;
+    this.maxSnapshots.textContent = storageInfo.maxSnapshots;
+    this.storageSize.textContent = storageInfo.totalSizeMB;
+
+    if (snapshots.length === 0) {
+      this.snapshotsList.innerHTML = `
+        <div class="empty-state">
+          <p>No snapshots available yet.</p>
+          <p>Snapshots are created automatically before AI categorization.</p>
+        </div>
+      `;
+      return;
+    }
+
+    this.snapshotsList.innerHTML = snapshots.map(snapshot => {
+      const date = new Date(snapshot.timestamp);
+      const timeAgo = this.formatRelativeTime(date);
+      const fullDate = date.toLocaleString();
+
+      return `
+        <div class="snapshot-item" data-snapshot-id="${snapshot.id}">
+          <div class="snapshot-info">
+            <div class="snapshot-title">${snapshot.description}</div>
+            <div class="snapshot-meta">
+              <span class="snapshot-time" title="${fullDate}">${timeAgo}</span>
+              ${snapshot.metadata.bookmarkCount ? `<span class="snapshot-count">${snapshot.metadata.bookmarkCount} bookmarks</span>` : ''}
+            </div>
+          </div>
+          <div class="snapshot-actions">
+            <button class="restore-snapshot-btn" data-snapshot-id="${snapshot.id}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13C18 16.31 15.31 19 12 19C8.69 19 6 16.31 6 13H4C4 17.42 7.58 21 12 21C16.42 21 20 17.42 20 13C20 8.58 16.42 5 12 5Z" fill="currentColor" />
+              </svg>
+              Restore
+            </button>
+            <button class="delete-snapshot-btn" data-snapshot-id="${snapshot.id}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.querySelectorAll('.restore-snapshot-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const snapshotId = e.currentTarget.dataset.snapshotId;
+        this.restoreSnapshot(snapshotId);
+      });
+    });
+
+    document.querySelectorAll('.delete-snapshot-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const snapshotId = e.currentTarget.dataset.snapshotId;
+        this.deleteSnapshot(snapshotId);
+      });
+    });
+  }
+
+  /**
+   * Restore a snapshot
+   */
+  async restoreSnapshot(snapshotId) {
+    const confirmed = confirm(
+      'Are you sure you want to restore this snapshot?\n\n' +
+      'This will replace ALL current bookmarks with the bookmarks from the snapshot.\n\n' +
+      'Current bookmarks will be permanently deleted.\n\n' +
+      'This action cannot be undone automatically.'
+    );
+
+    if (!confirmed) return;
+
+    this.isProcessing = true;
+    this.showProgress();
+    this.hideSnapshots();
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'restoreSnapshot',
+        data: { snapshotId }
+      });
+
+      if (response && response.success) {
+        const results = response.data;
+        
+        this.showResults({
+          processed: results.bookmarksRestored + results.bookmarksRemoved,
+          categorized: results.bookmarksRestored,
+          message: `Snapshot restored successfully! ${results.bookmarksRestored} bookmarks restored, ${results.foldersCreated} folders created.`,
+          title: 'Snapshot Restored'
+        });
+
+        await this.loadStats();
+        this.updateUI();
+      } else {
+        this.showError(response.error || 'Failed to restore snapshot');
+      }
+    } catch (error) {
+      console.error('Error restoring snapshot:', error);
+      this.showError(`Failed to restore snapshot: ${error.message}`);
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
+   * Delete a snapshot
+   */
+  async deleteSnapshot(snapshotId) {
+    const confirmed = confirm('Are you sure you want to delete this snapshot? This action cannot be undone.');
+
+    if (!confirmed) return;
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'deleteSnapshot',
+        data: { snapshotId }
+      });
+
+      if (response && response.success) {
+        await this.showSnapshots();
+      } else {
+        this.showError('Failed to delete snapshot');
+      }
+    } catch (error) {
+      console.error('Error deleting snapshot:', error);
+      this.showError('Failed to delete snapshot');
+    }
   }
 
   /**

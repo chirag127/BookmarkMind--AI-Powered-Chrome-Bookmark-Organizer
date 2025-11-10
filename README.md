@@ -85,6 +85,7 @@ _Extension will be available on the Chrome Web Store after review process_
     - Watch as your bookmarks are intelligently organized into hierarchical folders
 
 3. **Advanced Features**
+    - Use "View Snapshots & Undo" to see automatic backups and restore previous states
     - Use "Remove Duplicate URLs" to clean up duplicate bookmarks
     - Use "Move All to Bookmark Bar" to reset and reprocess bookmarks
     - Use "Re-organize All" to reprocess already organized bookmarks
@@ -113,6 +114,8 @@ _Extension will be available on the Chrome Web Store after review process_
 
 ### 🔧 Smart Management
 
+-   **Snapshot & Rollback:** Automatic snapshots before major changes with full undo capability
+-   **Version History:** Keep up to 10 snapshots for safe experimentation
 -   **Duplicate Removal:** Detects and removes bookmarks pointing to the same webpage
 -   **Existing Folder Integration:** Reuses and extends your current folder structure
 -   **Fallback Protection:** AgentRouter ensures service availability
