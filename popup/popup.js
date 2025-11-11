@@ -114,6 +114,10 @@ class PopupController {
     this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
     this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
     this.exportBtn.addEventListener('click', () => this.exportBookmarks());
+    this.folderInsightsBtn = document.getElementById('folderInsightsBtn');
+    if (this.folderInsightsBtn) {
+      this.folderInsightsBtn.addEventListener('click', () => this.openFolderInsights());
+    }
     this.settingsBtn.addEventListener('click', () => this.openSettings());
     this.helpLink.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1225,6 +1229,13 @@ class PopupController {
    */
   openSettings() {
     chrome.runtime.openOptionsPage();
+  }
+
+  /**
+   * Open folder insights page
+   */
+  openFolderInsights() {
+    window.location.href = 'folder-insights.html';
   }
 
   /**

@@ -93,6 +93,7 @@ _Extension will be available on the Chrome Web Store after review process_
     - Use "Remove Duplicate URLs" to clean up duplicate bookmarks
     - Use "Move All to Bookmark Bar" to reset and reprocess bookmarks
     - Use "Re-organize All" to reprocess already organized bookmarks
+    - Use **"Folder Insights"** to analyze folder health, view statistics, and get smart organization suggestions
 
 ### Settings Configuration
 
@@ -140,6 +141,7 @@ _Extension will be available on the Chrome Web Store after review process_
 -   **Export/Import:** Backup and restore your settings and learning data
 -   **Learning Analytics:** View detailed statistics about learned patterns
 -   **Mobile Responsive:** Works seamlessly across all devices
+-   **Folder Insights:** Comprehensive folder analytics and health monitoring (see [FOLDER_INSIGHTS.md](FOLDER_INSIGHTS.md))
 
 ### 🤖 AI Model Optimization (New!)
 
@@ -158,6 +160,38 @@ _Extension will be available on the Chrome Web Store after review process_
 -   **Processing Time Metrics:** Analyze performance for different operations
 -   **Folder Consolidation Reports:** View folder optimization history
 -   **Performance Insights:** AI-generated recommendations for optimization
+-   **Folder Health Scores:** Real-time folder organization quality monitoring with actionable recommendations
+
+## 📊 Folder Insights & Organization
+
+BookmarkMind includes a powerful **Folder Insights** feature that provides deep analytics and smart recommendations for your bookmark organization. [View full documentation](FOLDER_INSIGHTS.md)
+
+### Key Features
+
+-   **📈 Folder Statistics:** Bookmark counts, depth analysis, last modified dates, AI confidence scores
+-   **❤️ Health Scores:** 0-100 scores based on organization quality, depth, distribution, and AI confidence
+-   **💡 Smart Suggestions:** AI-powered recommendations for folder splits, consolidation, and reorganization
+-   **🔍 Folder Comparison:** Side-by-side comparison of up to 3 folders
+-   **🗺️ Visual Tree Map:** Interactive hierarchy visualization with color-coded health indicators
+-   **⭐ Favorite Folders:** Quick access to frequently used folders with usage tracking
+
+### Health Score Breakdown
+
+-   **Excellent (80-100):** Well-organized with ideal bookmark count and structure
+-   **Good (60-79):** Decent organization with minor improvements possible
+-   **Fair (40-59):** Needs improvement in distribution or structure
+-   **Poor (<40):** Requires immediate reorganization
+
+### Smart Suggestions
+
+The system automatically detects:
+
+-   **Oversized Folders:** Suggests splitting folders with >30 bookmarks
+-   **Sparse Folders:** Recommends consolidation for folders with <5 bookmarks
+-   **Deep Nesting:** Alerts when folders exceed 4 levels of depth
+-   **Low AI Confidence:** Flags bookmarks that may be miscategorized
+
+[Learn more about Folder Insights →](FOLDER_INSIGHTS.md)
 
 ## 📸 Screenshots
 
