@@ -16,6 +16,7 @@ class OptionsController {
     this.loadSettings();
     this.loadStats();
     this.loadLearningData();
+    this.loadPerformanceData();
 
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'LEARNING_DATA_UPDATED') {
@@ -89,8 +90,32 @@ class OptionsController {
     this.exportLearningDataBtn = document.getElementById('exportLearningData');
     this.importLearningDataBtn = document.getElementById('importLearningData');
 
+    // Performance monitoring elements
+    this.avgCategorizationTime = document.getElementById('avgCategorizationTime');
+    this.performanceSuccessRate = document.getElementById('performanceSuccessRate');
+    this.totalApiCalls = document.getElementById('totalApiCalls');
+    this.memoryUsage = document.getElementById('memoryUsage');
+    this.providerComparisonChart = document.getElementById('providerComparisonChart');
+    this.avgBatchSize = document.getElementById('avgBatchSize');
+    this.avgBatchTime = document.getElementById('avgBatchTime');
+    this.avgTimePerItem = document.getElementById('avgTimePerItem');
+    this.efficiencyScore = document.getElementById('efficiencyScore');
+    this.performanceHistoryChart = document.getElementById('performanceHistoryChart');
+    this.performanceCanvas = document.getElementById('performanceCanvas');
+    this.insightsContainer = document.getElementById('insightsContainer');
+    this.exportStartDate = document.getElementById('exportStartDate');
+    this.exportEndDate = document.getElementById('exportEndDate');
+    this.setLast30Days = document.getElementById('setLast30Days');
+    this.setAllTime = document.getElementById('setAllTime');
+    this.exportReportJSON = document.getElementById('exportReportJSON');
+    this.exportReportCSV = document.getElementById('exportReportCSV');
+    this.refreshPerformanceData = document.getElementById('refreshPerformanceData');
+
     // Toast notification
     this.toast = document.getElementById('toast');
+
+    // Performance monitoring chart
+    this.performanceChart = null;
   }
 
   /**
@@ -146,6 +171,23 @@ class OptionsController {
     }
     if (this.importLearningDataBtn) {
       this.importLearningDataBtn.addEventListener('click', () => this.importLearningData());
+    }
+
+    // Performance monitoring events
+    if (this.refreshPerformanceData) {
+      this.refreshPerformanceData.addEventListener('click', () => this.loadPerformanceData());
+    }
+    if (this.setLast30Days) {
+      this.setLast30Days.addEventListener('click', () => this.setDateRangeLast30Days());
+    }
+    if (this.setAllTime) {
+      this.setAllTime.addEventListener('click', () => this.setDateRangeAllTime());
+    }
+    if (this.exportReportJSON) {
+      this.exportReportJSON.addEventListener('click', () => this.exportReport('json'));
+    }
+    if (this.exportReportCSV) {
+      this.exportReportCSV.addEventListener('click', () => this.exportReport('csv'));
     }
   }
 
@@ -426,7 +468,7 @@ class OptionsController {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'application/json';
-      
+
       input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -435,9 +477,9 @@ class OptionsController {
         reader.onload = async (event) => {
           try {
             const importedData = JSON.parse(event.target.result);
-            
+
             const merge = confirm('Merge with existing learning data? Click OK to merge, Cancel to replace.');
-            
+
             const response = await chrome.runtime.sendMessage({
               action: 'importLearningData',
               data: {
@@ -519,20 +561,20 @@ class OptionsController {
     const hasValue = value.length > 0;
     const isPlaceholder = value.startsWith('••••');
     const hasExistingKey = this.apiKeyInput.dataset.hasKey === 'true';
-    
+    const isValidFormat = value.startsWith('AIza') && value.length >= 35;
+
     let shouldEnable = false;
-    
+
     if (isPlaceholder && hasExistingKey) {
       shouldEnable = false;
     } else if (hasValue && !isPlaceholder) {
-      const isValidFormat = value.startsWith('AIza') && value.length >= 35;
       shouldEnable = isValidFormat;
     }
 
     this.testGeminiKeyBtn.disabled = !shouldEnable;
     this.saveGeminiKeyBtn.disabled = !shouldEnable;
 
-    if (hasValue && !isPlaceholder && !(value.startsWith('AIza') && value.length >= 35)) {
+    if (hasValue && !isPlaceholder && !isValidFormat) {
       this.showApiKeyStatus('API key should start with "AIza" and be ~39 characters long', 'error');
     } else if (!isPlaceholder && hasValue && isValidFormat) {
       this.hideApiKeyStatus();
@@ -663,13 +705,13 @@ class OptionsController {
 
       if (response && response.success && response.valid) {
         this.showApiKeyStatus('✓ Gemini API key is valid! Saving...', 'success');
-        
+
         this.settings.apiKey = apiKey;
         await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
         console.log('✓ Gemini API key automatically saved');
-        
+
         this.showToast('Gemini API key validated and saved!', 'success');
-        
+
         setTimeout(() => {
           this.apiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
           this.apiKeyInput.type = 'password';
@@ -791,13 +833,13 @@ class OptionsController {
         const data = await response.json();
         console.log('Cerebras API test successful:', data);
         this.showCerebrasApiKeyStatus('✓ Cerebras API key is valid! Saving...', 'success');
-        
+
         this.settings.cerebrasApiKey = apiKey;
         await chrome.storage.sync.set({ bookmarkMindSettings: this.settings });
         console.log('✓ Cerebras API key automatically saved');
-        
+
         this.showToast('Cerebras API key validated and saved!', 'success');
-        
+
         setTimeout(() => {
           this.cerebrasApiKeyInput.value = '••••••••••••••••••••••••••••••••••••••••';
           this.cerebrasApiKeyInput.type = 'password';
@@ -885,8 +927,6 @@ class OptionsController {
     this.cerebrasApiKeyStatus.classList.add('hidden');
   }
 
-
-
   /**
    * Show/hide API key status
    */
@@ -900,18 +940,7 @@ class OptionsController {
     this.apiKeyStatus.classList.add('hidden');
   }
 
-  /**
-   * Show/hide Cerebras API key status
-   */
-  showCerebrasApiKeyStatus(message, type) {
-    this.cerebrasApiKeyStatus.className = `status-indicator ${type}`;
-    this.cerebrasApiKeyStatus.querySelector('.status-text').textContent = message;
-    this.cerebrasApiKeyStatus.classList.remove('hidden');
-  }
 
-  hideCerebrasApiKeyStatus() {
-    this.cerebrasApiKeyStatus.classList.add('hidden');
-  }
 
   /**
    * Handle Groq API key input change
@@ -1212,12 +1241,17 @@ class OptionsController {
         Processing...
       `;
 
-      // Initialize consolidator with user's threshold setting
-      const consolidator = new FolderConsolidator();
-      consolidator.setMinBookmarksThreshold(this.settings.minBookmarksThreshold || 3);
+      // Send consolidation request to background script
+      const response = await chrome.runtime.sendMessage({
+        action: 'consolidateFolders',
+        data: { minThreshold: this.settings.minBookmarksThreshold || 3 }
+      });
 
-      // Get preview first
-      const preview = await consolidator.getConsolidationPreview();
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'Consolidation failed');
+      }
+
+      const preview = response.data;
 
       if (preview.totalFoldersToRemove === 0) {
         this.showToast('No sparse folders found to consolidate', 'info');
@@ -1228,7 +1262,7 @@ class OptionsController {
       const previewMessage = `Found ${preview.sparseFolders.length} sparse folders and ${preview.emptyFolders.length} empty folders.\n` +
         `This will move ${preview.totalBookmarksToMove} bookmarks and remove ${preview.totalFoldersToRemove} folders.\n\n` +
         `Sparse folders:\n${preview.sparseFolders.map(f => `• ${f.name} (${f.bookmarkCount} bookmarks)`).join('\n')}\n\n` +
-        `Continue with consolidation?`;
+        'Continue with consolidation?';
 
       const finalConfirm = confirm(previewMessage);
       if (!finalConfirm) {
@@ -1236,15 +1270,24 @@ class OptionsController {
       }
 
       // Perform consolidation
-      const results = await consolidator.consolidateSparsefolders();
+      const consolidateResponse = await chrome.runtime.sendMessage({
+        action: 'performConsolidation',
+        data: { minThreshold: this.settings.minBookmarksThreshold || 3 }
+      });
+
+      if (!consolidateResponse || !consolidateResponse.success) {
+        throw new Error(consolidateResponse?.error || 'Consolidation failed');
+      }
+
+      const results = consolidateResponse.data;
 
       // Show success message
-      const successMessage = `Consolidation completed!\n\n` +
-        `📊 Results:\n` +
+      const successMessage = 'Consolidation completed!\n\n' +
+        '📊 Results:\n' +
         `• Folders processed: ${results.foldersProcessed}\n` +
         `• Bookmarks moved: ${results.bookmarksMoved}\n` +
         `• Folders removed: ${results.foldersRemoved}\n\n` +
-        `Your bookmark structure has been optimized!`;
+        'Your bookmark structure has been optimized!';
 
       this.showToast('Folder consolidation completed successfully!', 'success');
       alert(successMessage);
@@ -1274,7 +1317,7 @@ class OptionsController {
   async exportAllData() {
     try {
       const allData = await chrome.storage.sync.get(null);
-      
+
       // Get learning data from LearningService
       const learningResponse = await chrome.runtime.sendMessage({
         action: 'exportLearningData'
@@ -1359,7 +1402,361 @@ class OptionsController {
     }
   }
 
+  /**
+   * Load and display performance data
+   */
+  async loadPerformanceData() {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'getPerformanceDashboard' });
 
+      if (response && response.success) {
+        const dashboard = response.data;
+        this.displayPerformanceDashboard(dashboard);
+      } else {
+        console.warn('Failed to load performance data');
+      }
+    } catch (error) {
+      console.error('Error loading performance data:', error);
+    }
+  }
+
+  /**
+   * Display performance dashboard data
+   */
+  displayPerformanceDashboard(dashboard) {
+    // Update overview cards
+    if (this.avgCategorizationTime) {
+      this.avgCategorizationTime.textContent = dashboard.overview.avgCategorizationTime || '-';
+    }
+    if (this.performanceSuccessRate) {
+      this.performanceSuccessRate.textContent = `${dashboard.overview.successRate}%`;
+    }
+    if (this.totalApiCalls) {
+      this.totalApiCalls.textContent = dashboard.overview.totalProcessed || 0;
+    }
+    if (this.memoryUsage && dashboard.currentMemory) {
+      this.memoryUsage.textContent = dashboard.currentMemory.usedMB || '-';
+    }
+
+    // Display provider comparison
+    this.displayProviderComparison(dashboard.providerComparison);
+
+    // Display batch efficiency
+    if (dashboard.batchEfficiency) {
+      if (this.avgBatchSize) {
+        this.avgBatchSize.textContent = dashboard.batchEfficiency.avgBatchSize || '-';
+      }
+      if (this.avgBatchTime) {
+        this.avgBatchTime.textContent = dashboard.batchEfficiency.avgBatchTime || '-';
+      }
+      if (this.avgTimePerItem) {
+        this.avgTimePerItem.textContent = dashboard.batchEfficiency.avgTimePerItem || '-';
+      }
+      if (this.efficiencyScore) {
+        this.efficiencyScore.textContent = dashboard.batchEfficiency.efficiencyScore || '-';
+      }
+    }
+
+    // Display performance history graph
+    this.displayPerformanceHistory(dashboard.performanceHistory);
+
+    // Display AI insights
+    this.displayInsights(dashboard.insights);
+  }
+
+  /**
+   * Display provider comparison chart
+   */
+  displayProviderComparison(providerData) {
+    if (!this.providerComparisonChart || !providerData) return;
+
+    const providers = Object.keys(providerData);
+    if (providers.length === 0) {
+      this.providerComparisonChart.innerHTML = '<div class="loading-state">No provider data available yet</div>';
+      return;
+    }
+
+    // Find fastest and slowest providers
+    const sortedProviders = providers.sort((a, b) =>
+      providerData[a].avgResponseTime - providerData[b].avgResponseTime
+    );
+    const fastest = sortedProviders[0];
+    const slowest = sortedProviders[sortedProviders.length - 1];
+
+    // Create provider cards
+    const html = `
+      <div class="provider-comparison-grid">
+        ${providers.map(provider => {
+    const data = providerData[provider];
+    const isFastest = provider === fastest && providers.length > 1;
+    const isSlowest = provider === slowest && providers.length > 1;
+
+    return `
+            <div class="provider-card">
+              <div class="provider-card-header">
+                <span class="provider-name">${provider}</span>
+                ${isFastest ? '<span class="provider-badge fastest">Fastest</span>' : ''}
+                ${isSlowest ? '<span class="provider-badge slowest">Slowest</span>' : ''}
+              </div>
+              <div class="provider-stats">
+                <div class="provider-stat-row">
+                  <span class="provider-stat-label">Avg Response:</span>
+                  <span class="provider-stat-value">${data.avgResponseTime}ms</span>
+                </div>
+                <div class="provider-stat-row">
+                  <span class="provider-stat-label">Success Rate:</span>
+                  <span class="provider-stat-value">${data.successRate}%</span>
+                </div>
+                <div class="provider-stat-row">
+                  <span class="provider-stat-label">Total Calls:</span>
+                  <span class="provider-stat-value">${data.totalCalls}</span>
+                </div>
+                <div class="provider-stat-row">
+                  <span class="provider-stat-label">Last 24h:</span>
+                  <span class="provider-stat-value">${data.recentPerformance.last24h.calls} calls</span>
+                </div>
+              </div>
+            </div>
+          `;
+  }).join('')}
+      </div>
+    `;
+
+    this.providerComparisonChart.innerHTML = html;
+  }
+
+  /**
+   * Display performance history graph
+   */
+  displayPerformanceHistory(historyData) {
+    if (!this.performanceCanvas || !historyData || historyData.length === 0) {
+      if (this.performanceHistoryChart) {
+        this.performanceHistoryChart.innerHTML = '<div class="loading-state">No performance history available yet</div>';
+      }
+      return;
+    }
+
+    const ctx = this.performanceCanvas.getContext('2d');
+    const canvas = this.performanceCanvas;
+
+    // Set canvas size
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 250;
+
+    // Prepare data
+    const dates = historyData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const times = historyData.map(d => d.avgCategorizationTime);
+    const maxTime = Math.max(...times, 100);
+    const padding = 40;
+    const graphWidth = canvas.width - padding * 2;
+    const graphHeight = canvas.height - padding * 2;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid lines
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (graphHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(canvas.width - padding, y);
+      ctx.stroke();
+    }
+
+    // Draw axes
+    ctx.strokeStyle = '#5f6368';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, canvas.height - padding);
+    ctx.lineTo(canvas.width - padding, canvas.height - padding);
+    ctx.stroke();
+
+    // Draw line graph
+    if (times.length > 0) {
+      ctx.strokeStyle = '#1a73e8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      times.forEach((time, index) => {
+        const x = padding + (graphWidth / (times.length - 1 || 1)) * index;
+        const y = canvas.height - padding - (time / maxTime) * graphHeight;
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.stroke();
+
+      // Draw points
+      ctx.fillStyle = '#1a73e8';
+      times.forEach((time, index) => {
+        const x = padding + (graphWidth / (times.length - 1 || 1)) * index;
+        const y = canvas.height - padding - (time / maxTime) * graphHeight;
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Draw labels
+    ctx.fillStyle = '#5f6368';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+
+    // X-axis labels (dates) - show every other label if too many
+    const labelInterval = dates.length > 10 ? 2 : 1;
+    dates.forEach((date, index) => {
+      if (index % labelInterval === 0 || index === dates.length - 1) {
+        const x = padding + (graphWidth / (dates.length - 1 || 1)) * index;
+        ctx.save();
+        ctx.translate(x, canvas.height - padding + 20);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillText(date, 0, 0);
+        ctx.restore();
+      }
+    });
+
+    // Y-axis labels (time in ms)
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (graphHeight / 5) * i;
+      const value = Math.round(maxTime - (maxTime / 5) * i);
+      ctx.fillText(`${value}ms`, padding - 10, y + 4);
+    }
+  }
+
+  /**
+   * Display AI insights and recommendations
+   */
+  displayInsights(insights) {
+    if (!this.insightsContainer || !insights) return;
+
+    const allInsights = [
+      ...(insights.recommendations || []),
+      ...(insights.warnings || [])
+    ];
+
+    if (allInsights.length === 0) {
+      this.insightsContainer.innerHTML = '<div class="loading-state">No insights available yet. Complete some categorizations to get recommendations.</div>';
+      return;
+    }
+
+    const html = allInsights.map(insight => {
+      const type = insight.type === 'error_rate' || insight.type === 'performance_decline' || insight.type === 'memory_usage'
+        ? 'warning'
+        : insight.priority === 'info'
+          ? 'info'
+          : 'recommendation';
+
+      const icon = type === 'warning' ? '⚠️' : type === 'info' ? '✓' : '💡';
+
+      return `
+        <div class="insight-card ${type}">
+          <div class="insight-icon">${icon}</div>
+          <div class="insight-content">
+            <div class="insight-title">${this.escapeHtml(insight.title)}</div>
+            <div class="insight-description">${this.escapeHtml(insight.description)}</div>
+            <div class="insight-action">→ ${this.escapeHtml(insight.action)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.insightsContainer.innerHTML = html;
+  }
+
+  /**
+   * Set date range to last 30 days
+   */
+  setDateRangeLast30Days() {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+
+    if (this.exportEndDate) {
+      this.exportEndDate.valueAsDate = end;
+    }
+    if (this.exportStartDate) {
+      this.exportStartDate.valueAsDate = start;
+    }
+  }
+
+  /**
+   * Set date range to all time
+   */
+  setDateRangeAllTime() {
+    if (this.exportStartDate) {
+      this.exportStartDate.value = '';
+    }
+    if (this.exportEndDate) {
+      this.exportEndDate.value = '';
+    }
+  }
+
+  /**
+   * Export analytics report
+   */
+  async exportReport(format) {
+    try {
+      const startDate = this.exportStartDate && this.exportStartDate.value
+        ? new Date(this.exportStartDate.value).getTime()
+        : null;
+      const endDate = this.exportEndDate && this.exportEndDate.value
+        ? new Date(this.exportEndDate.value).getTime()
+        : null;
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'exportAnalyticsReport',
+        data: {
+          format: format,
+          startDate: startDate,
+          endDate: endDate
+        }
+      });
+
+      if (response && response.success) {
+        const exportData = response.data;
+        const dateStr = new Date().toISOString().slice(0, 10);
+
+        if (format === 'csv') {
+          const blob = new Blob([exportData.data], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `bookmarkmind-analytics-${dateStr}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          const dataStr = JSON.stringify(exportData.data, null, 2);
+          const blob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `bookmarkmind-analytics-${dateStr}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+
+        this.showToast(`Analytics report exported as ${format.toUpperCase()}`, 'success');
+      } else {
+        throw new Error('Failed to export report');
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      this.showToast('Failed to export analytics report', 'error');
+    }
+  }
 
   /**
    * Show toast notification

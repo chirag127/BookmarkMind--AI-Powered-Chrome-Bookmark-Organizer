@@ -70,7 +70,8 @@ class AnalyticsService {
             success: apiData.success !== false,
             responseTime: apiData.responseTime || 0,
             batchSize: apiData.batchSize || 1,
-            errorType: apiData.errorType || null
+            errorType: apiData.errorType || null,
+            memoryUsage: apiData.memoryUsage || null
         };
 
         analytics.apiCalls.push(apiCall);
@@ -89,11 +90,18 @@ class AnalyticsService {
                 total: 0,
                 successful: 0,
                 failed: 0,
-                totalTokens: 0
+                totalTokens: 0,
+                totalResponseTime: 0,
+                avgResponseTime: 0
             };
         }
         analytics.apiByProvider[providerKey].total++;
         analytics.apiByProvider[providerKey].totalTokens += apiCall.tokensUsed;
+        analytics.apiByProvider[providerKey].totalResponseTime += apiCall.responseTime;
+        analytics.apiByProvider[providerKey].avgResponseTime = Math.round(
+            analytics.apiByProvider[providerKey].totalResponseTime / analytics.apiByProvider[providerKey].total
+        );
+        
         if (apiCall.success) {
             analytics.apiByProvider[providerKey].successful++;
         } else {
@@ -366,11 +374,315 @@ class AnalyticsService {
     }
 
     /**
+     * Get performance insights and AI-generated recommendations
+     * @returns {Promise<Object>} Performance insights
+     */
+    async getPerformanceInsights() {
+        const analytics = await this._getAnalytics();
+        const insights = {
+            recommendations: [],
+            performanceMetrics: {},
+            trends: {},
+            warnings: []
+        };
+
+        // Calculate average categorization time per bookmark
+        const recentSessions = analytics.sessions.slice(-20);
+        if (recentSessions.length > 0) {
+            const avgTimePerBookmark = recentSessions.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / recentSessions.length;
+            insights.performanceMetrics.avgCategorizationTime = Math.round(avgTimePerBookmark);
+        }
+
+        // Calculate API response time comparison across providers
+        const providerPerformance = {};
+        for (const [provider, data] of Object.entries(analytics.apiByProvider)) {
+            if (data.total > 0) {
+                providerPerformance[provider] = {
+                    avgResponseTime: data.avgResponseTime || 0,
+                    successRate: Math.round((data.successful / data.total) * 100),
+                    totalCalls: data.total
+                };
+            }
+        }
+        insights.performanceMetrics.providerComparison = providerPerformance;
+
+        // Calculate batch processing efficiency
+        const batchCalls = analytics.apiCalls.filter(c => c.batchSize > 1);
+        if (batchCalls.length > 0) {
+            const avgBatchSize = batchCalls.reduce((sum, c) => sum + c.batchSize, 0) / batchCalls.length;
+            const avgBatchTime = batchCalls.reduce((sum, c) => sum + c.responseTime, 0) / batchCalls.length;
+            const avgTimePerItem = avgBatchSize > 0 ? avgBatchTime / avgBatchSize : 0;
+            
+            insights.performanceMetrics.batchEfficiency = {
+                avgBatchSize: Math.round(avgBatchSize),
+                avgBatchTime: Math.round(avgBatchTime),
+                avgTimePerItem: Math.round(avgTimePerItem)
+            };
+        }
+
+        // Generate AI recommendations
+        
+        // Recommendation: Batch size optimization
+        if (batchCalls.length > 0) {
+            const avgBatchSize = batchCalls.reduce((sum, c) => sum + c.batchSize, 0) / batchCalls.length;
+            if (avgBatchSize < 30) {
+                insights.recommendations.push({
+                    type: 'batch_size',
+                    priority: 'medium',
+                    title: 'Increase batch size for better performance',
+                    description: `Your current average batch size is ${Math.round(avgBatchSize)}. Consider increasing to 50-100 bookmarks per batch for faster processing.`,
+                    action: 'Increase batch size in settings'
+                });
+            } else if (avgBatchSize > 100) {
+                insights.recommendations.push({
+                    type: 'batch_size',
+                    priority: 'low',
+                    title: 'Consider reducing batch size',
+                    description: `Your current batch size of ${Math.round(avgBatchSize)} is quite large. If you experience timeouts, try reducing to 50-75 bookmarks per batch.`,
+                    action: 'Reduce batch size in settings'
+                });
+            }
+        }
+
+        // Recommendation: Provider selection
+        const sortedProviders = Object.entries(providerPerformance)
+            .sort((a, b) => a[1].avgResponseTime - b[1].avgResponseTime);
+        
+        if (sortedProviders.length > 1) {
+            const fastest = sortedProviders[0];
+            const slowest = sortedProviders[sortedProviders.length - 1];
+            
+            if (fastest[1].avgResponseTime < slowest[1].avgResponseTime * 0.5) {
+                insights.recommendations.push({
+                    type: 'provider',
+                    priority: 'high',
+                    title: `${fastest[0]} is 2x faster than ${slowest[0]}`,
+                    description: `${fastest[0]} averages ${fastest[1].avgResponseTime}ms response time vs ${slowest[1].avgResponseTime}ms for ${slowest[0]}. Consider using ${fastest[0]} as your primary provider.`,
+                    action: `Switch to ${fastest[0]} for faster processing`
+                });
+            }
+        }
+
+        // Recommendation: Success rate warnings
+        for (const [provider, data] of Object.entries(providerPerformance)) {
+            if (data.successRate < 80 && data.totalCalls > 5) {
+                insights.warnings.push({
+                    type: 'error_rate',
+                    severity: 'high',
+                    title: `High error rate for ${provider}`,
+                    description: `${provider} has a ${data.successRate}% success rate. This may indicate API key issues or rate limiting.`,
+                    action: 'Check API key and rate limits'
+                });
+            }
+        }
+
+        // Recommendation: Performance trends
+        if (recentSessions.length >= 10) {
+            const firstHalf = recentSessions.slice(0, Math.floor(recentSessions.length / 2));
+            const secondHalf = recentSessions.slice(Math.floor(recentSessions.length / 2));
+            
+            const avgFirst = firstHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / firstHalf.length;
+            const avgSecond = secondHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / secondHalf.length;
+            
+            insights.trends.performanceChange = {
+                direction: avgSecond < avgFirst ? 'improving' : 'declining',
+                percentChange: Math.round(((avgSecond - avgFirst) / avgFirst) * 100)
+            };
+
+            if (avgSecond > avgFirst * 1.3) {
+                insights.warnings.push({
+                    type: 'performance_decline',
+                    severity: 'medium',
+                    title: 'Performance has declined recently',
+                    description: `Categorization time has increased by ${Math.round(((avgSecond - avgFirst) / avgFirst) * 100)}%. This may indicate API throttling or network issues.`,
+                    action: 'Monitor performance and check network connection'
+                });
+            } else if (avgSecond < avgFirst * 0.7) {
+                insights.recommendations.push({
+                    type: 'performance_improvement',
+                    priority: 'info',
+                    title: 'Performance has improved!',
+                    description: `Categorization time has decreased by ${Math.round(((avgFirst - avgSecond) / avgFirst) * 100)}%. Great job optimizing your workflow!`,
+                    action: 'Continue current configuration'
+                });
+            }
+        }
+
+        // Recommendation: Memory usage (if available)
+        const recentApiCalls = analytics.apiCalls.slice(-50);
+        const memoryUsages = recentApiCalls.filter(c => c.memoryUsage).map(c => c.memoryUsage);
+        if (memoryUsages.length > 0) {
+            const avgMemory = memoryUsages.reduce((sum, m) => sum + m, 0) / memoryUsages.length;
+            insights.performanceMetrics.avgMemoryUsage = Math.round(avgMemory / 1024 / 1024); // Convert to MB
+
+            if (avgMemory > 100 * 1024 * 1024) { // 100 MB
+                insights.warnings.push({
+                    type: 'memory_usage',
+                    severity: 'medium',
+                    title: 'High memory usage detected',
+                    description: `Average memory usage is ${Math.round(avgMemory / 1024 / 1024)}MB. Consider reducing batch size or clearing browser cache.`,
+                    action: 'Reduce batch size or clear cache'
+                });
+            }
+        }
+
+        return insights;
+    }
+
+    /**
      * Export analytics data
      * @returns {Promise<Object>} Analytics data
      */
     async exportAnalytics() {
         return await this._getAnalytics();
+    }
+
+    /**
+     * Export analytics report in different formats
+     * @param {string} format - 'json', 'csv'
+     * @param {number} startDate - Start timestamp (optional)
+     * @param {number} endDate - End timestamp (optional)
+     * @returns {Promise<Object>} Export data
+     */
+    async exportAnalyticsReport(format = 'json', startDate = null, endDate = null) {
+        const analytics = await this._getAnalytics();
+        
+        // Filter data by date range
+        let filteredSessions = analytics.sessions;
+        let filteredApiCalls = analytics.apiCalls;
+        
+        if (startDate || endDate) {
+            const start = startDate || 0;
+            const end = endDate || Date.now();
+            
+            filteredSessions = analytics.sessions.filter(s => 
+                s.timestamp >= start && s.timestamp <= end
+            );
+            filteredApiCalls = analytics.apiCalls.filter(c => 
+                c.timestamp >= start && c.timestamp <= end
+            );
+        }
+
+        const report = {
+            metadata: {
+                exportDate: new Date().toISOString(),
+                startDate: startDate ? new Date(startDate).toISOString() : 'All time',
+                endDate: endDate ? new Date(endDate).toISOString() : 'Present',
+                format: format
+            },
+            summary: {
+                totalCategorizations: filteredSessions.reduce((sum, s) => sum + s.bookmarksCategorized, 0),
+                totalApiCalls: filteredApiCalls.length,
+                totalErrors: filteredSessions.reduce((sum, s) => sum + s.errors, 0),
+                avgCategorizationTime: this._calculateAvgTime(
+                    filteredSessions.reduce((sum, s) => sum + s.duration, 0),
+                    filteredSessions.length
+                )
+            },
+            sessions: filteredSessions,
+            apiCalls: filteredApiCalls,
+            providerStats: this._calculateProviderStats(filteredApiCalls)
+        };
+
+        if (format === 'csv') {
+            return {
+                format: 'csv',
+                data: this._convertToCSV(report)
+            };
+        }
+
+        return {
+            format: 'json',
+            data: report
+        };
+    }
+
+    /**
+     * Calculate provider statistics for filtered API calls
+     * @private
+     */
+    _calculateProviderStats(apiCalls) {
+        const stats = {};
+        
+        apiCalls.forEach(call => {
+            if (!stats[call.provider]) {
+                stats[call.provider] = {
+                    total: 0,
+                    successful: 0,
+                    failed: 0,
+                    totalResponseTime: 0,
+                    avgResponseTime: 0,
+                    totalTokens: 0
+                };
+            }
+            
+            stats[call.provider].total++;
+            stats[call.provider].totalTokens += call.tokensUsed;
+            stats[call.provider].totalResponseTime += call.responseTime;
+            
+            if (call.success) {
+                stats[call.provider].successful++;
+            } else {
+                stats[call.provider].failed++;
+            }
+        });
+
+        // Calculate averages
+        for (const provider in stats) {
+            if (stats[provider].total > 0) {
+                stats[provider].avgResponseTime = Math.round(
+                    stats[provider].totalResponseTime / stats[provider].total
+                );
+            }
+        }
+
+        return stats;
+    }
+
+    /**
+     * Convert report data to CSV format
+     * @private
+     */
+    _convertToCSV(report) {
+        const lines = [];
+        
+        // Summary section
+        lines.push('SUMMARY');
+        lines.push('Metric,Value');
+        lines.push(`Export Date,${report.metadata.exportDate}`);
+        lines.push(`Period,${report.metadata.startDate} to ${report.metadata.endDate}`);
+        lines.push(`Total Categorizations,${report.summary.totalCategorizations}`);
+        lines.push(`Total API Calls,${report.summary.totalApiCalls}`);
+        lines.push(`Total Errors,${report.summary.totalErrors}`);
+        lines.push(`Avg Categorization Time (ms),${report.summary.avgCategorizationTime}`);
+        lines.push('');
+
+        // Provider statistics
+        lines.push('PROVIDER STATISTICS');
+        lines.push('Provider,Total Calls,Successful,Failed,Avg Response Time (ms),Total Tokens');
+        for (const [provider, stats] of Object.entries(report.providerStats)) {
+            lines.push(`${provider},${stats.total},${stats.successful},${stats.failed},${stats.avgResponseTime},${stats.totalTokens}`);
+        }
+        lines.push('');
+
+        // Sessions
+        lines.push('CATEGORIZATION SESSIONS');
+        lines.push('Timestamp,Processed,Categorized,Errors,Duration (ms),Success Rate (%),Avg Time Per Bookmark (ms),Mode');
+        report.sessions.forEach(session => {
+            const date = new Date(session.timestamp).toISOString();
+            lines.push(`${date},${session.bookmarksProcessed},${session.bookmarksCategorized},${session.errors},${session.duration},${session.successRate},${session.avgTimePerBookmark},${session.mode}`);
+        });
+        lines.push('');
+
+        // API Calls
+        lines.push('API CALLS');
+        lines.push('Timestamp,Provider,Model,Tokens,Success,Response Time (ms),Batch Size,Error Type');
+        report.apiCalls.forEach(call => {
+            const date = new Date(call.timestamp).toISOString();
+            lines.push(`${date},${call.provider},${call.model},${call.tokensUsed},${call.success},${call.responseTime},${call.batchSize},${call.errorType || 'N/A'}`);
+        });
+
+        return lines.join('\n');
     }
 
     /**

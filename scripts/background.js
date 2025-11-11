@@ -12,7 +12,8 @@ try {
     'folderManager.js',
     'learningService.js',
     'snapshotManager.js',
-    'analyticsService.js'
+    'analyticsService.js',
+    'performanceMonitor.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -24,7 +25,8 @@ try {
     FolderManager: typeof FolderManager !== 'undefined',
     LearningService: typeof LearningService !== 'undefined',
     SnapshotManager: typeof SnapshotManager !== 'undefined',
-    AnalyticsService: typeof AnalyticsService !== 'undefined'
+    AnalyticsService: typeof AnalyticsService !== 'undefined',
+    PerformanceMonitor: typeof PerformanceMonitor !== 'undefined'
   });
 
 } catch (error) {
@@ -207,6 +209,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'getSnapshots':
         await handleGetSnapshots(sendResponse);
+        break;
+
+      case 'getPerformanceDashboard':
+        await handleGetPerformanceDashboard(sendResponse);
+        break;
+
+      case 'exportAnalyticsReport':
+        await handleExportAnalyticsReport(message.data, sendResponse);
         break;
 
       case 'ping':
@@ -651,6 +661,64 @@ async function handleGetSnapshots(sendResponse) {
     sendResponse({
       success: false,
       error: error.message || 'Failed to retrieve snapshots from storage'
+    });
+  }
+}
+
+/**
+ * Handle get performance dashboard request
+ */
+async function handleGetPerformanceDashboard(sendResponse) {
+  try {
+    if (typeof PerformanceMonitor === 'undefined') {
+      throw new Error('PerformanceMonitor class not loaded');
+    }
+
+    const perfMonitor = new PerformanceMonitor();
+    await perfMonitor.initialize();
+    
+    const dashboard = await perfMonitor.getPerformanceDashboard();
+    
+    sendResponse({
+      success: true,
+      data: dashboard
+    });
+
+  } catch (error) {
+    console.error('Get performance dashboard error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to get performance dashboard'
+    });
+  }
+}
+
+/**
+ * Handle export analytics report request
+ */
+async function handleExportAnalyticsReport(data, sendResponse) {
+  try {
+    if (typeof AnalyticsService === 'undefined') {
+      throw new Error('AnalyticsService class not loaded');
+    }
+
+    const analyticsService = new AnalyticsService();
+    const report = await analyticsService.exportAnalyticsReport(
+      data.format || 'json',
+      data.startDate || null,
+      data.endDate || null
+    );
+    
+    sendResponse({
+      success: true,
+      data: report
+    });
+
+  } catch (error) {
+    console.error('Export analytics report error:', error);
+    sendResponse({
+      success: false,
+      error: error.message || 'Failed to export analytics report'
     });
   }
 }

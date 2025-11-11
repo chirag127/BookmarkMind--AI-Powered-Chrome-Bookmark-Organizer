@@ -536,6 +536,261 @@ body {
     color: #f44336;
 }
 
+/* Performance Monitoring Section */
+.performance-subsection {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.performance-subsection h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #202124;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-large {
+    min-height: 300px;
+}
+
+.loading-state {
+    color: #5f6368;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Provider Comparison Chart */
+.provider-comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.provider-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+}
+
+.provider-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.provider-name {
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: capitalize;
+}
+
+.provider-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.provider-badge.fastest {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.provider-badge.slowest {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.provider-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.provider-stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.provider-stat-label {
+    color: #5f6368;
+}
+
+.provider-stat-value {
+    font-weight: 500;
+    color: #202124;
+}
+
+/* Batch Stats Grid */
+.batch-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.batch-stat {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.batch-stat-label {
+    font-size: 12px;
+    color: #5f6368;
+    margin-bottom: 8px;
+}
+
+.batch-stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+/* Insights Container */
+.insights-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insight-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid #1a73e8;
+    display: flex;
+    gap: 12px;
+}
+
+.insight-card.recommendation {
+    border-left-color: #1a73e8;
+}
+
+.insight-card.warning {
+    border-left-color: #f9ab00;
+    background: #fffbf0;
+}
+
+.insight-card.info {
+    border-left-color: #34a853;
+    background: #f0f9f4;
+}
+
+.insight-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.insight-card.recommendation .insight-icon {
+    background: #e8f0fe;
+    color: #1a73e8;
+}
+
+.insight-card.warning .insight-icon {
+    background: #fef7e0;
+    color: #f9ab00;
+}
+
+.insight-card.info .insight-icon {
+    background: #e6f4ea;
+    color: #34a853;
+}
+
+.insight-content {
+    flex: 1;
+}
+
+.insight-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #202124;
+}
+
+.insight-description {
+    font-size: 13px;
+    color: #5f6368;
+    margin-bottom: 8px;
+}
+
+.insight-action {
+    font-size: 12px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+/* Export Controls */
+.export-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.date-range-selector {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group-inline label {
+    font-size: 13px;
+    color: #5f6368;
+    font-weight: 500;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+.small-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.export-actions {
+    display: flex;
+    gap: 8px;
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
