@@ -1,578 +1,1120 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BookmarkMind Settings</title>
+        <link rel="stylesheet" href="options.css" />
+    </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BookmarkMind Settings</title>
-  <link rel="stylesheet" href="options.css">
-</head>
+    <body>
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <svg
+                            width="32"
+                            height="32"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"
+                                fill="#4285f4"
+                            />
+                            <path
+                                d="M7 7H17V9H7V7ZM7 11H17V13H7V11ZM7 15H14V17H7V15Z"
+                                fill="#4285f4"
+                            />
+                        </svg>
+                        <div>
+                            <h1>BookmarkMind</h1>
+                            <p>AI-Powered Bookmark Organizer</p>
+                        </div>
+                    </div>
+                    <div class="version">v1.0.0</div>
+                </div>
+            </header>
 
-<body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-content">
-        <div class="logo">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"
-              fill="#4285f4" />
-            <path d="M7 7H17V9H7V7ZM7 11H17V13H7V11ZM7 15H14V17H7V15Z" fill="#4285f4" />
-          </svg>
-          <div>
-            <h1>BookmarkMind</h1>
-            <p>AI-Powered Bookmark Organizer</p>
-          </div>
+            <!-- Main Content -->
+            <main class="main">
+                <!-- API Configuration Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>API Configuration</h2>
+                        <p>
+                            Configure your AI provider API keys. Each provider
+                            can be configured independently.
+                        </p>
+                    </div>
+
+                    <!-- Gemini Provider Section -->
+                    <div class="provider-section">
+                        <h3 class="provider-heading">
+                            Gemini API Key (Required - Primary Provider)
+                        </h3>
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input
+                                    type="password"
+                                    id="apiKey"
+                                    placeholder="Enter your Gemini API key (starts with AIza...)"
+                                    autocomplete="off"
+                                />
+                                <button
+                                    type="button"
+                                    id="clearApiKey"
+                                    class="toggle-btn"
+                                    title="Clear API Key"
+                                    style="right: 40px"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    id="toggleApiKey"
+                                    class="toggle-btn"
+                                    title="Show/Hide API Key"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="form-help">
+                                <p>
+                                    Get your free API key from
+                                    <a
+                                        href="https://makersuite.google.com/app/apikey"
+                                        target="_blank"
+                                        >Google AI Studio</a
+                                    >
+                                </p>
+                                <p>
+                                    <strong>Tip:</strong> API keys start with
+                                    "AIza" and are about 39 characters long. Use
+                                    the clear button (Γ£ò) to enter a new key.
+                                </p>
+                                <div
+                                    id="apiKeyStatus"
+                                    class="status-indicator hidden"
+                                >
+                                    <span class="status-icon"></span>
+                                    <span class="status-text"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button
+                                type="button"
+                                id="testGeminiKey"
+                                class="secondary-btn"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Test Gemini Key
+                            </button>
+                            <button
+                                type="button"
+                                id="saveGeminiKey"
+                                class="primary-btn"
+                            >
+                                Save Gemini Key
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cerebras Provider Section -->
+                    <div
+                        class="provider-section"
+                        style="
+                            margin-top: 2rem;
+                            padding-top: 2rem;
+                            border-top: 1px solid #e0e0e0;
+                        "
+                    >
+                        <h3 class="provider-heading">
+                            Cerebras API Key (Optional - Fallback Provider)
+                        </h3>
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input
+                                    type="password"
+                                    id="cerebrasApiKey"
+                                    placeholder="Enter your Cerebras API key (starts with csk-...)"
+                                    autocomplete="off"
+                                />
+                                <button
+                                    type="button"
+                                    id="clearCerebrasApiKey"
+                                    class="toggle-btn"
+                                    title="Clear Cerebras API Key"
+                                    style="right: 40px"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    id="toggleCerebrasApiKey"
+                                    class="toggle-btn"
+                                    title="Show/Hide Cerebras API Key"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="form-help">
+                                <p>
+                                    Get your API key from
+                                    <a
+                                        href="https://cloud.cerebras.ai/"
+                                        target="_blank"
+                                        >Cerebras Cloud</a
+                                    >
+                                    (provides fallback if Gemini fails)
+                                </p>
+                                <p>
+                                    <strong>Tip:</strong> Cerebras API keys
+                                    start with "csk-". This is optional but
+                                    recommended for better reliability.
+                                </p>
+                                <div
+                                    id="cerebrasApiKeyStatus"
+                                    class="status-indicator hidden"
+                                >
+                                    <span class="status-icon"></span>
+                                    <span class="status-text"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button
+                                type="button"
+                                id="testCerebrasKey"
+                                class="secondary-btn"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Test Cerebras Key
+                            </button>
+                            <button
+                                type="button"
+                                id="saveCerebrasKey"
+                                class="primary-btn"
+                            >
+                                Save Cerebras Key
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Groq API Key -->
+                    <div
+                        class="form-group"
+                        style="
+                            margin-top: 2rem;
+                            padding-top: 2rem;
+                            border-top: 1px solid #e0e0e0;
+                        "
+                    >
+                        <label for="groqApiKey"
+                            >Groq API Key (Optional - Quaternary
+                            Fallback)</label
+                        >
+                        <div class="input-group">
+                            <input
+                                type="password"
+                                id="groqApiKey"
+                                placeholder="Enter your Groq API key (starts with gsk_...)"
+                                autocomplete="off"
+                            />
+                            <button
+                                type="button"
+                                id="clearGroqApiKey"
+                                class="toggle-btn"
+                                title="Clear Groq API Key"
+                                style="right: 40px"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                id="toggleGroqApiKey"
+                                class="toggle-btn"
+                                title="Show/Hide Groq API Key"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="form-help">
+                            <p>
+                                Get your API key from
+                                <a
+                                    href="https://console.groq.com/"
+                                    target="_blank"
+                                    >Groq Console</a
+                                >
+                                (provides additional fallback after Cerebras)
+                            </p>
+                            <p>
+                                <strong>Tip:</strong> Groq API keys start with
+                                "gsk_". This is optional but provides very fast
+                                inference speeds.
+                            </p>
+                            <div
+                                id="groqApiKeyStatus"
+                                class="status-indicator hidden"
+                            >
+                                <span class="status-icon"></span>
+                                <span class="status-text"></span>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button
+                                type="button"
+                                id="testGroqKey"
+                                class="secondary-btn"
+                                disabled
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Test Groq Key
+                            </button>
+                            <button
+                                type="button"
+                                id="saveGroqKey"
+                                class="primary-btn"
+                                disabled
+                            >
+                                Save Groq Key
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Categories Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Categories</h2>
+                        <p>
+                            Customize the categories used to organize your
+                            bookmarks. You can add, edit, or remove categories.
+                        </p>
+                    </div>
+
+                    <div class="categories-container">
+                        <div class="categories-list" id="categoriesList">
+                            <!-- Categories will be populated by JavaScript -->
+                        </div>
+
+                        <div class="add-category">
+                            <div class="input-group">
+                                <input
+                                    type="text"
+                                    id="newCategoryInput"
+                                    placeholder="Enter new category name (e.g., Work/Projects)"
+                                    maxlength="50"
+                                />
+                                <button
+                                    type="button"
+                                    id="addCategoryBtn"
+                                    class="add-btn"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                    Add Category
+                                </button>
+                            </div>
+                            <p class="form-help">
+                                Use "/" to create nested categories (e.g.,
+                                "Work/Projects/Current")
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Advanced Settings Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Advanced Settings</h2>
+                        <p>
+                            Configure advanced options for bookmark processing
+                            and organization.
+                        </p>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="batchSize">Batch Size</label>
+                            <select id="batchSize">
+                                <option value="25">25 bookmarks</option>
+                                <option value="50" selected>
+                                    50 bookmarks
+                                </option>
+                                <option value="100">100 bookmarks</option>
+                            </select>
+                            <p class="setting-help">
+                                Number of bookmarks to process at once. Lower
+                                values are safer for large collections.
+                            </p>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="maxCategoryDepth"
+                                >Maximum Category Depth:
+                                <span id="maxDepthValue">2</span> levels</label
+                            >
+                            <input
+                                type="range"
+                                id="maxCategoryDepth"
+                                min="1"
+                                max="4"
+                                value="2"
+                                step="1"
+                            />
+                            <div class="depth-labels">
+                                <span>1 (Broad)</span>
+                                <span>2 (Balanced)</span>
+                                <span>3 (Detailed)</span>
+                                <span>4 (Granular)</span>
+                            </div>
+                            <p class="setting-help">
+                                Controls how deep category hierarchies can be.
+                                Lower values create broader, simpler categories.
+                            </p>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="minBookmarksThreshold"
+                                >Minimum Bookmarks per Folder:
+                                <span id="minThresholdValue">3</span>
+                                bookmarks</label
+                            >
+                            <input
+                                type="range"
+                                id="minBookmarksThreshold"
+                                min="2"
+                                max="10"
+                                value="3"
+                                step="1"
+                            />
+                            <div class="depth-labels">
+                                <span>2 (Aggressive)</span>
+                                <span>3 (Balanced)</span>
+                                <span>5 (Conservative)</span>
+                                <span>10 (Minimal)</span>
+                            </div>
+                            <p class="setting-help">
+                                Folders with fewer bookmarks than this threshold
+                                will be consolidated during cleanup.
+                            </p>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="checkbox-group">
+                                <input
+                                    type="checkbox"
+                                    id="cleanupEmptyFolders"
+                                />
+                                <label for="cleanupEmptyFolders"
+                                    >Clean up empty folders after
+                                    organizing</label
+                                >
+                            </div>
+                            <p class="setting-help">
+                                Automatically remove empty bookmark folders
+                                after categorization.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Model Performance Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>AI Model Performance</h2>
+                        <p>
+                            View detailed AI model comparison, cost tracking,
+                            and optimization features.
+                        </p>
+                    </div>
+                    <div class="action-row">
+                        <button
+                            id="viewModelComparison"
+                            class="btn btn-primary"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17Z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            View AI Model Comparison Dashboard
+                        </button>
+                        <p class="help-text">
+                            Compare performance, track costs, run A/B tests, and
+                            optimize model settings.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Statistics Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Statistics</h2>
+                        <p>
+                            Overview of your bookmark organization and extension
+                            usage.
+                        </p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalBookmarksCount">
+                                -
+                            </div>
+                            <div class="stat-label">Total Bookmarks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div
+                                class="stat-number"
+                                id="organizedBookmarksCount"
+                            >
+                                -
+                            </div>
+                            <div class="stat-label">Organized</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="categoriesCount">
+                                -
+                            </div>
+                            <div class="stat-label">Categories</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="learningPatternsCount">
+                                -
+                            </div>
+                            <div class="stat-label">Learning Patterns</div>
+                        </div>
+                    </div>
+
+                    <div class="last-sort-info">
+                        <strong>Last Organization:</strong>
+                        <span id="lastSortDate">Never</span>
+                    </div>
+                </section>
+
+                <!-- Performance Monitoring Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Performance Monitoring</h2>
+                        <p>
+                            Track and analyze performance metrics, API provider
+                            comparison, and system insights.
+                        </p>
+                    </div>
+
+                    <!-- Performance Overview Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="avgCategorizationTime">
+                                -
+                            </div>
+                            <div class="stat-label">
+                                Avg Time per Bookmark (ms)
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div
+                                class="stat-number"
+                                id="performanceSuccessRate"
+                            >
+                                -
+                            </div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalApiCalls">-</div>
+                            <div class="stat-label">Total API Calls</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="memoryUsage">-</div>
+                            <div class="stat-label">Memory Usage (MB)</div>
+                        </div>
+                    </div>
+
+                    <!-- API Provider Comparison -->
+                    <div class="performance-subsection">
+                        <h3>API Provider Comparison</h3>
+                        <p class="form-help">
+                            Response time and success rate comparison across
+                            providers (last 24 hours)
+                        </p>
+                        <div
+                            id="providerComparisonChart"
+                            class="chart-container"
+                        >
+                            <div class="loading-state">
+                                No provider data available yet
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Processing Efficiency -->
+                    <div class="performance-subsection">
+                        <h3>Batch Processing Efficiency</h3>
+                        <div class="batch-stats-grid">
+                            <div class="batch-stat">
+                                <div class="batch-stat-label">
+                                    Avg Batch Size
+                                </div>
+                                <div class="batch-stat-value" id="avgBatchSize">
+                                    -
+                                </div>
+                            </div>
+                            <div class="batch-stat">
+                                <div class="batch-stat-label">
+                                    Avg Batch Time (ms)
+                                </div>
+                                <div class="batch-stat-value" id="avgBatchTime">
+                                    -
+                                </div>
+                            </div>
+                            <div class="batch-stat">
+                                <div class="batch-stat-label">
+                                    Time per Item (ms)
+                                </div>
+                                <div
+                                    class="batch-stat-value"
+                                    id="avgTimePerItem"
+                                >
+                                    -
+                                </div>
+                            </div>
+                            <div class="batch-stat">
+                                <div class="batch-stat-label">
+                                    Efficiency Score
+                                </div>
+                                <div
+                                    class="batch-stat-value"
+                                    id="efficiencyScore"
+                                >
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance History Graph -->
+                    <div class="performance-subsection">
+                        <h3>Performance History (Last 30 Days)</h3>
+                        <p class="form-help">
+                            Track categorization performance improvement over
+                            time
+                        </p>
+                        <div
+                            id="performanceHistoryChart"
+                            class="chart-container chart-large"
+                        >
+                            <canvas id="performanceCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights & Recommendations -->
+                    <div class="performance-subsection">
+                        <h3>AI Insights & Recommendations</h3>
+                        <div id="insightsContainer" class="insights-container">
+                            <div class="loading-state">Loading insights...</div>
+                        </div>
+                    </div>
+
+                    <!-- Export Analytics Report -->
+                    <div class="performance-subsection">
+                        <h3>Export Analytics Report</h3>
+                        <p class="form-help">
+                            Export detailed performance and usage analytics
+                        </p>
+
+                        <div class="export-controls">
+                            <div class="date-range-selector">
+                                <div class="form-group-inline">
+                                    <label for="exportStartDate">From:</label>
+                                    <input
+                                        type="date"
+                                        id="exportStartDate"
+                                        class="date-input"
+                                    />
+                                </div>
+                                <div class="form-group-inline">
+                                    <label for="exportEndDate">To:</label>
+                                    <input
+                                        type="date"
+                                        id="exportEndDate"
+                                        class="date-input"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    id="setLast30Days"
+                                    class="secondary-btn small-btn"
+                                >
+                                    Last 30 Days
+                                </button>
+                                <button
+                                    type="button"
+                                    id="setAllTime"
+                                    class="secondary-btn small-btn"
+                                >
+                                    All Time
+                                </button>
+                            </div>
+
+                            <div class="export-actions">
+                                <button
+                                    type="button"
+                                    id="exportReportJSON"
+                                    class="secondary-btn"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                    Export JSON
+                                </button>
+                                <button
+                                    type="button"
+                                    id="exportReportCSV"
+                                    class="secondary-btn"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                    Export CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refresh Performance Data -->
+                    <div class="form-actions">
+                        <button
+                            type="button"
+                            id="refreshPerformanceData"
+                            class="secondary-btn"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12S7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12S8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            Refresh Performance Data
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Learning Data Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Learning Data</h2>
+                        <p>
+                            View and manage categorization patterns learned from
+                            your corrections.
+                        </p>
+                    </div>
+
+                    <div class="learning-data-container">
+                        <div class="learning-summary">
+                            <div class="summary-item">
+                                <span class="summary-label"
+                                    >Total Patterns:</span
+                                >
+                                <span
+                                    class="summary-value"
+                                    id="totalLearningPatterns"
+                                    >0</span
+                                >
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Last Updated:</span>
+                                <span
+                                    class="summary-value"
+                                    id="lastLearningUpdate"
+                                    >Never</span
+                                >
+                            </div>
+                        </div>
+
+                        <div
+                            class="learning-patterns"
+                            id="learningPatternsList"
+                        >
+                            <div class="no-patterns" id="noPatternsMessage">
+                                <p>
+                                    No learning patterns collected yet. The
+                                    extension will learn from your manual
+                                    bookmark corrections.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="learning-actions">
+                            <button
+                                type="button"
+                                id="refreshLearningData"
+                                class="secondary-btn"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12S7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12S8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Refresh Data
+                            </button>
+                            <button
+                                type="button"
+                                id="exportLearningData"
+                                class="secondary-btn"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Export Learning Data
+                            </button>
+                            <button
+                                type="button"
+                                id="importLearningData"
+                                class="secondary-btn"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M9 16V10H5L12 3L19 10H15V16H9ZM5 18H19V20H5V18Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                                Import Learning Data
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Data Management Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>Data Management</h2>
+                        <p>
+                            Manage your extension data, learning patterns,
+                            settings, and bookmark organization.
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <h3>Folder Organization</h3>
+                        <p class="form-help">
+                            <strong>Consolidate Sparse Folders:</strong>
+                            Automatically moves bookmarks from folders with less
+                            than 3 bookmarks to their parent folders. This helps
+                            clean up your bookmark structure by eliminating
+                            folders that don't have enough content to justify
+                            their existence. <br /><br />
+                            <strong>Example:</strong> If you have "Work >
+                            Projects > Old Project" with only 2 bookmarks, those
+                            bookmarks will be moved to "Work > Projects". If
+                            "Work > Projects" then has less than 3 bookmarks,
+                            they'll be moved to "Work".
+                        </p>
+                    </div>
+
+                    <div class="data-actions">
+                        <button
+                            type="button"
+                            id="consolidateFolders"
+                            class="secondary-btn"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M10 4H4C2.89 4 2 4.89 2 6V18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6H12L10 4Z"
+                                    fill="currentColor"
+                                />
+                                <path
+                                    d="M8 12L10 14L16 8"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    fill="none"
+                                />
+                            </svg>
+                            Consolidate Sparse Folders
+                        </button>
+
+                        <button
+                            type="button"
+                            id="exportData"
+                            class="secondary-btn"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            Export All Data
+                        </button>
+
+                        <button
+                            type="button"
+                            id="clearLearningData"
+                            class="secondary-btn"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            Clear Learning Data
+                        </button>
+
+                        <button
+                            type="button"
+                            id="resetSettings"
+                            class="danger-btn"
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13C18 16.31 15.31 19 12 19C8.69 19 6 16.31 6 13H4C4 17.42 7.58 21 12 21C16.42 21 20 17.42 20 13C20 8.58 16.42 5 12 5Z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            Reset All Settings
+                        </button>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer-content">
+                    <div class="footer-links">
+                        <a href="analytics.html" target="_blank"
+                            >≡ƒôè Analytics Dashboard</a
+                        >
+                        <a
+                            href="https://github.com/bookmarkmind/bookmarkmind"
+                            target="_blank"
+                            >GitHub</a
+                        >
+                        <a
+                            href="https://github.com/bookmarkmind/bookmarkmind/issues"
+                            target="_blank"
+                            >Report Issue</a
+                        >
+                        <a
+                            href="https://github.com/bookmarkmind/bookmarkmind/blob/main/README.md"
+                            target="_blank"
+                            >Documentation</a
+                        >
+                    </div>
+                    <div class="footer-text">
+                        <p>Made with Γ¥ñ∩╕Å for better bookmark organization</p>
+                    </div>
+                </div>
+            </footer>
         </div>
-        <div class="version">v1.0.0</div>
-      </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="main">
-      <!-- API Configuration Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>API Configuration</h2>
-          <p>Configure your AI provider API keys. Each provider can be configured independently.</p>
-        </div>
-
-        <!-- Gemini Provider Section -->
-        <div class="provider-section">
-          <h3 class="provider-heading">Gemini API Key (Required - Primary Provider)</h3>
-          <div class="form-group">
-            <div class="input-group">
-              <input type="password" id="apiKey" placeholder="Enter your Gemini API key (starts with AIza...)"
-                autocomplete="off">
-              <button type="button" id="clearApiKey" class="toggle-btn" title="Clear API Key" style="right: 40px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                    fill="currentColor" />
-                </svg>
-              </button>
-              <button type="button" id="toggleApiKey" class="toggle-btn" title="Show/Hide API Key">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
-                    fill="currentColor" />
-                </svg>
-              </button>
+        <!-- Notification Toast -->
+        <div id="toast" class="toast hidden">
+            <div class="toast-content">
+                <span class="toast-icon"></span>
+                <span class="toast-message"></span>
             </div>
-            <div class="form-help">
-              <p>Get your free API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI
-                  Studio</a></p>
-              <p><strong>Tip:</strong> API keys start with "AIza" and are about 39 characters long. Use the clear button
-                (Γ£ò) to enter a new key.</p>
-              <div id="apiKeyStatus" class="status-indicator hidden">
-                <span class="status-icon"></span>
-                <span class="status-text"></span>
-              </div>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" id="testGeminiKey" class="secondary-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
-              </svg>
-              Test Gemini Key
-            </button>
-            <button type="button" id="saveGeminiKey" class="primary-btn">
-              Save Gemini Key
-            </button>
-          </div>
         </div>
 
-        <!-- Cerebras Provider Section -->
-        <div class="provider-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;">
-          <h3 class="provider-heading">Cerebras API Key (Optional - Fallback Provider)</h3>
-          <div class="form-group">
-            <div class="input-group">
-              <input type="password" id="cerebrasApiKey" placeholder="Enter your Cerebras API key (starts with csk-...)"
-                autocomplete="off">
-              <button type="button" id="clearCerebrasApiKey" class="toggle-btn" title="Clear Cerebras API Key" style="right: 40px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                    fill="currentColor" />
-                </svg>
-              </button>
-              <button type="button" id="toggleCerebrasApiKey" class="toggle-btn" title="Show/Hide Cerebras API Key">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
-                    fill="currentColor" />
-                </svg>
-              </button>
-            </div>
-            <div class="form-help">
-              <p>Get your API key from <a href="https://cloud.cerebras.ai/" target="_blank">Cerebras Cloud</a> (provides fallback if Gemini fails)</p>
-              <p><strong>Tip:</strong> Cerebras API keys start with "csk-". This is optional but recommended for better reliability.</p>
-              <div id="cerebrasApiKeyStatus" class="status-indicator hidden">
-                <span class="status-icon"></span>
-                <span class="status-text"></span>
-              </div>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" id="testCerebrasKey" class="secondary-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
-              </svg>
-              Test Cerebras Key
-            </button>
-            <button type="button" id="saveCerebrasKey" class="primary-btn">
-              Save Cerebras Key
-            </button>
-          </div>
-        </div>
-
-        <!-- Groq API Key -->
-        <div class="form-group" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;">
-          <label for="groqApiKey">Groq API Key (Optional - Quaternary Fallback)</label>
-          <div class="input-group">
-            <input type="password" id="groqApiKey" placeholder="Enter your Groq API key (starts with gsk_...)"
-              autocomplete="off">
-            <button type="button" id="clearGroqApiKey" class="toggle-btn" title="Clear Groq API Key" style="right: 40px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                  fill="currentColor" />
-              </svg>
-            </button>
-            <button type="button" id="toggleGroqApiKey" class="toggle-btn" title="Show/Hide Groq API Key">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z"
-                  fill="currentColor" />
-              </svg>
-            </button>
-          </div>
-          <div class="form-help">
-            <p>Get your API key from <a href="https://console.groq.com/" target="_blank">Groq Console</a> (provides additional fallback after Cerebras)</p>
-            <p><strong>Tip:</strong> Groq API keys start with "gsk_". This is optional but provides very fast inference speeds.</p>
-            <div id="groqApiKeyStatus" class="status-indicator hidden">
-              <span class="status-icon"></span>
-              <span class="status-text"></span>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" id="testGroqKey" class="secondary-btn" disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
-              </svg>
-              Test Groq Key
-            </button>
-            <button type="button" id="saveGroqKey" class="primary-btn" disabled>
-              Save Groq Key
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Categories Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Categories</h2>
-          <p>Customize the categories used to organize your bookmarks. You can add, edit, or remove categories.</p>
-        </div>
-
-        <div class="categories-container">
-          <div class="categories-list" id="categoriesList">
-            <!-- Categories will be populated by JavaScript -->
-          </div>
-
-          <div class="add-category">
-            <div class="input-group">
-              <input type="text" id="newCategoryInput" placeholder="Enter new category name (e.g., Work/Projects)"
-                maxlength="50">
-              <button type="button" id="addCategoryBtn" class="add-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor" />
-                </svg>
-                Add Category
-              </button>
-            </div>
-            <p class="form-help">Use "/" to create nested categories (e.g., "Work/Projects/Current")</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Advanced Settings Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Advanced Settings</h2>
-          <p>Configure advanced options for bookmark processing and organization.</p>
-        </div>
-
-        <div class="settings-grid">
-          <div class="setting-item">
-            <label for="batchSize">Batch Size</label>
-            <select id="batchSize">
-              <option value="25">25 bookmarks</option>
-              <option value="50" selected>50 bookmarks</option>
-              <option value="100">100 bookmarks</option>
-            </select>
-            <p class="setting-help">Number of bookmarks to process at once. Lower values are safer for large
-              collections.</p>
-          </div>
-
-          <div class="setting-item">
-            <label for="maxCategoryDepth">Maximum Category Depth: <span id="maxDepthValue">2</span> levels</label>
-            <input type="range" id="maxCategoryDepth" min="1" max="4" value="2" step="1">
-            <div class="depth-labels">
-              <span>1 (Broad)</span>
-              <span>2 (Balanced)</span>
-              <span>3 (Detailed)</span>
-              <span>4 (Granular)</span>
-            </div>
-            <p class="setting-help">Controls how deep category hierarchies can be. Lower values create broader, simpler
-              categories.</p>
-          </div>
-
-          <div class="setting-item">
-            <label for="minBookmarksThreshold">Minimum Bookmarks per Folder: <span id="minThresholdValue">3</span>
-              bookmarks</label>
-            <input type="range" id="minBookmarksThreshold" min="2" max="10" value="3" step="1">
-            <div class="depth-labels">
-              <span>2 (Aggressive)</span>
-              <span>3 (Balanced)</span>
-              <span>5 (Conservative)</span>
-              <span>10 (Minimal)</span>
-            </div>
-            <p class="setting-help">Folders with fewer bookmarks than this threshold will be consolidated during
-              cleanup.</p>
-          </div>
-
-          <div class="setting-item">
-            <div class="checkbox-group">
-              <input type="checkbox" id="cleanupEmptyFolders">
-              <label for="cleanupEmptyFolders">Clean up empty folders after organizing</label>
-            </div>
-            <p class="setting-help">Automatically remove empty bookmark folders after categorization.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- AI Model Performance Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>AI Model Performance</h2>
-          <p>View detailed AI model comparison, cost tracking, and optimization features.</p>
-        </div>
-        <div class="action-row">
-          <button id="viewModelComparison" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17Z" fill="currentColor"/>
-            </svg>
-            View AI Model Comparison Dashboard
-          </button>
-          <p class="help-text">Compare performance, track costs, run A/B tests, and optimize model settings.</p>
-        </div>
-      </section>
-
-      <!-- Statistics Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Statistics</h2>
-          <p>Overview of your bookmark organization and extension usage.</p>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number" id="totalBookmarksCount">-</div>
-            <div class="stat-label">Total Bookmarks</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="organizedBookmarksCount">-</div>
-            <div class="stat-label">Organized</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="categoriesCount">-</div>
-            <div class="stat-label">Categories</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="learningPatternsCount">-</div>
-            <div class="stat-label">Learning Patterns</div>
-          </div>
-        </div>
-
-        <div class="last-sort-info">
-          <strong>Last Organization:</strong> <span id="lastSortDate">Never</span>
-        </div>
-      </section>
-
-      <!-- Performance Monitoring Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Performance Monitoring</h2>
-          <p>Track and analyze performance metrics, API provider comparison, and system insights.</p>
-        </div>
-
-        <!-- Performance Overview Cards -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number" id="avgCategorizationTime">-</div>
-            <div class="stat-label">Avg Time per Bookmark (ms)</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="performanceSuccessRate">-</div>
-            <div class="stat-label">Success Rate</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="totalApiCalls">-</div>
-            <div class="stat-label">Total API Calls</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="memoryUsage">-</div>
-            <div class="stat-label">Memory Usage (MB)</div>
-          </div>
-        </div>
-
-        <!-- API Provider Comparison -->
-        <div class="performance-subsection">
-          <h3>API Provider Comparison</h3>
-          <p class="form-help">Response time and success rate comparison across providers (last 24 hours)</p>
-          <div id="providerComparisonChart" class="chart-container">
-            <div class="loading-state">No provider data available yet</div>
-          </div>
-        </div>
-
-        <!-- Batch Processing Efficiency -->
-        <div class="performance-subsection">
-          <h3>Batch Processing Efficiency</h3>
-          <div class="batch-stats-grid">
-            <div class="batch-stat">
-              <div class="batch-stat-label">Avg Batch Size</div>
-              <div class="batch-stat-value" id="avgBatchSize">-</div>
-            </div>
-            <div class="batch-stat">
-              <div class="batch-stat-label">Avg Batch Time (ms)</div>
-              <div class="batch-stat-value" id="avgBatchTime">-</div>
-            </div>
-            <div class="batch-stat">
-              <div class="batch-stat-label">Time per Item (ms)</div>
-              <div class="batch-stat-value" id="avgTimePerItem">-</div>
-            </div>
-            <div class="batch-stat">
-              <div class="batch-stat-label">Efficiency Score</div>
-              <div class="batch-stat-value" id="efficiencyScore">-</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Performance History Graph -->
-        <div class="performance-subsection">
-          <h3>Performance History (Last 30 Days)</h3>
-          <p class="form-help">Track categorization performance improvement over time</p>
-          <div id="performanceHistoryChart" class="chart-container chart-large">
-            <canvas id="performanceCanvas"></canvas>
-          </div>
-        </div>
-
-        <!-- AI Insights & Recommendations -->
-        <div class="performance-subsection">
-          <h3>AI Insights & Recommendations</h3>
-          <div id="insightsContainer" class="insights-container">
-            <div class="loading-state">Loading insights...</div>
-          </div>
-        </div>
-
-        <!-- Export Analytics Report -->
-        <div class="performance-subsection">
-          <h3>Export Analytics Report</h3>
-          <p class="form-help">Export detailed performance and usage analytics</p>
-          
-          <div class="export-controls">
-            <div class="date-range-selector">
-              <div class="form-group-inline">
-                <label for="exportStartDate">From:</label>
-                <input type="date" id="exportStartDate" class="date-input">
-              </div>
-              <div class="form-group-inline">
-                <label for="exportEndDate">To:</label>
-                <input type="date" id="exportEndDate" class="date-input">
-              </div>
-              <button type="button" id="setLast30Days" class="secondary-btn small-btn">Last 30 Days</button>
-              <button type="button" id="setAllTime" class="secondary-btn small-btn">All Time</button>
-            </div>
-            
-            <div class="export-actions">
-              <button type="button" id="exportReportJSON" class="secondary-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
-                </svg>
-                Export JSON
-              </button>
-              <button type="button" id="exportReportCSV" class="secondary-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="currentColor"/>
-                </svg>
-                Export CSV
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Refresh Performance Data -->
-        <div class="form-actions">
-          <button type="button" id="refreshPerformanceData" class="secondary-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12S7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12S8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
-            </svg>
-            Refresh Performance Data
-          </button>
-        </div>
-      </section>
-
-      <!-- Learning Data Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Learning Data</h2>
-          <p>View and manage categorization patterns learned from your corrections.</p>
-        </div>
-
-        <div class="learning-data-container">
-          <div class="learning-summary">
-            <div class="summary-item">
-              <span class="summary-label">Total Patterns:</span>
-              <span class="summary-value" id="totalLearningPatterns">0</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Last Updated:</span>
-              <span class="summary-value" id="lastLearningUpdate">Never</span>
-            </div>
-          </div>
-
-          <div class="learning-patterns" id="learningPatternsList">
-            <div class="no-patterns" id="noPatternsMessage">
-              <p>No learning patterns collected yet. The extension will learn from your manual bookmark corrections.</p>
-            </div>
-          </div>
-
-          <div class="learning-actions">
-            <button type="button" id="refreshLearningData" class="secondary-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12S7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12S8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z"
-                  fill="currentColor" />
-              </svg>
-              Refresh Data
-            </button>
-            <button type="button" id="exportLearningData" class="secondary-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
-                  fill="currentColor" />
-              </svg>
-              Export Learning Data
-            </button>
-            <button type="button" id="importLearningData" class="secondary-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M9 16V10H5L12 3L19 10H15V16H9ZM5 18H19V20H5V18Z"
-                  fill="currentColor" />
-              </svg>
-              Import Learning Data
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Data Management Section -->
-      <section class="section">
-        <div class="section-header">
-          <h2>Data Management</h2>
-          <p>Manage your extension data, learning patterns, settings, and bookmark organization.</p>
-        </div>
-
-        <div class="form-group">
-          <h3>Folder Organization</h3>
-          <p class="form-help">
-            <strong>Consolidate Sparse Folders:</strong> Automatically moves bookmarks from folders with less than 3
-            bookmarks to their parent folders.
-            This helps clean up your bookmark structure by eliminating folders that don't have enough content to justify
-            their existence.
-            <br><br>
-            <strong>Example:</strong> If you have "Work > Projects > Old Project" with only 2 bookmarks, those bookmarks
-            will be moved to "Work > Projects".
-            If "Work > Projects" then has less than 3 bookmarks, they'll be moved to "Work".
-          </p>
-        </div>
-
-        <div class="data-actions">
-          <button type="button" id="consolidateFolders" class="secondary-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M10 4H4C2.89 4 2 4.89 2 6V18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6H12L10 4Z"
-                fill="currentColor" />
-              <path d="M8 12L10 14L16 8" stroke="currentColor" stroke-width="2" fill="none" />
-            </svg>
-            Consolidate Sparse Folders
-          </button>
-
-          <button type="button" id="exportData" class="secondary-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"
-                fill="currentColor" />
-            </svg>
-            Export All Data
-          </button>
-
-          <button type="button" id="clearLearningData" class="secondary-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"
-                fill="currentColor" />
-            </svg>
-            Clear Learning Data
-          </button>
-
-          <button type="button" id="resetSettings" class="danger-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13C18 16.31 15.31 19 12 19C8.69 19 6 16.31 6 13H4C4 17.42 7.58 21 12 21C16.42 21 20 17.42 20 13C20 8.58 16.42 5 12 5Z"
-                fill="currentColor" />
-            </svg>
-            Reset All Settings
-          </button>
-        </div>
-      </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-links">
-          <a href="analytics.html" target="_blank">≡ƒôè Analytics Dashboard</a>
-          <a href="https://github.com/bookmarkmind/bookmarkmind" target="_blank">GitHub</a>
-          <a href="https://github.com/bookmarkmind/bookmarkmind/issues" target="_blank">Report Issue</a>
-          <a href="https://github.com/bookmarkmind/bookmarkmind/blob/main/README.md" target="_blank">Documentation</a>
-        </div>
-        <div class="footer-text">
-          <p>Made with Γ¥ñ∩╕Å for better bookmark organization</p>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <!-- Notification Toast -->
-  <div id="toast" class="toast hidden">
-    <div class="toast-content">
-      <span class="toast-icon"></span>
-      <span class="toast-message"></span>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="../scripts/bookmarkService.js"></script>
-  <script src="../scripts/aiProcessor.js"></script>
-  <script src="../scripts/categorizer.js"></script>
-  <script src="../scripts/folderManager.js"></script>
-  <script src="../scripts/folderConsolidator.js"></script>
-  <script src="../scripts/learningService.js"></script>
-  <script src="options.js"></script>
-</body>
-
+        <!-- Scripts -->
+        <script src="../scripts/bookmarkService.js"></script>
+        <script src="../scripts/aiProcessor.js"></script>
+        <script src="../scripts/categorizer.js"></script>
+        <script src="../scripts/folderManager.js"></script>
+        <script src="../scripts/folderConsolidator.js"></script>
+        <script src="../scripts/learningService.js"></script>
+        <script src="options.js"></script>
+    </body>
 </html>
