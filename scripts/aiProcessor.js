@@ -2040,7 +2040,7 @@ Return only the JSON array with properly formatted category names, no additional
                     if (!isRetryableError) {
                         // Non-retryable errors (auth, bad request, etc.)
                         if (response.status === 401) {
-                            throw new Error('Invalid Groq API key. Please check your API key (should start with "gsk-").');
+                            throw new Error('Invalid Groq API key. Please check your API key (should start with "gsk_").');
                         } else if (response.status === 403) {
                             throw new Error('Groq API access denied. Please check your API key permissions.');
                         } else if (response.status === 400) {

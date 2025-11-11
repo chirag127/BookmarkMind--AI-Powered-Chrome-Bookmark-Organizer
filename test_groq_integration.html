@@ -81,7 +81,7 @@
         
         <div class="test-section">
             <h2>1. Test Groq API Key</h2>
-            <input type="password" id="groqApiKey" placeholder="Enter your Groq API key (gsk-...)">
+            <input type="password" id="groqApiKey" placeholder="Enter your Groq API key (gsk_...)">
             <button onclick="testGroqKey()">Test Groq API Key</button>
             <div id="groqKeyResult" class="result" style="display: none;"></div>
         </div>
@@ -98,7 +98,7 @@
             <p>Simulate provider fallback with all three providers</p>
             <input type="password" id="geminiKey" placeholder="Gemini API key (AIza...)">
             <input type="password" id="cerebrasKey" placeholder="Cerebras API key (csk-...)">
-            <input type="password" id="groqKeyFallback" placeholder="Groq API key (gsk-...)">
+            <input type="password" id="groqKeyFallback" placeholder="Groq API key (gsk_...)">
             <button onclick="testFallbackLogic()">Test Fallback Logic</button>
             <div id="fallbackResult" class="result" style="display: none;"></div>
         </div>
@@ -118,9 +118,9 @@
                 return;
             }
 
-            if (!apiKey.startsWith('gsk-')) {
+            if (!apiKey.startsWith('gsk_')) {
                 result.className = 'result error';
-                result.textContent = 'Error: Groq API key should start with "gsk-"';
+                result.textContent = 'Error: Groq API key should start with "gsk_"';
                 return;
             }
 

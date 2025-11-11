@@ -966,14 +966,14 @@ class OptionsController {
     const value = this.groqApiKeyInput.value.trim();
     const hasValue = value.length > 0;
     const isPlaceholder = value.startsWith('••••');
-    const isValidFormat = value.startsWith('gsk-') && value.length >= 10;
+    const isValidFormat = value.startsWith('gsk_') && value.length >= 10;
     const shouldEnable = hasValue && !isPlaceholder && isValidFormat;
 
     this.testGroqKeyBtn.disabled = !shouldEnable;
     this.saveGroqKeyBtn.disabled = !shouldEnable;
 
     if (hasValue && !isPlaceholder && !isValidFormat) {
-      this.showGroqApiKeyStatus('Invalid format. Groq API keys should start with "gsk-"', 'error');
+      this.showGroqApiKeyStatus('Invalid format. Groq API keys should start with "gsk_"', 'error');
     } else {
       this.hideGroqApiKeyStatus();
     }
@@ -986,7 +986,7 @@ class OptionsController {
     this.groqApiKeyInput.value = '';
     this.groqApiKeyInput.type = 'password';
     this.groqApiKeyInput.dataset.hasKey = 'false';
-    this.groqApiKeyInput.placeholder = 'Enter your Groq API key (starts with gsk-...)';
+    this.groqApiKeyInput.placeholder = 'Enter your Groq API key (starts with gsk_...)';
     this.isGroqApiKeyVisible = false;
     this.updateGroqButtonStates();
   }
@@ -1066,8 +1066,8 @@ class OptionsController {
     const apiKey = this.groqApiKeyInput.value.trim();
     if (!apiKey || apiKey.startsWith('••••')) return;
 
-    if (!apiKey.startsWith('gsk-') || apiKey.length < 10) {
-      this.showGroqApiKeyStatus('Invalid API key format. Key should start with "gsk-"', 'error');
+    if (!apiKey.startsWith('gsk_') || apiKey.length < 10) {
+      this.showGroqApiKeyStatus('Invalid API key format. Key should start with "gsk_"', 'error');
       return;
     }
 
