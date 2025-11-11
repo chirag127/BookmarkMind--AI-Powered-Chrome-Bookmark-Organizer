@@ -31,6 +31,9 @@ class OptionsController {
    * Initialize DOM element references
    */
   initializeElements() {
+    // Model comparison elements
+    this.viewModelComparison = document.getElementById('viewModelComparison');
+
     // Gemini API Key elements
     this.apiKeyInput = document.getElementById('apiKey');
     this.toggleApiKeyBtn = document.getElementById('toggleApiKey');
@@ -122,6 +125,13 @@ class OptionsController {
    * Attach event listeners
    */
   attachEventListeners() {
+    // Model comparison events
+    if (this.viewModelComparison) {
+      this.viewModelComparison.addEventListener('click', () => {
+        window.location.href = 'model-comparison.html';
+      });
+    }
+
     // Gemini API Key events
     this.apiKeyInput.addEventListener('input', () => this.onApiKeyChange());
     this.toggleApiKeyBtn.addEventListener('click', () => this.toggleApiKeyVisibility());

@@ -10,36 +10,37 @@ class AIProcessor {
         this.groqApiKey = null;
         this.bookmarkService = null;
         this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
+        this.modelComparisonService = typeof ModelComparisonService !== 'undefined' ? new ModelComparisonService() : null;
 
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
-            { name: 'gemini-2.5-pro', provider: 'gemini', sizeCategory: 'ultra' },
-            { name: 'gemini-2.5-flash-preview-09-2025', provider: 'gemini', sizeCategory: 'large' },
-            { name: 'gemini-2.5-flash', provider: 'gemini', sizeCategory: 'large' },
-            { name: 'gemini-2.5-flash-image', provider: 'gemini', sizeCategory: 'medium' },
-            { name: 'gemini-2.0-flash', provider: 'gemini', sizeCategory: 'medium' },
-            { name: 'gemini-2.5-flash-lite-preview-09-2025', provider: 'gemini', sizeCategory: 'small' },
-            { name: 'gemini-2.5-flash-lite', provider: 'gemini', sizeCategory: 'small' }
+            { name: 'gemini-2.5-pro', provider: 'gemini', sizeCategory: 'ultra', costPer1MInputTokens: 1.25, costPer1MOutputTokens: 5.00 },
+            { name: 'gemini-2.5-flash-preview-09-2025', provider: 'gemini', sizeCategory: 'large', costPer1MInputTokens: 0.075, costPer1MOutputTokens: 0.30 },
+            { name: 'gemini-2.5-flash', provider: 'gemini', sizeCategory: 'large', costPer1MInputTokens: 0.075, costPer1MOutputTokens: 0.30 },
+            { name: 'gemini-2.5-flash-image', provider: 'gemini', sizeCategory: 'medium', costPer1MInputTokens: 0.0375, costPer1MOutputTokens: 0.15 },
+            { name: 'gemini-2.0-flash', provider: 'gemini', sizeCategory: 'medium', costPer1MInputTokens: 0.0375, costPer1MOutputTokens: 0.15 },
+            { name: 'gemini-2.5-flash-lite-preview-09-2025', provider: 'gemini', sizeCategory: 'small', costPer1MInputTokens: 0.02, costPer1MOutputTokens: 0.08 },
+            { name: 'gemini-2.5-flash-lite', provider: 'gemini', sizeCategory: 'small', costPer1MInputTokens: 0.02, costPer1MOutputTokens: 0.08 }
         ];
         this.currentModelIndex = 0;
         this.baseUrlTemplate = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
 
         // Cerebras model fallback sequence - OpenAI-compatible API
         this.cerebrasModels = [
-            { name: 'gpt-oss-120b', provider: 'cerebras', paramCount: 120 },
-            { name: 'llama-3.3-70b', provider: 'cerebras', paramCount: 70 },
-            { name: 'qwen-3-32b', provider: 'cerebras', paramCount: 32 },
-            { name: 'llama3.1-8b', provider: 'cerebras', paramCount: 8 }
+            { name: 'gpt-oss-120b', provider: 'cerebras', paramCount: 120, costPer1MInputTokens: 0.60, costPer1MOutputTokens: 0.60 },
+            { name: 'llama-3.3-70b', provider: 'cerebras', paramCount: 70, costPer1MInputTokens: 0.60, costPer1MOutputTokens: 0.60 },
+            { name: 'qwen-3-32b', provider: 'cerebras', paramCount: 32, costPer1MInputTokens: 0.10, costPer1MOutputTokens: 0.10 },
+            { name: 'llama3.1-8b', provider: 'cerebras', paramCount: 8, costPer1MInputTokens: 0.10, costPer1MOutputTokens: 0.10 }
         ];
         this.cerebrasBaseUrl = 'https://api.cerebras.ai/v1/chat/completions';
 
         // Groq model fallback sequence - OpenAI-compatible API (size-descending)
         this.groqModels = [
-            { name: 'openai/gpt-oss-120b', provider: 'groq', paramCount: 120 },
-            { name: 'llama-3.3-70b-versatile', provider: 'groq', paramCount: 70 },
-            { name: 'qwen/qwen3-32b', provider: 'groq', paramCount: 32 },
-            { name: 'openai/gpt-oss-20b', provider: 'groq', paramCount: 20 },
-            { name: 'llama-3.1-8b-instant', provider: 'groq', paramCount: 8 }
+            { name: 'openai/gpt-oss-120b', provider: 'groq', paramCount: 120, costPer1MInputTokens: 0.00, costPer1MOutputTokens: 0.00 },
+            { name: 'llama-3.3-70b-versatile', provider: 'groq', paramCount: 70, costPer1MInputTokens: 0.00, costPer1MOutputTokens: 0.00 },
+            { name: 'qwen/qwen3-32b', provider: 'groq', paramCount: 32, costPer1MInputTokens: 0.00, costPer1MOutputTokens: 0.00 },
+            { name: 'openai/gpt-oss-20b', provider: 'groq', paramCount: 20, costPer1MInputTokens: 0.00, costPer1MOutputTokens: 0.00 },
+            { name: 'llama-3.1-8b-instant', provider: 'groq', paramCount: 8, costPer1MInputTokens: 0.00, costPer1MOutputTokens: 0.00 }
         ];
         this.groqBaseUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -47,6 +48,9 @@ class AIProcessor {
         this.maxRetries = 3;
         this.baseRetryDelay = 1000; // 1 second
         this.maxRetryDelay = 30000; // 30 seconds
+
+        // Custom model configuration support
+        this.customModelConfig = null;
     }
 
     /**
@@ -416,6 +420,45 @@ class AIProcessor {
         if (typeof BookmarkService !== 'undefined') {
             this.bookmarkService = new BookmarkService();
         }
+    }
+
+    /**
+     * Set custom model configuration
+     * @param {Object} config - Custom model configuration {temperature, top_p, max_tokens}
+     */
+    setCustomModelConfig(config) {
+        this.customModelConfig = config;
+        console.log('🔧 Custom model configuration set:', config);
+    }
+
+    /**
+     * Get optimal batch size based on bookmark count and rate limits
+     * @param {number} bookmarkCount - Number of bookmarks to process
+     * @param {string} provider - AI provider ('gemini', 'cerebras', 'groq')
+     * @returns {number} Optimal batch size
+     */
+    getOptimalBatchSize(bookmarkCount, provider = 'gemini') {
+        const rateLimits = {
+            gemini: { maxBatchSize: 100, rpmLimit: 15 },
+            cerebras: { maxBatchSize: 50, rpmLimit: 60 },
+            groq: { maxBatchSize: 100, rpmLimit: 30 }
+        };
+
+        const limits = rateLimits[provider] || rateLimits.gemini;
+        
+        // Calculate optimal batch size
+        if (bookmarkCount <= 10) return 10;
+        if (bookmarkCount <= 25) return 25;
+        if (bookmarkCount <= 50) return 50;
+        if (bookmarkCount <= 100) return limits.maxBatchSize;
+        
+        // For large sets, balance between throughput and rate limits
+        const optimalSize = Math.min(
+            limits.maxBatchSize,
+            Math.ceil(bookmarkCount / limits.rpmLimit)
+        );
+        
+        return Math.max(25, optimalSize);
     }
 
     /**

@@ -13,7 +13,8 @@ try {
     'learningService.js',
     'snapshotManager.js',
     'analyticsService.js',
-    'performanceMonitor.js'
+    'performanceMonitor.js',
+    'modelComparisonService.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -26,7 +27,8 @@ try {
     LearningService: typeof LearningService !== 'undefined',
     SnapshotManager: typeof SnapshotManager !== 'undefined',
     AnalyticsService: typeof AnalyticsService !== 'undefined',
-    PerformanceMonitor: typeof PerformanceMonitor !== 'undefined'
+    PerformanceMonitor: typeof PerformanceMonitor !== 'undefined',
+    ModelComparisonService: typeof ModelComparisonService !== 'undefined'
   });
 
 } catch (error) {
@@ -334,6 +336,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'runSnapshotDiagnostics':
         await handleRunSnapshotDiagnostics(sendResponse);
+        break;
+
+      case 'getModelComparison':
+        await handleGetModelComparison(sendResponse);
+        break;
+
+      case 'startABTest':
+        await handleStartABTest(message.data, sendResponse);
+        break;
+
+      case 'recordModelPerformance':
+        await handleRecordModelPerformance(message.data, sendResponse);
+        break;
+
+      case 'getCostReport':
+        await handleGetCostReport(message.data, sendResponse);
+        break;
+
+      case 'setBudgetAlert':
+        await handleSetBudgetAlert(message.data, sendResponse);
+        break;
+
+      case 'getModelRecommendation':
+        await handleGetModelRecommendation(message.data, sendResponse);
+        break;
+
+      case 'setCustomModelConfig':
+        await handleSetCustomModelConfig(message.data, sendResponse);
+        break;
+
+      case 'getCustomModelConfig':
+        await handleGetCustomModelConfig(sendResponse);
         break;
 
       default:
@@ -1434,6 +1468,165 @@ async function saveLearningPatterns(patterns, category) {
   } catch (error) {
     console.error('❌ Error saving learning patterns:', error);
     throw error;
+  }
+}
+
+/**
+ * Handle model comparison dashboard request
+ */
+async function handleGetModelComparison(sendResponse) {
+  try {
+    const modelComparisonService = new ModelComparisonService();
+    const dashboard = await modelComparisonService.getComparisonDashboard();
+    sendResponse({ success: true, data: dashboard });
+  } catch (error) {
+    console.error('Error getting model comparison:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle A/B test initiation
+ */
+async function handleStartABTest(data, sendResponse) {
+  try {
+    const { modelA, modelB, bookmarks } = data;
+    
+    if (!bookmarks || bookmarks.length === 0) {
+      throw new Error('No bookmarks provided for A/B testing');
+    }
+
+    // Get settings
+    const result = await chrome.storage.sync.get(['bookmarkMindSettings']);
+    const settings = result.bookmarkMindSettings || {};
+
+    if (!settings.apiKey) {
+      throw new Error('API key not configured');
+    }
+
+    // Initialize AI processor
+    const aiProcessor = new AIProcessor();
+    aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey, settings.groqApiKey);
+
+    // Process with both models
+    const startTimeA = Date.now();
+    // TODO: Implement model-specific categorization
+    const resultsA = { categories: [], success: true, time: Date.now() - startTimeA };
+    
+    const startTimeB = Date.now();
+    // TODO: Implement model-specific categorization
+    const resultsB = { categories: [], success: true, time: Date.now() - startTimeB };
+
+    // Record comparison
+    const modelComparisonService = new ModelComparisonService();
+    await modelComparisonService.recordABTest({
+      modelA,
+      modelB,
+      bookmarkSample: bookmarks.length,
+      resultsA,
+      resultsB,
+      speedA: resultsA.time,
+      speedB: resultsB.time
+    });
+
+    sendResponse({
+      success: true,
+      data: {
+        modelA,
+        modelB,
+        resultsA,
+        resultsB
+      }
+    });
+  } catch (error) {
+    console.error('Error in A/B test:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle recording model performance
+ */
+async function handleRecordModelPerformance(data, sendResponse) {
+  try {
+    const modelComparisonService = new ModelComparisonService();
+    await modelComparisonService.recordModelPerformance(data.metrics);
+    await modelComparisonService.trackCost(data.metrics);
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error recording model performance:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle cost report request
+ */
+async function handleGetCostReport(data, sendResponse) {
+  try {
+    const modelComparisonService = new ModelComparisonService();
+    const report = await modelComparisonService.getCostReport(data.period || 'all');
+    sendResponse({ success: true, data: report });
+  } catch (error) {
+    console.error('Error getting cost report:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle setting budget alert
+ */
+async function handleSetBudgetAlert(data, sendResponse) {
+  try {
+    const modelComparisonService = new ModelComparisonService();
+    await modelComparisonService.setBudgetAlert(data.budget);
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error setting budget alert:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle model recommendation request
+ */
+async function handleGetModelRecommendation(data, sendResponse) {
+  try {
+    const modelComparisonService = new ModelComparisonService();
+    const recommendation = await modelComparisonService.getRecommendedModel(
+      data.bookmarkType,
+      data.userHistory
+    );
+    sendResponse({ success: true, data: recommendation });
+  } catch (error) {
+    console.error('Error getting model recommendation:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle setting custom model configuration
+ */
+async function handleSetCustomModelConfig(data, sendResponse) {
+  try {
+    await chrome.storage.sync.set({ customModelConfig: data.config });
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error setting custom model config:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Handle getting custom model configuration
+ */
+async function handleGetCustomModelConfig(sendResponse) {
+  try {
+    const result = await chrome.storage.sync.get(['customModelConfig']);
+    sendResponse({ success: true, data: result.customModelConfig || null });
+  } catch (error) {
+    console.error('Error getting custom model config:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 

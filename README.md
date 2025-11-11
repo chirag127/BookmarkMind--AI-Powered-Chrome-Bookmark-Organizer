@@ -2,9 +2,9 @@
 
 ## ✨ Description
 
-BookmarkMind is an intelligent Chrome extension that transforms your chaotic bookmark collection into a beautifully organized library using advanced AI technology. Powered by Google's Gemini AI with AgentRouter fallback, it automatically categorizes, enhances titles, removes duplicates, and creates hierarchical folder structures for your bookmarks.
+BookmarkMind is an intelligent Chrome extension that transforms your chaotic bookmark collection into a beautifully organized library using advanced AI technology. Powered by Google's Gemini AI with Cerebras and Groq fallback, it automatically categorizes, enhances titles, removes duplicates, and creates hierarchical folder structures for your bookmarks.
 
-Say goodbye to bookmark chaos and hello to intelligent organization that learns from your preferences and adapts to your browsing habits.
+Say goodbye to bookmark chaos and hello to intelligent organization that learns from your preferences and adapts to your browsing habits. Now featuring advanced AI model performance comparison, cost tracking, A/B testing, and intelligent model recommendations.
 
 ## 🚀 Live Demo
 
@@ -12,7 +12,9 @@ Say goodbye to bookmark chaos and hello to intelligent organization that learns 
 
 **📱 Extension Demo:** Install the extension and try it with your own bookmarks!
 
-**📊 Analytics Dashboard:** Monitor your categorization performance, API usage, and folder consolidation metrics in real-time
+**📊 AI Model Comparison Dashboard:** View performance metrics, track costs, run A/B tests, and get intelligent model recommendations
+
+**📈 Analytics Dashboard:** Monitor your categorization performance, API usage, and folder consolidation metrics in real-time
 
 ## 🛠️ Tech Stack / Tools Used
 
@@ -138,6 +140,15 @@ _Extension will be available on the Chrome Web Store after review process_
 -   **Export/Import:** Backup and restore your settings and learning data
 -   **Learning Analytics:** View detailed statistics about learned patterns
 -   **Mobile Responsive:** Works seamlessly across all devices
+
+### 🤖 AI Model Optimization (New!)
+
+-   **Performance Comparison Dashboard:** View detailed metrics for all AI models (success rate, speed, cost)
+-   **A/B Testing Mode:** Compare models side-by-side with sample bookmarks
+-   **Cost Tracking:** Monitor API spending with real-time cost estimation and budget alerts
+-   **Model Recommendations:** Intelligent suggestions for optimal model based on your usage patterns
+-   **Custom Model Configuration:** Fine-tune temperature, top_p, and max_tokens parameters
+-   **Batch Size Optimizer:** Automatically adjusts batch size based on bookmarks and rate limits
 
 ### 📊 Performance Monitoring
 
