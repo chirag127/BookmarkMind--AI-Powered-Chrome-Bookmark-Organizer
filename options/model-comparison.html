@@ -32,6 +32,7 @@
       <button class="tab-btn" data-tab="performance">Performance</button>
       <button class="tab-btn" data-tab="costs">Cost Tracking</button>
       <button class="tab-btn" data-tab="abtest">A/B Testing</button>
+      <button class="tab-btn" data-tab="benchmark">Benchmarks</button>
       <button class="tab-btn" data-tab="config">Model Configuration</button>
     </nav>
 
@@ -277,6 +278,140 @@
         </section>
       </div>
 
+      <!-- Benchmark Tab -->
+      <div id="benchmark-tab" class="tab-content">
+        <section class="section">
+          <h2>Automated Benchmarks</h2>
+          <p>Evaluate categorization accuracy and performance across AI models using predefined test sets.</p>
+          
+          <!-- Benchmark Configuration -->
+          <div class="benchmark-config">
+            <h3>Run Benchmark Suite</h3>
+            <div class="benchmark-inputs">
+              <div class="form-group">
+                <label>Test Categories</label>
+                <div class="checkbox-group">
+                  <label><input type="checkbox" class="benchmark-category" value="technical" checked> Technical/Development</label>
+                  <label><input type="checkbox" class="benchmark-category" value="news" checked> News/Media</label>
+                  <label><input type="checkbox" class="benchmark-category" value="shopping" checked> Shopping/E-commerce</label>
+                  <label><input type="checkbox" class="benchmark-category" value="entertainment" checked> Entertainment</label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Providers to Test</label>
+                <div class="checkbox-group">
+                  <label><input type="checkbox" class="benchmark-provider" value="gemini" checked> Gemini</label>
+                  <label><input type="checkbox" class="benchmark-provider" value="cerebras"> Cerebras</label>
+                  <label><input type="checkbox" class="benchmark-provider" value="groq"> Groq</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="benchmarkBatchSize">Batch Size</label>
+                <input type="number" id="benchmarkBatchSize" value="10" min="1" max="50">
+                <small>Number of bookmarks to process per batch</small>
+              </div>
+            </div>
+
+            <div class="benchmark-actions">
+              <button id="runBenchmarkBtn" class="btn btn-primary">
+                <span class="btn-icon">🧪</span>
+                Run Benchmark Suite
+              </button>
+              <button id="clearBenchmarkHistoryBtn" class="btn btn-secondary">Clear History</button>
+            </div>
+
+            <div id="benchmarkProgress" class="benchmark-progress hidden">
+              <div class="progress-bar">
+                <div class="progress-fill" id="benchmarkProgressFill"></div>
+              </div>
+              <p id="benchmarkProgressText">Starting benchmark...</p>
+            </div>
+          </div>
+
+          <!-- Benchmark Results -->
+          <div id="benchmarkResults" class="benchmark-results hidden">
+            <h3>Latest Results</h3>
+            <div class="results-summary">
+              <div class="summary-metric">
+                <span class="metric-label">Overall Accuracy:</span>
+                <span class="metric-value" id="benchmarkAccuracy">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Average Speed:</span>
+                <span class="metric-value" id="benchmarkSpeed">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Total Cost:</span>
+                <span class="metric-value" id="benchmarkCost">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Tests Run:</span>
+                <span class="metric-value" id="benchmarkTests">-</span>
+              </div>
+            </div>
+
+            <!-- Best Model Recommendation -->
+            <div class="benchmark-recommendation">
+              <h4>🏆 Best Model</h4>
+              <div class="recommendation-details">
+                <div class="model-badge" id="bestBenchmarkModel">-</div>
+                <div class="model-metrics">
+                  <span id="bestBenchmarkMetrics">-</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Comparison Table -->
+            <h4>Detailed Comparison</h4>
+            <div class="benchmark-table-container">
+              <table class="benchmark-table">
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Model</th>
+                    <th>Success Rate</th>
+                    <th>Avg Speed</th>
+                    <th>Total Cost</th>
+                    <th>Consistency</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmarkTableBody">
+                  <tr>
+                    <td colspan="7" class="loading">Run a benchmark to see results...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="benchmark-recommendations">
+              <h4>Recommendations</h4>
+              <div id="benchmarkRecommendationsList"></div>
+            </div>
+          </div>
+
+          <!-- Historical Results -->
+          <div class="benchmark-history">
+            <h3>Historical Results</h3>
+            <div class="history-controls">
+              <select id="benchmarkHistoryLimit">
+                <option value="5">Last 5 runs</option>
+                <option value="10" selected>Last 10 runs</option>
+                <option value="20">Last 20 runs</option>
+                <option value="50">Last 50 runs</option>
+              </select>
+              <button id="refreshBenchmarkHistory" class="btn btn-secondary">Refresh</button>
+            </div>
+            <div id="benchmarkHistoryList">
+              <p>No benchmark history available. Run a benchmark to get started.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <!-- Model Configuration Tab -->
       <div id="config-tab" class="tab-content">
         <section class="section">
@@ -329,6 +464,7 @@
     </main>
   </div>
 
+  <script src="../scripts/benchmarkService.js"></script>
   <script src="model-comparison.js"></script>
 </body>
 </html>

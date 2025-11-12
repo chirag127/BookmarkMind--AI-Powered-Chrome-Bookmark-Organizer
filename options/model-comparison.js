@@ -61,6 +61,25 @@ class ModelComparisonController {
     this.abtestResults = document.getElementById('abtestResults');
     this.previousTestsList = document.getElementById('previousTestsList');
 
+    // Benchmark elements
+    this.runBenchmarkBtn = document.getElementById('runBenchmarkBtn');
+    this.clearBenchmarkHistoryBtn = document.getElementById('clearBenchmarkHistoryBtn');
+    this.benchmarkProgress = document.getElementById('benchmarkProgress');
+    this.benchmarkProgressFill = document.getElementById('benchmarkProgressFill');
+    this.benchmarkProgressText = document.getElementById('benchmarkProgressText');
+    this.benchmarkResults = document.getElementById('benchmarkResults');
+    this.benchmarkAccuracy = document.getElementById('benchmarkAccuracy');
+    this.benchmarkSpeed = document.getElementById('benchmarkSpeed');
+    this.benchmarkCost = document.getElementById('benchmarkCost');
+    this.benchmarkTests = document.getElementById('benchmarkTests');
+    this.bestBenchmarkModel = document.getElementById('bestBenchmarkModel');
+    this.bestBenchmarkMetrics = document.getElementById('bestBenchmarkMetrics');
+    this.benchmarkTableBody = document.getElementById('benchmarkTableBody');
+    this.benchmarkRecommendationsList = document.getElementById('benchmarkRecommendationsList');
+    this.benchmarkHistoryLimit = document.getElementById('benchmarkHistoryLimit');
+    this.refreshBenchmarkHistory = document.getElementById('refreshBenchmarkHistory');
+    this.benchmarkHistoryList = document.getElementById('benchmarkHistoryList');
+
     // Model config elements
     this.temperature = document.getElementById('temperature');
     this.temperatureValue = document.getElementById('temperatureValue');
@@ -71,6 +90,9 @@ class ModelComparisonController {
     this.customBatchSize = document.getElementById('customBatchSize');
     this.saveModelConfigBtn = document.getElementById('saveModelConfigBtn');
     this.resetModelConfigBtn = document.getElementById('resetModelConfigBtn');
+
+    // Initialize benchmark service
+    this.benchmarkService = new BenchmarkService();
   }
 
   /**
@@ -94,6 +116,12 @@ class ModelComparisonController {
 
     // A/B testing
     this.startABTestBtn.addEventListener('click', () => this.startABTest());
+
+    // Benchmark
+    this.runBenchmarkBtn.addEventListener('click', () => this.runBenchmark());
+    this.clearBenchmarkHistoryBtn.addEventListener('click', () => this.clearBenchmarkHistory());
+    this.refreshBenchmarkHistory.addEventListener('click', () => this.loadBenchmarkHistory());
+    this.benchmarkHistoryLimit.addEventListener('change', () => this.loadBenchmarkHistory());
 
     // Model configuration
     this.temperature.addEventListener('input', () => {
@@ -142,6 +170,8 @@ class ModelComparisonController {
       this.loadCostReport();
     } else if (tabName === 'config') {
       this.loadModelConfig();
+    } else if (tabName === 'benchmark') {
+      this.loadBenchmarkHistory();
     }
   }
 
@@ -554,6 +584,196 @@ class ModelComparisonController {
     this.customBatchSize.classList.add('hidden');
 
     this.showSuccess('Model configuration reset to defaults');
+  }
+
+  /**
+   * Run benchmark suite
+   */
+  async runBenchmark() {
+    /* global BenchmarkService */
+    try {
+      // Get selected options
+      const selectedCategories = Array.from(document.querySelectorAll('.benchmark-category:checked'))
+        .map(cb => cb.value);
+      const selectedProviders = Array.from(document.querySelectorAll('.benchmark-provider:checked'))
+        .map(cb => cb.value);
+      const batchSize = parseInt(document.getElementById('benchmarkBatchSize').value);
+
+      if (selectedCategories.length === 0) {
+        this.showError('Please select at least one test category');
+        return;
+      }
+
+      if (selectedProviders.length === 0) {
+        this.showError('Please select at least one provider to test');
+        return;
+      }
+
+      // Show progress
+      this.runBenchmarkBtn.disabled = true;
+      this.benchmarkProgress.classList.remove('hidden');
+      this.benchmarkProgressFill.style.width = '0%';
+      this.benchmarkProgressText.textContent = 'Starting benchmark suite...';
+
+      // Simulate progress updates
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress = Math.min(progress + 5, 90);
+        this.benchmarkProgressFill.style.width = `${progress}%`;
+      }, 1000);
+
+      // Run benchmark
+      const results = await this.benchmarkService.runBenchmarkSuite({
+        providers: selectedProviders,
+        testCategories: selectedCategories,
+        batchSize: batchSize
+      });
+
+      clearInterval(progressInterval);
+      this.benchmarkProgressFill.style.width = '100%';
+      this.benchmarkProgressText.textContent = 'Benchmark complete!';
+
+      // Display results
+      this.displayBenchmarkResults(results);
+
+      setTimeout(() => {
+        this.benchmarkProgress.classList.add('hidden');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error running benchmark:', error);
+      this.showError('Failed to run benchmark: ' + error.message);
+      this.benchmarkProgress.classList.add('hidden');
+    } finally {
+      this.runBenchmarkBtn.disabled = false;
+    }
+  }
+
+  /**
+   * Display benchmark results
+   */
+  displayBenchmarkResults(results) {
+    this.benchmarkResults.classList.remove('hidden');
+
+    // Summary metrics
+    this.benchmarkAccuracy.textContent = `${results.summary.averageAccuracy.toFixed(1)}%`;
+    this.benchmarkSpeed.textContent = `${results.summary.averageSpeed.toFixed(0)}ms`;
+    this.benchmarkCost.textContent = `$${results.summary.totalCost.toFixed(4)}`;
+    this.benchmarkTests.textContent = results.summary.totalTests;
+
+    // Generate report
+    const report = this.benchmarkService.generateReport(results);
+
+    // Best model
+    if (report.bestModel) {
+      this.bestBenchmarkModel.textContent = `${report.bestModel.provider} / ${report.bestModel.model}`;
+      this.bestBenchmarkMetrics.textContent =
+        `${report.bestModel.successRate.toFixed(1)}% accuracy, ${report.bestModel.averageSpeed.toFixed(0)}ms avg, $${report.bestModel.totalCost.toFixed(4)} cost`;
+    }
+
+    // Comparison table
+    this.benchmarkTableBody.innerHTML = '';
+    report.comparison.forEach(model => {
+      const row = document.createElement('tr');
+      const successClass = parseFloat(model.successRate) >= 90 ? 'high' :
+        parseFloat(model.successRate) >= 70 ? 'medium' : 'low';
+
+      row.innerHTML = `
+        <td>${model.provider}</td>
+        <td><strong>${model.model}</strong></td>
+        <td><span class="success-rate ${successClass}">${model.successRate}%</span></td>
+        <td>${model.averageSpeed}ms</td>
+        <td>$${model.totalCost}</td>
+        <td>${model.folderConsistency}%</td>
+        <td><strong>${model.score}</strong></td>
+      `;
+      this.benchmarkTableBody.appendChild(row);
+    });
+
+    // Recommendations
+    this.benchmarkRecommendationsList.innerHTML = '';
+    report.recommendations.forEach(rec => {
+      const recDiv = document.createElement('div');
+      recDiv.className = 'recommendation-item';
+
+      const icon = rec.type === 'best_overall' ? '🏆' :
+        rec.type === 'fastest' ? '⚡' :
+          rec.type === 'cheapest' ? '💰' :
+            rec.type === 'accurate' ? '🎯' : '📊';
+
+      recDiv.innerHTML = `
+        <div class="rec-icon">${icon}</div>
+        <div class="rec-content">
+          <strong>${rec.message}</strong>
+          <p>${rec.details}</p>
+        </div>
+      `;
+      this.benchmarkRecommendationsList.appendChild(recDiv);
+    });
+
+    // Refresh history
+    this.loadBenchmarkHistory();
+  }
+
+  /**
+   * Load benchmark history
+   */
+  async loadBenchmarkHistory() {
+    try {
+      const limit = parseInt(this.benchmarkHistoryLimit.value);
+      const history = await this.benchmarkService.getHistory(limit);
+
+      if (history.length === 0) {
+        this.benchmarkHistoryList.innerHTML = '<p>No benchmark history available. Run a benchmark to get started.</p>';
+        return;
+      }
+
+      let html = '<div class="history-items">';
+      history.forEach((result, index) => {
+        const date = new Date(result.timestamp).toLocaleString();
+        const bestModel = this.benchmarkService.generateReport(result).bestModel;
+
+        html += `
+          <div class="history-item">
+            <div class="history-header">
+              <strong>Benchmark #${history.length - index}</strong>
+              <span class="history-date">${date}</span>
+            </div>
+            <div class="history-stats">
+              <span>Tests: ${result.summary.totalTests}</span>
+              <span>Accuracy: ${result.summary.averageAccuracy.toFixed(1)}%</span>
+              <span>Speed: ${result.summary.averageSpeed.toFixed(0)}ms</span>
+              <span>Cost: $${result.summary.totalCost.toFixed(4)}</span>
+            </div>
+            ${bestModel ? `<div class="history-best">Best: ${bestModel.provider}/${bestModel.model}</div>` : ''}
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      this.benchmarkHistoryList.innerHTML = html;
+    } catch (error) {
+      console.error('Error loading benchmark history:', error);
+      this.benchmarkHistoryList.innerHTML = '<p>Error loading history</p>';
+    }
+  }
+
+  /**
+   * Clear benchmark history
+   */
+  async clearBenchmarkHistory() {
+    if (!confirm('Are you sure you want to clear all benchmark history?')) {
+      return;
+    }
+
+    try {
+      await this.benchmarkService.clearHistory();
+      this.loadBenchmarkHistory();
+      this.showSuccess('Benchmark history cleared');
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      this.showError('Failed to clear benchmark history');
+    }
   }
 
   /**

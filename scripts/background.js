@@ -15,7 +15,8 @@ try {
     'snapshotManager.js',
     'analyticsService.js',
     'performanceMonitor.js',
-    'modelComparisonService.js'
+    'modelComparisonService.js',
+    'benchmarkService.js'
   );
   console.log('Background scripts loaded successfully');
 
@@ -30,7 +31,8 @@ try {
     SnapshotManager: typeof SnapshotManager !== 'undefined',
     AnalyticsService: typeof AnalyticsService !== 'undefined',
     PerformanceMonitor: typeof PerformanceMonitor !== 'undefined',
-    ModelComparisonService: typeof ModelComparisonService !== 'undefined'
+    ModelComparisonService: typeof ModelComparisonService !== 'undefined',
+    BenchmarkService: typeof BenchmarkService !== 'undefined'
   });
 
 } catch (error) {
