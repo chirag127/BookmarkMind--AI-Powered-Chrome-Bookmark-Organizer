@@ -1184,27 +1184,21 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
       return;
     }
 
-    // Extract learning patterns from the bookmark
-    const patterns = extractLearningPatterns(bookmarkData, newFolder);
+    // Use LearningService to record the manual correction
+    const learningService = new LearningService();
+    await learningService.recordCorrection(bookmarkData, oldFolder, newFolder, true);
+    console.log(`📚 ✅ MANUAL LEARNING SUCCESS: Learned from USER move: "${bookmarkData.title}" → "${newFolder}"`);
 
-    if (patterns.length > 0) {
-      await saveLearningPatterns(patterns, newFolder);
-      console.log(`📚 ✅ MANUAL LEARNING SUCCESS: Learned ${patterns.length} patterns from USER move: ${patterns.join(', ')} → "${newFolder}"`);
-
-      // Send notification to options page about learning
-      try {
-        chrome.runtime.sendMessage({
-          type: 'LEARNING_DATA_UPDATED',
-          count: patterns.length,
-          patterns: patterns,
-          category: newFolder,
-          source: 'MANUAL_USER_MOVE'
-        });
-      } catch (error) {
-        console.warn('Failed to notify about learning update:', error);
-      }
-    } else {
-      console.log('📚 No patterns extracted from this manual move');
+    // Send notification to options page about learning
+    try {
+      chrome.runtime.sendMessage({
+        type: 'LEARNING_DATA_UPDATED',
+        count: 1,
+        category: newFolder,
+        source: 'MANUAL_USER_MOVE'
+      });
+    } catch (error) {
+      console.warn('Failed to notify about learning update:', error);
     }
 
   } catch (error) {
@@ -1329,6 +1323,8 @@ function calculateByteSize(str) {
 
 /**
  * Save learning patterns to storage with deduplication, size validation, and auto-pruning
+ * DEPRECATED: This function is no longer used. Use LearningService.recordCorrection() instead.
+ * Keeping for backward compatibility but will be removed in future version.
  */
 async function saveLearningPatterns(patterns, category) {
   try {

@@ -8,6 +8,7 @@ class Categorizer {
     this.bookmarkService = new BookmarkService();
     this.aiProcessor = new AIProcessor();
     this.folderManager = new FolderManager();
+    this.learningService = typeof LearningService !== 'undefined' ? new LearningService() : null;
     this.snapshotManager = typeof SnapshotManager !== 'undefined' ? new SnapshotManager() : null;
     this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
     this.isProcessing = false;
@@ -534,24 +535,11 @@ class Categorizer {
       if (!bookmark || !bookmark[0]) return;
 
       const bookmarkData = bookmark[0];
-      const learningData = await this._getLearningData();
-
-      // Extract patterns from URL and title
-      const url = new URL(bookmarkData.url);
-      const domain = url.hostname.replace('www.', '');
-      const title = bookmarkData.title.toLowerCase();
-
-      // Store learning patterns
-      learningData[domain] = correctedCategory;
-
-      // Store title keywords (if title has meaningful words)
-      const titleWords = title.split(/\s+/).filter(word => word.length > 3);
-      titleWords.forEach(word => {
-        learningData[word] = correctedCategory;
-      });
-
-      await this._saveLearningData(learningData);
-      console.log(`Recorded correction: ${originalCategory} → ${correctedCategory} for ${domain}`);
+      if (!this.learningService) {
+        this.learningService = new LearningService();
+      }
+      await this.learningService.recordCorrection(bookmarkData, originalCategory, correctedCategory, true);
+      console.log(`Recorded correction: ${originalCategory} → ${correctedCategory} for "${bookmarkData.title}"`);
 
     } catch (error) {
       console.error('Error recording correction:', error);
@@ -620,23 +608,18 @@ class Categorizer {
    */
   async _getLearningData() {
     try {
-      const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
-      return result.bookmarkMindLearning || {};
+      if (!this.learningService) {
+        this.learningService = new LearningService();
+      }
+      return await this.learningService.getLearningData();
     } catch (error) {
       console.error('Error getting learning data:', error);
-      return {};
-    }
-  }
-
-  /**
-   * Save learning data
-   * @param {Object} learningData - Learning data to save
-   */
-  async _saveLearningData(learningData) {
-    try {
-      await chrome.storage.sync.set({ bookmarkMindLearning: learningData });
-    } catch (error) {
-      console.error('Error saving learning data:', error);
+      return {
+        version: '1.0',
+        patterns: {},
+        corrections: [],
+        lastUpdated: null
+      };
     }
   }
 
