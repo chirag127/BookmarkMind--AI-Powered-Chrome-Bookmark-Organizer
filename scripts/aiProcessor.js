@@ -1008,12 +1008,14 @@ class AIProcessor {
      * @param {Array} bookmarks - Array of bookmark objects
      * @param {Array} suggestedCategories - Suggested categories (optional)
      * @param {Object} learningData - Previous user corrections
+     * @param {Function} progressCallback - Optional callback for batch progress (batchNum, totalBatches) => void
      * @returns {Promise<Object>} Object with categories and categorization results
      */
     async categorizeBookmarks(
         bookmarks,
         suggestedCategories = [],
-        learningData = {}
+        learningData = {},
+        progressCallback = null
     ) {
         if (!this.apiKey) {
             throw new Error("API key not set");
@@ -1109,6 +1111,15 @@ class AIProcessor {
                         }" - ${bookmark.url?.substring(0, 50)}...`
                     );
                 });
+
+                // Call progress callback if provided
+                if (progressCallback) {
+                    try {
+                        progressCallback(batchNumber, totalBatches);
+                    } catch (err) {
+                        console.warn('Progress callback error:', err);
+                    }
+                }
 
                 try {
                     // Process entire batch with AI (50 bookmarks at once)

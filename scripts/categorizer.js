@@ -115,38 +115,56 @@ class Categorizer {
         return { processed: bookmarks.length, categorized: 0, errors: 0, message: 'All bookmarks are already organized!' };
       }
 
-      // For large collections, warn user and potentially limit processing
-      if (uncategorizedBookmarks.length > 500) {
-        console.warn(`Large collection detected: ${uncategorizedBookmarks.length} bookmarks. This may take 10+ minutes.`);
+      // Calculate estimated processing time based on batch size
+      const batchSize = settings.batchSize || 50;
+      const estimatedBatches = Math.ceil(uncategorizedBookmarks.length / batchSize);
+      const estimatedMinutes = Math.ceil(estimatedBatches * 0.5);
 
-        // Optionally limit to first 500 bookmarks for testing
-        if (uncategorizedBookmarks.length > 1000) {
-          console.log('Limiting to first 500 bookmarks to prevent timeout. Use smaller batches for full processing.');
-          uncategorizedBookmarks = uncategorizedBookmarks.slice(0, 500);
-        }
+      console.log(`Processing ${uncategorizedBookmarks.length} bookmarks in ${estimatedBatches} batches (batch size: ${batchSize})`);
+      console.log(`Estimated time: ${estimatedMinutes} minutes`);
+
+      if (uncategorizedBookmarks.length > 500) {
+        console.log(`Large collection detected: ${uncategorizedBookmarks.length} bookmarks will be processed in batches.`);
       }
 
       // Get learning data
       const learningData = await this._getLearningData();
 
-      // Categorize bookmarks using AI with dynamic category generation
+      // Categorize bookmarks using AI with dynamic category generation and batch progress tracking
       console.log('Categorizer: Starting AI categorization with dynamic categories...');
-      progressCallback?.({ stage: 'categorizing', progress: 30 });
+      progressCallback?.({ stage: 'categorizing', progress: 30, message: `Processing ${uncategorizedBookmarks.length} bookmarks in batches...` });
 
-      // Add timeout for the entire AI categorization process
-      const categorizationPromise = this.aiProcessor.categorizeBookmarks(
+      // Process bookmarks in batches with progress tracking
+      const batchSize = settings.batchSize || 50;
+      const totalBatches = Math.ceil(uncategorizedBookmarks.length / batchSize);
+      
+      console.log(`Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks in ${totalBatches} batches of ${batchSize}`);
+
+      // Create a progress-aware categorization wrapper
+      const categorizationPromise = this._categorizeWithProgress(
         uncategorizedBookmarks,
-        settings.categories, // Use as suggested categories
-        learningData
+        settings.categories,
+        learningData,
+        batchSize,
+        (batchProgress) => {
+          // Map batch progress (0-100) to categorization stage (30-70)
+          const overallProgress = 30 + Math.floor(batchProgress * 0.4);
+          progressCallback?.({ 
+            stage: 'categorizing', 
+            progress: overallProgress,
+            message: `Processing batch ${batchProgress.currentBatch}/${batchProgress.totalBatches}...`
+          });
+        }
       );
 
-      const timeoutMinutes = Math.ceil(uncategorizedBookmarks.length / 50) * 2; // 2 minutes per batch
-      const timeoutMs = Math.max(120000, timeoutMinutes * 60000); // At least 2 minutes
+      // Dynamic timeout based on actual batch count (3 minutes per batch minimum)
+      const timeoutMinutes = Math.max(5, totalBatches * 3);
+      const timeoutMs = timeoutMinutes * 60000;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`AI categorization timeout after ${Math.ceil(timeoutMs / 60000)} minutes. Try with fewer bookmarks or check your internet connection.`)), timeoutMs);
+        setTimeout(() => reject(new Error(`AI categorization timeout after ${timeoutMinutes} minutes. Check your internet connection or reduce batch size.`)), timeoutMs);
       });
 
-      console.log(`Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks (estimated ${Math.ceil(uncategorizedBookmarks.length / 50)} batches, timeout: ${Math.ceil(timeoutMs / 60000)} minutes)`);
+      console.log(`Categorizer: Timeout set to ${timeoutMinutes} minutes for ${totalBatches} batches`);
 
       const categorizationData = await Promise.race([categorizationPromise, timeoutPromise]);
 
@@ -284,73 +302,42 @@ class Categorizer {
       const learningData = await this._getLearningData();
       console.log(`Categorizer: Loaded ${Object.keys(learningData).length} learning patterns`);
 
-      // Process bookmarks in batches for better performance
-      const batchSize = Math.min(settings.batchSize || 20, 50); // Limit batch size for bulk operations
-      const batches = [];
-      for (let i = 0; i < validBookmarks.length; i += batchSize) {
-        batches.push(validBookmarks.slice(i, i + batchSize));
-      }
+      // Use the same batch processing approach with progress tracking
+      console.log(`Bulk categorization: Processing ${validBookmarks.length} bookmarks with batch size ${settings.batchSize || 50}`);
 
-      console.log(`Processing ${validBookmarks.length} bookmarks in ${batches.length} batches of ${batchSize}`);
+      progressCallback?.({
+        stage: 'categorizing',
+        progress: 20,
+        message: `Processing ${validBookmarks.length} bookmarks in batches...`
+      });
 
-      let totalCategorized = 0;
-      let totalErrors = 0;
-      const allCategorizations = [];
-      const categoriesUsed = new Set();
-
-      // Process each batch
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        const batchProgress = Math.round(20 + (batchIndex / batches.length) * 60);
-
-        progressCallback?.({
-          stage: 'categorizing',
-          progress: batchProgress,
-          message: `Processing batch ${batchIndex + 1} of ${batches.length}...`
-        });
-
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} bookmarks`);
-
-        try {
-          // Get AI categorizations for this batch
-          const batchCategorizations = await this.aiProcessor.categorizeBookmarks(
-            batch,
-            settings,
-            learningData
-          );
-
-          console.log(`Received ${batchCategorizations.length} categorizations for batch ${batchIndex + 1}`);
-          allCategorizations.push(...batchCategorizations);
-
-          // Track categories used
-          batchCategorizations.forEach(cat => {
-            if (cat.category && cat.category !== 'Other') {
-              categoriesUsed.add(cat.category);
-            }
-          });
-
-        } catch (error) {
-          console.error(`Error processing batch ${batchIndex + 1}:`, error);
-          totalErrors += batch.length;
-
-          // Add failed categorizations as "Other"
-          batch.forEach(bookmark => {
-            allCategorizations.push({
-              bookmarkId: bookmark.id,
-              category: 'Other',
-              confidence: 0,
-              reasoning: 'Failed to categorize due to error'
-            });
+      // Use aiProcessor's categorizeBookmarks which handles batching internally
+      const categorizationData = await this.aiProcessor.categorizeBookmarks(
+        validBookmarks,
+        settings.categories,
+        learningData,
+        (batchNum, totalBatches) => {
+          const batchProgress = Math.round(20 + ((batchNum / totalBatches) * 60));
+          progressCallback?.({
+            stage: 'categorizing',
+            progress: batchProgress,
+            message: `Processing batch ${batchNum} of ${totalBatches}...`
           });
         }
+      );
 
-        // Small delay between batches to prevent API rate limiting
-        if (batchIndex < batches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-
+      const allCategorizations = categorizationData.results || [];
       console.log(`Bulk categorization complete. Got ${allCategorizations.length} categorizations`);
+
+      // Track categories used
+      const categoriesUsed = new Set();
+      allCategorizations.forEach(cat => {
+        if (cat.category && cat.category !== 'Other') {
+          categoriesUsed.add(cat.category);
+        }
+      });
+
+      let totalErrors = 0;
 
       // Organize bookmarks into folders
       progressCallback?.({ stage: 'organizing', progress: 80 });
@@ -573,6 +560,41 @@ class Categorizer {
   }
 
   /**
+   * Categorize bookmarks with progress tracking across batches
+   * @param {Array} bookmarks - All bookmarks to categorize
+   * @param {Array} suggestedCategories - Suggested categories
+   * @param {Object} learningData - Learning data
+   * @param {number} batchSize - Size of each batch
+   * @param {Function} progressCallback - Progress callback
+   * @returns {Promise<Object>} Categorization results
+   */
+  async _categorizeWithProgress(bookmarks, suggestedCategories, learningData, batchSize, progressCallback) {
+    const totalBatches = Math.ceil(bookmarks.length / batchSize);
+    console.log(`Processing ${bookmarks.length} bookmarks in ${totalBatches} batches of ${batchSize}`);
+
+    let currentBatch = 0;
+
+    // Call the aiProcessor's categorizeBookmarks method which handles batching internally
+    // but wrap it to provide progress updates
+    const results = await this.aiProcessor.categorizeBookmarks(
+      bookmarks,
+      suggestedCategories,
+      learningData,
+      (batchNum, total) => {
+        currentBatch = batchNum;
+        const batchProgress = Math.floor((batchNum / total) * 100);
+        progressCallback?.({
+          currentBatch: batchNum,
+          totalBatches: total,
+          progress: batchProgress
+        });
+      }
+    );
+
+    return results;
+  }
+
+  /**
    * Get user settings
    * @returns {Promise<Object>} User settings
    */
@@ -580,7 +602,8 @@ class Categorizer {
     const defaultSettings = {
       apiKey: '',
       categories: ['Work', 'Personal', 'Shopping', 'Entertainment', 'News', 'Social', 'Learning', 'Other'],
-      lastSortTime: 0
+      lastSortTime: 0,
+      batchSize: 50
     };
 
     try {
