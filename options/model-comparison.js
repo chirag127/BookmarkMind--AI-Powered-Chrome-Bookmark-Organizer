@@ -433,8 +433,16 @@ class ModelComparisonController {
         return;
       }
 
+      if (sampleSize < 1 || sampleSize > 50) {
+        this.showError('Sample size must be between 1 and 50');
+        return;
+      }
+
       this.startABTestBtn.disabled = true;
       this.startABTestBtn.textContent = 'Running test...';
+      
+      // Hide previous results
+      this.abtestResults.classList.add('hidden');
 
       // Get sample bookmarks
       const bookmarksResponse = await chrome.runtime.sendMessage({
@@ -445,7 +453,15 @@ class ModelComparisonController {
         throw new Error('Failed to get bookmarks');
       }
 
-      const bookmarks = bookmarksResponse.data.slice(0, sampleSize);
+      const allBookmarks = bookmarksResponse.data || [];
+      if (allBookmarks.length === 0) {
+        throw new Error('No bookmarks found. Please add some bookmarks first.');
+      }
+
+      // Take random sample
+      const bookmarks = this._getRandomSample(allBookmarks, sampleSize);
+      
+      this.startABTestBtn.textContent = `Processing ${bookmarks.length} bookmarks...`;
 
       // Run A/B test
       const response = await chrome.runtime.sendMessage({
@@ -455,15 +471,26 @@ class ModelComparisonController {
 
       if (response && response.success) {
         this.displayABTestResults(response.data);
-        this.showSuccess('A/B test completed successfully');
+        this.showSuccess(`A/B test completed! Processed ${bookmarks.length} bookmarks.`);
+      } else {
+        throw new Error(response.error || 'Failed to run A/B test');
       }
     } catch (error) {
       console.error('Error in A/B test:', error);
-      this.showError('Failed to run A/B test');
+      this.showError(`Failed to run A/B test: ${error.message}`);
     } finally {
       this.startABTestBtn.disabled = false;
       this.startABTestBtn.textContent = 'Start A/B Test';
     }
+  }
+
+  /**
+   * Get random sample from array
+   * @private
+   */
+  _getRandomSample(array, size) {
+    const shuffled = [...array].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(size, array.length));
   }
 
   /**
@@ -475,14 +502,59 @@ class ModelComparisonController {
     document.getElementById('modelAName').textContent = data.modelA;
     document.getElementById('modelBName').textContent = data.modelB;
 
-    // Update metrics (placeholder - would need actual data)
-    document.getElementById('modelASuccessRate').textContent = '95%';
-    document.getElementById('modelASpeed').textContent = `${data.resultsA.time}ms`;
-    document.getElementById('modelACost').textContent = '$0.001';
+    // Update metrics from actual results
+    const resultsA = data.resultsA;
+    const resultsB = data.resultsB;
 
-    document.getElementById('modelBSuccessRate').textContent = '92%';
-    document.getElementById('modelBSpeed').textContent = `${data.resultsB.time}ms`;
-    document.getElementById('modelBCost').textContent = '$0.002';
+    // Model A metrics
+    const successRateA = resultsA.success && resultsA.metrics
+      ? Math.round(resultsA.metrics.successRate * 100)
+      : 0;
+    document.getElementById('modelASuccessRate').textContent = `${successRateA}%`;
+    document.getElementById('modelASpeed').textContent = `${resultsA.time}ms`;
+
+    // Calculate cost for Model A
+    const costA = this._estimateCost(data.modelA, resultsA.metrics);
+    document.getElementById('modelACost').textContent = `$${costA.toFixed(6)}`;
+
+    // Model B metrics
+    const successRateB = resultsB.success && resultsB.metrics
+      ? Math.round(resultsB.metrics.successRate * 100)
+      : 0;
+    document.getElementById('modelBSuccessRate').textContent = `${successRateB}%`;
+    document.getElementById('modelBSpeed').textContent = `${resultsB.time}ms`;
+
+    // Calculate cost for Model B
+    const costB = this._estimateCost(data.modelB, resultsB.metrics);
+    document.getElementById('modelBCost').textContent = `$${costB.toFixed(6)}`;
+
+    // Reload dashboard to show updated stats
+    this.loadDashboard();
+  }
+
+  /**
+   * Estimate cost for a model based on token usage
+   * @private
+   */
+  _estimateCost(model, metrics) {
+    if (!metrics) return 0;
+
+    const pricing = {
+      'gemini-2.5-pro': { input: 1.25, output: 5.00 },
+      'gemini-2.5-flash': { input: 0.075, output: 0.30 },
+      'gemini-2.5-flash-preview-09-2025': { input: 0.075, output: 0.30 },
+      'llama-3.3-70b': { input: 0.60, output: 0.60 },
+      'llama-3.3-70b-versatile': { input: 0.00, output: 0.00 },
+      'qwen-3-32b': { input: 0.10, output: 0.10 },
+      'llama3.1-8b': { input: 0.10, output: 0.10 }
+    };
+
+    const modelPricing = pricing[model] || { input: 0.10, output: 0.30 };
+    const inputTokens = metrics.inputTokens || 0;
+    const outputTokens = metrics.outputTokens || 0;
+
+    return ((inputTokens / 1000000) * modelPricing.input) +
+           ((outputTokens / 1000000) * modelPricing.output);
   }
 
   /**

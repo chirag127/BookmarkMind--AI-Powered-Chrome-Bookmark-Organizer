@@ -1514,15 +1514,29 @@ async function handleStartABTest(data, sendResponse) {
 
     // Process with both models
     const startTimeA = Date.now();
-    // TODO: Implement model-specific categorization
-    const resultsA = { categories: [], success: true, time: Date.now() - startTimeA };
+    const resultsA = await processWithSpecificModel(modelA, bookmarks, aiProcessor, settings);
+    resultsA.time = Date.now() - startTimeA;
     
     const startTimeB = Date.now();
-    // TODO: Implement model-specific categorization
-    const resultsB = { categories: [], success: true, time: Date.now() - startTimeB };
+    const resultsB = await processWithSpecificModel(modelB, bookmarks, aiProcessor, settings);
+    resultsB.time = Date.now() - startTimeB;
 
-    // Record comparison
+    // Record comparison with full metrics
     const modelComparisonService = new ModelComparisonService();
+    
+    // Calculate costs
+    const costA = modelComparisonService._calculateCost({
+      model: modelA,
+      inputTokens: resultsA.metrics?.inputTokens || 0,
+      outputTokens: resultsA.metrics?.outputTokens || 0
+    });
+    
+    const costB = modelComparisonService._calculateCost({
+      model: modelB,
+      inputTokens: resultsB.metrics?.inputTokens || 0,
+      outputTokens: resultsB.metrics?.outputTokens || 0
+    });
+    
     await modelComparisonService.recordABTest({
       modelA,
       modelB,
@@ -1530,8 +1544,25 @@ async function handleStartABTest(data, sendResponse) {
       resultsA,
       resultsB,
       speedA: resultsA.time,
-      speedB: resultsB.time
+      speedB: resultsB.time,
+      accuracyA: resultsA.success ? resultsA.metrics?.successRate : 0,
+      accuracyB: resultsB.success ? resultsB.metrics?.successRate : 0,
+      costA,
+      costB
     });
+    
+    // Record performance metrics for both models
+    if (resultsA.metrics) {
+      resultsA.metrics.responseTime = resultsA.time;
+      await modelComparisonService.recordModelPerformance(resultsA.metrics);
+      await modelComparisonService.trackCost(resultsA.metrics);
+    }
+    
+    if (resultsB.metrics) {
+      resultsB.metrics.responseTime = resultsB.time;
+      await modelComparisonService.recordModelPerformance(resultsB.metrics);
+      await modelComparisonService.trackCost(resultsB.metrics);
+    }
 
     sendResponse({
       success: true,
@@ -1545,6 +1576,85 @@ async function handleStartABTest(data, sendResponse) {
   } catch (error) {
     console.error('Error in A/B test:', error);
     sendResponse({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Process bookmarks with a specific model
+ * @param {string} modelName - Model name to use
+ * @param {Array} bookmarks - Bookmarks to process
+ * @param {AIProcessor} aiProcessor - AI processor instance
+ * @param {Object} settings - Settings object
+ * @returns {Promise<Object>} Results with categories, success, and metrics
+ */
+async function processWithSpecificModel(modelName, bookmarks, aiProcessor, settings) {
+  try {
+    // Determine provider and process accordingly
+    let provider = 'gemini';
+    if (modelName.includes('llama') || modelName.includes('qwen') || modelName.includes('gpt-oss')) {
+      if (settings.cerebrasApiKey && !modelName.includes('versatile') && !modelName.includes('instant')) {
+        provider = 'cerebras';
+      } else if (settings.groqApiKey) {
+        provider = 'groq';
+      }
+    }
+
+    // Build the prompt for categorization
+    const prompt = await aiProcessor._buildPrompt(bookmarks, [], {});
+    
+    let result;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    
+    if (provider === 'gemini') {
+      result = await aiProcessor._processWithGemini(bookmarks, [], {}, modelName);
+    } else if (provider === 'cerebras') {
+      result = await aiProcessor._processWithCerebras(prompt, bookmarks, modelName);
+    } else if (provider === 'groq') {
+      result = await aiProcessor._processWithGroq(prompt, bookmarks, modelName);
+    }
+
+    // Extract categories from results
+    const categories = [...new Set(result.map(r => r.category).filter(Boolean))];
+    
+    // Estimate token counts (rough approximation)
+    const promptText = JSON.stringify(bookmarks);
+    inputTokens = Math.ceil(promptText.length / 4);
+    outputTokens = Math.ceil(JSON.stringify(result).length / 4);
+
+    return {
+      categories,
+      results: result,
+      success: true,
+      metrics: {
+        model: modelName,
+        provider,
+        successRate: result.length / bookmarks.length,
+        responseTime: 0, // Will be set by caller
+        inputTokens,
+        outputTokens,
+        categoriesGenerated: categories.length,
+        bookmarkType: 'general'
+      }
+    };
+  } catch (error) {
+    console.error(`Error processing with ${modelName}:`, error);
+    return {
+      categories: [],
+      results: [],
+      success: false,
+      error: error.message,
+      metrics: {
+        model: modelName,
+        provider: 'unknown',
+        successRate: 0,
+        responseTime: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        categoriesGenerated: 0,
+        errorType: error.message
+      }
+    };
   }
 }
 

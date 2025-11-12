@@ -306,6 +306,21 @@
   margin-bottom: 24px;
 }
 
+.abtest-config .help-text {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.abtest-config optgroup {
+  font-weight: 600;
+  color: #333;
+}
+
+.abtest-config option {
+  font-weight: normal;
+}
+
 .abtest-inputs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
