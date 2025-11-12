@@ -1184,10 +1184,16 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
       return;
     }
 
-    // Use LearningService to record the manual correction
+    // Record manual correction using LearningService
     const learningService = new LearningService();
-    await learningService.recordCorrection(bookmarkData, oldFolder, newFolder, true);
-    console.log(`📚 ✅ MANUAL LEARNING SUCCESS: Learned from USER move: "${bookmarkData.title}" → "${newFolder}"`);
+    await learningService.recordCorrection(
+      bookmarkData,
+      oldFolder,
+      newFolder,
+      true // isManual = true for user-initiated moves
+    );
+
+    console.log(`📚 ✅ MANUAL LEARNING SUCCESS: Learned from USER move: "${bookmarkData.title}" from "${oldFolder}" to "${newFolder}"`);
 
     // Send notification to options page about learning
     try {
@@ -1242,12 +1248,8 @@ async function getFolderPath(folderId) {
   }
 }
 
-/**
- * Extract learning patterns from bookmark data
- */
-function extractLearningPatterns(bookmark, targetCategory) {
-  const patterns = [];
 
+<<<<<<< HEAD
   try {
     // Extract domain pattern
     if (bookmark.url) {
@@ -1456,6 +1458,8 @@ async function saveLearningPatterns(patterns, category) {
     throw error;
   }
 }
+=======
+>>>>>>> 2fc1468 (Refactor bookmark move listener and manual learning logic to use LearningService.recordCorrection())
 
 /**
  * Handle model comparison dashboard request
