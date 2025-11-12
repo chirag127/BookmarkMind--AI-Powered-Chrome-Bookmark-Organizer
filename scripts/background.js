@@ -120,13 +120,22 @@ async function initializeExtension() {
       console.log('Initialized default settings');
     }
 
-    // Initialize learning data storage
-    const existingLearning = await chrome.storage.sync.get(['bookmarkMindLearning']);
-    if (!existingLearning.bookmarkMindLearning) {
-      await chrome.storage.sync.set({
+    // Migrate learning data from sync to local storage for backwards compatibility
+    const existingSyncLearning = await chrome.storage.sync.get(['bookmarkMindLearning']);
+    const existingLocalLearning = await chrome.storage.local.get(['bookmarkMindLearning']);
+
+    if (existingSyncLearning.bookmarkMindLearning && !existingLocalLearning.bookmarkMindLearning) {
+      // Migration: Copy sync data to local storage
+      await chrome.storage.local.set({
+        bookmarkMindLearning: existingSyncLearning.bookmarkMindLearning
+      });
+      console.log('Migrated learning data from sync to local storage');
+    } else if (!existingLocalLearning.bookmarkMindLearning) {
+      // Initialize learning data storage in local storage
+      await chrome.storage.local.set({
         bookmarkMindLearning: {}
       });
-      console.log('Initialized learning data storage');
+      console.log('Initialized learning data storage in local storage');
     }
 
   } catch (error) {
@@ -1323,8 +1332,8 @@ function calculateByteSize(str) {
  */
 async function saveLearningPatterns(patterns, category) {
   try {
-    // Get existing learning data
-    const result = await chrome.storage.sync.get(['bookmarkMindLearning']);
+    // Get existing learning data from local storage
+    const result = await chrome.storage.local.get(['bookmarkMindLearning']);
     const learningData = result.bookmarkMindLearning || {};
 
     const initialPatternCount = Object.keys(learningData).length;
@@ -1420,8 +1429,8 @@ async function saveLearningPatterns(patterns, category) {
 
       console.log(`✅ Final pattern count: ${learningEntries.length} (${byteSize} bytes)`);
 
-      // Save updated learning data
-      await chrome.storage.sync.set({ bookmarkMindLearning: learningDataObj });
+      // Save updated learning data to local storage
+      await chrome.storage.local.set({ bookmarkMindLearning: learningDataObj });
 
       // Update timestamp
       await chrome.storage.local.set({
