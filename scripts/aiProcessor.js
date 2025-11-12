@@ -3,6 +3,354 @@
  * Handles Gemini API integration for bookmark categorization
  */
 
+/**
+ * Request Queue Management System
+ * Handles provider-specific rate limits, priority ordering, throttling, and retry logic
+ */
+class RequestQueue {
+    constructor() {
+        this.queue = [];
+        this.processing = false;
+        this.requestHistory = new Map();
+        
+        this.rateLimits = {
+            gemini: { rpm: 15, maxQueueSize: 100 },
+            cerebras: { rpm: 60, maxQueueSize: 200 },
+            groq: { rpm: 30, maxQueueSize: 150 }
+        };
+        
+        this.priorities = {
+            high: 0,
+            normal: 1,
+            low: 2
+        };
+        
+        this.retryConfig = {
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 30000,
+            jitterFactor: 0.3
+        };
+        
+        this.metrics = {
+            requestsPerMinute: new Map(),
+            queueDepth: 0,
+            throttledRequests: 0,
+            totalRequests: 0,
+            successfulRequests: 0,
+            failedRequests: 0,
+            retriedRequests: 0,
+            averageWaitTime: 0,
+            providerMetrics: new Map()
+        };
+        
+        this._initializeProviderMetrics();
+        this._startMetricsCleanup();
+    }
+    
+    _initializeProviderMetrics() {
+        for (const provider of ['gemini', 'cerebras', 'groq']) {
+            this.metrics.providerMetrics.set(provider, {
+                requests: 0,
+                successful: 0,
+                failed: 0,
+                throttled: 0,
+                averageLatency: 0,
+                lastRequestTime: null
+            });
+        }
+    }
+    
+    _startMetricsCleanup() {
+        setInterval(() => {
+            const oneMinuteAgo = Date.now() - 60000;
+            for (const [timestamp] of this.requestHistory) {
+                if (timestamp < oneMinuteAgo) {
+                    this.requestHistory.delete(timestamp);
+                }
+            }
+            this._updateRequestsPerMinute();
+        }, 10000);
+    }
+    
+    _updateRequestsPerMinute() {
+        const now = Date.now();
+        const oneMinuteAgo = now - 60000;
+        
+        const overallCount = Array.from(this.requestHistory.keys())
+            .filter(ts => ts >= oneMinuteAgo).length;
+        this.metrics.requestsPerMinute.set('overall', overallCount);
+        
+        for (const provider of ['gemini', 'cerebras', 'groq']) {
+            const providerCount = Array.from(this.requestHistory.entries())
+                .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
+            this.metrics.requestsPerMinute.set(provider, providerCount);
+        }
+    }
+    
+    async enqueue(request, provider = 'gemini', priority = 'normal') {
+        const limits = this.rateLimits[provider];
+        if (!limits) {
+            throw new Error(`Unknown provider: ${provider}`);
+        }
+        
+        if (this.queue.length >= limits.maxQueueSize) {
+            this.metrics.throttledRequests++;
+            const providerMetrics = this.metrics.providerMetrics.get(provider);
+            providerMetrics.throttled++;
+            throw new Error(`Queue full for provider ${provider} (max: ${limits.maxQueueSize})`);
+        }
+        
+        const queueItem = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            request,
+            provider,
+            priority: this.priorities[priority] || this.priorities.normal,
+            priorityName: priority,
+            retries: 0,
+            enqueuedAt: Date.now(),
+            startedAt: null,
+            completedAt: null
+        };
+        
+        this.queue.push(queueItem);
+        this.queue.sort((a, b) => a.priority - b.priority);
+        this.metrics.queueDepth = this.queue.length;
+        this.metrics.totalRequests++;
+        
+        console.log(`📥 Enqueued ${provider} request (priority: ${priority}, queue: ${this.queue.length}/${limits.maxQueueSize})`);
+        
+        if (!this.processing) {
+            this._processQueue();
+        }
+        
+        return new Promise((resolve, reject) => {
+            queueItem.resolve = resolve;
+            queueItem.reject = reject;
+        });
+    }
+    
+    async _processQueue() {
+        if (this.processing || this.queue.length === 0) {
+            return;
+        }
+        
+        this.processing = true;
+        
+        while (this.queue.length > 0) {
+            const item = this.queue[0];
+            const provider = item.provider;
+            const limits = this.rateLimits[provider];
+            
+            if (await this._canProcessRequest(provider, limits)) {
+                this.queue.shift();
+                this.metrics.queueDepth = this.queue.length;
+                item.startedAt = Date.now();
+                
+                const waitTime = item.startedAt - item.enqueuedAt;
+                this.metrics.averageWaitTime = 
+                    (this.metrics.averageWaitTime * (this.metrics.totalRequests - 1) + waitTime) / 
+                    this.metrics.totalRequests;
+                
+                this._executeRequest(item);
+            } else {
+                const delay = this._calculateThrottleDelay(provider, limits);
+                console.log(`⏳ Rate limit reached for ${provider}, waiting ${Math.round(delay)}ms...`);
+                await this._delay(delay);
+            }
+        }
+        
+        this.processing = false;
+    }
+    
+    async _canProcessRequest(provider, limits) {
+        const now = Date.now();
+        const oneMinuteAgo = now - 60000;
+        
+        const recentRequests = Array.from(this.requestHistory.entries())
+            .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
+        
+        return recentRequests < limits.rpm;
+    }
+    
+    _calculateThrottleDelay(provider, limits) {
+        const now = Date.now();
+        const oneMinuteAgo = now - 60000;
+        
+        const recentRequestTimes = Array.from(this.requestHistory.entries())
+            .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider)
+            .map(([ts]) => ts)
+            .sort((a, b) => a - b);
+        
+        if (recentRequestTimes.length === 0) {
+            return 0;
+        }
+        
+        const oldestRequest = recentRequestTimes[0];
+        const timeUntilOldestExpires = 60000 - (now - oldestRequest);
+        
+        return Math.max(100, timeUntilOldestExpires + 100);
+    }
+    
+    async _executeRequest(item) {
+        const startTime = Date.now();
+        const providerMetrics = this.metrics.providerMetrics.get(item.provider);
+        providerMetrics.requests++;
+        
+        try {
+            console.log(`🚀 Executing ${item.provider} request (${item.priorityName}, attempt ${item.retries + 1}/${this.retryConfig.maxRetries + 1})`);
+            
+            const result = await item.request();
+            
+            const latency = Date.now() - startTime;
+            providerMetrics.successful++;
+            providerMetrics.averageLatency = 
+                (providerMetrics.averageLatency * (providerMetrics.successful - 1) + latency) / 
+                providerMetrics.successful;
+            providerMetrics.lastRequestTime = Date.now();
+            
+            this.requestHistory.set(Date.now(), item.provider);
+            this._updateRequestsPerMinute();
+            
+            item.completedAt = Date.now();
+            this.metrics.successfulRequests++;
+            
+            console.log(`✅ ${item.provider} request completed (${latency}ms)`);
+            item.resolve(result);
+        } catch (error) {
+            console.error(`❌ ${item.provider} request failed (attempt ${item.retries + 1}):`, error.message);
+            
+            if (this._shouldRetry(item, error)) {
+                item.retries++;
+                this.metrics.retriedRequests++;
+                
+                const delay = this._calculateRetryDelay(item.retries);
+                console.log(`🔄 Retrying ${item.provider} request in ${Math.round(delay)}ms (attempt ${item.retries + 1}/${this.retryConfig.maxRetries + 1})`);
+                
+                await this._delay(delay);
+                
+                this.queue.unshift(item);
+                this.metrics.queueDepth = this.queue.length;
+            } else {
+                providerMetrics.failed++;
+                this.metrics.failedRequests++;
+                item.reject(error);
+            }
+        }
+        
+        this._processQueue();
+    }
+    
+    _shouldRetry(item, error) {
+        if (item.retries >= this.retryConfig.maxRetries) {
+            return false;
+        }
+        
+        const retryableErrors = [
+            'rate limit',
+            'timeout',
+            'network',
+            '429',
+            '500',
+            '502',
+            '503',
+            '504',
+            'ECONNRESET',
+            'ETIMEDOUT'
+        ];
+        
+        const errorMessage = error.message?.toLowerCase() || '';
+        return retryableErrors.some(pattern => errorMessage.includes(pattern));
+    }
+    
+    _calculateRetryDelay(retryCount) {
+        const exponentialDelay = Math.min(
+            this.retryConfig.baseDelay * Math.pow(2, retryCount - 1),
+            this.retryConfig.maxDelay
+        );
+        
+        const jitter = exponentialDelay * this.retryConfig.jitterFactor * (Math.random() * 2 - 1);
+        
+        return Math.max(0, exponentialDelay + jitter);
+    }
+    
+    _delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    getMetrics() {
+        this._updateRequestsPerMinute();
+        
+        return {
+            queueDepth: this.metrics.queueDepth,
+            totalRequests: this.metrics.totalRequests,
+            successfulRequests: this.metrics.successfulRequests,
+            failedRequests: this.metrics.failedRequests,
+            retriedRequests: this.metrics.retriedRequests,
+            throttledRequests: this.metrics.throttledRequests,
+            averageWaitTime: Math.round(this.metrics.averageWaitTime),
+            requestsPerMinute: Object.fromEntries(this.metrics.requestsPerMinute),
+            providers: Object.fromEntries(
+                Array.from(this.metrics.providerMetrics.entries()).map(([provider, metrics]) => [
+                    provider,
+                    {
+                        ...metrics,
+                        averageLatency: Math.round(metrics.averageLatency),
+                        rpm: this.metrics.requestsPerMinute.get(provider) || 0,
+                        rpmLimit: this.rateLimits[provider].rpm,
+                        queueLimit: this.rateLimits[provider].maxQueueSize
+                    }
+                ])
+            )
+        };
+    }
+    
+    getDetailedMetrics() {
+        const metrics = this.getMetrics();
+        
+        console.log('\n📊 ═══════════════════════════════════════════════════════');
+        console.log('📊 REQUEST QUEUE METRICS');
+        console.log('📊 ═══════════════════════════════════════════════════════');
+        console.log(`📦 Queue Depth: ${metrics.queueDepth}`);
+        console.log(`📈 Total Requests: ${metrics.totalRequests}`);
+        console.log(`✅ Successful: ${metrics.successfulRequests}`);
+        console.log(`❌ Failed: ${metrics.failedRequests}`);
+        console.log(`🔄 Retried: ${metrics.retriedRequests}`);
+        console.log(`⏸️  Throttled: ${metrics.throttledRequests}`);
+        console.log(`⏱️  Average Wait: ${metrics.averageWaitTime}ms`);
+        console.log(`🕐 Overall RPM: ${metrics.requestsPerMinute.overall || 0}`);
+        console.log('');
+        console.log('📊 PROVIDER METRICS:');
+        
+        for (const [provider, stats] of Object.entries(metrics.providers)) {
+            console.log(`\n  🔹 ${provider.toUpperCase()}`);
+            console.log(`     Requests: ${stats.requests}`);
+            console.log(`     Successful: ${stats.successful}`);
+            console.log(`     Failed: ${stats.failed}`);
+            console.log(`     Throttled: ${stats.throttled}`);
+            console.log(`     RPM: ${stats.rpm}/${stats.rpmLimit}`);
+            console.log(`     Avg Latency: ${stats.averageLatency}ms`);
+            console.log(`     Queue Limit: ${stats.queueLimit}`);
+        }
+        
+        console.log('📊 ═══════════════════════════════════════════════════════\n');
+        
+        return metrics;
+    }
+    
+    clearMetrics() {
+        this.requestHistory.clear();
+        this.metrics.throttledRequests = 0;
+        this.metrics.totalRequests = 0;
+        this.metrics.successfulRequests = 0;
+        this.metrics.failedRequests = 0;
+        this.metrics.retriedRequests = 0;
+        this.metrics.averageWaitTime = 0;
+        this._initializeProviderMetrics();
+        console.log('🧹 Request queue metrics cleared');
+    }
+}
+
 class AIProcessor {
     constructor() {
         this.apiKey = null;
@@ -21,6 +369,8 @@ class AIProcessor {
             typeof PerformanceMonitor !== "undefined"
                 ? new PerformanceMonitor()
                 : null;
+
+        this.requestQueue = new RequestQueue();
 
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
@@ -599,6 +949,28 @@ class AIProcessor {
     setCustomModelConfig(config) {
         this.customModelConfig = config;
         console.log("🔧 Custom model configuration set:", config);
+    }
+
+    /**
+     * Get request queue metrics
+     * @returns {Object} Queue metrics
+     */
+    getQueueMetrics() {
+        return this.requestQueue.getMetrics();
+    }
+
+    /**
+     * Display detailed queue metrics
+     */
+    displayQueueMetrics() {
+        return this.requestQueue.getDetailedMetrics();
+    }
+
+    /**
+     * Clear request queue metrics
+     */
+    clearQueueMetrics() {
+        this.requestQueue.clearMetrics();
     }
 
     /**
@@ -1918,14 +2290,20 @@ Return only the JSON array with properly formatted category names, no additional
             );
 
             try {
-                const response = await fetch(currentUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": this.apiKey,
+                const response = await this.requestQueue.enqueue(
+                    async () => {
+                        return await fetch(currentUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "x-goog-api-key": this.apiKey,
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
                     },
-                    body: JSON.stringify(requestBody),
-                });
+                    'gemini',
+                    'high'
+                );
 
                 if (response.ok) {
                     const data = await response.json();
@@ -2214,14 +2592,20 @@ Return only the JSON array with properly formatted category names, no additional
 
             try {
                 const requestStart = Date.now();
-                const response = await fetch(currentUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": this.apiKey,
+                const response = await this.requestQueue.enqueue(
+                    async () => {
+                        return await fetch(currentUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "x-goog-api-key": this.apiKey,
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
                     },
-                    body: JSON.stringify(requestBody),
-                });
+                    'gemini',
+                    'normal'
+                );
                 const responseTime = Date.now() - requestStart;
 
                 if (response.ok) {
@@ -2451,14 +2835,20 @@ Return only the JSON array with properly formatted category names, no additional
                     }/${this.maxRetries + 1}`
                 );
 
-                const response = await fetch(this.cerebrasBaseUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.cerebrasApiKey}`,
+                const response = await this.requestQueue.enqueue(
+                    async () => {
+                        return await fetch(this.cerebrasBaseUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${this.cerebrasApiKey}`,
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
                     },
-                    body: JSON.stringify(requestBody),
-                });
+                    'cerebras',
+                    'normal'
+                );
 
                 const responseTime = Date.now() - requestStart;
 
@@ -2678,14 +3068,20 @@ Return only the JSON array with properly formatted category names, no additional
                     }`
                 );
 
-                const response = await fetch(this.groqBaseUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.groqApiKey}`,
+                const response = await this.requestQueue.enqueue(
+                    async () => {
+                        return await fetch(this.groqBaseUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${this.groqApiKey}`,
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
                     },
-                    body: JSON.stringify(requestBody),
-                });
+                    'groq',
+                    'normal'
+                );
 
                 const responseTime = Date.now() - requestStart;
 
@@ -3268,24 +3664,30 @@ Return only the JSON array, no additional text or formatting`;
 
         try {
             // Simple test request
-            const testResponse = await fetch(this.getCurrentModelUrl(), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": this.apiKey,
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
+            const testResponse = await this.requestQueue.enqueue(
+                async () => {
+                    return await fetch(this.getCurrentModelUrl(), {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-goog-api-key": this.apiKey,
+                        },
+                        body: JSON.stringify({
+                            contents: [
                                 {
-                                    text: "Hello, this is a test message.",
+                                    parts: [
+                                        {
+                                            text: "Hello, this is a test message.",
+                                        },
+                                    ],
                                 },
                             ],
-                        },
-                    ],
-                }),
-            });
+                        }),
+                    });
+                },
+                'gemini',
+                'high'
+            );
 
             if (testResponse.ok) {
                 console.log("API key test successful");
