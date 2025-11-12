@@ -3968,4 +3968,3 @@ if (typeof window !== "undefined") {
 if (typeof self !== "undefined" && typeof window === "undefined") {
     self.AIProcessor = AIProcessor;
 }
-self.AIProcessor = AIProcessor;

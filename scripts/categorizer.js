@@ -135,7 +135,6 @@ class Categorizer {
       progressCallback?.({ stage: 'categorizing', progress: 30, message: `Processing ${uncategorizedBookmarks.length} bookmarks in batches...` });
 
       // Process bookmarks in batches with progress tracking
-      const batchSize = settings.batchSize || 50;
       const totalBatches = Math.ceil(uncategorizedBookmarks.length / batchSize);
       
       console.log(`Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks in ${totalBatches} batches of ${batchSize}`);
