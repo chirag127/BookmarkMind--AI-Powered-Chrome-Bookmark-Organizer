@@ -2541,6 +2541,19 @@ Return only the JSON array with properly formatted category names, no additional
                 );
                 lastError = error;
 
+                // Check for truncation error and retry with smaller batches
+                if (error.isTruncation && batch.length > 1) {
+                    console.warn(
+                        `⚠️ JSON truncation detected! Retrying with split batches...`
+                    );
+                    return await this._retryWithSmallerBatches(
+                        batch,
+                        categories,
+                        learningData,
+                        model
+                    );
+                }
+
                 // Stop trying if it's a non-retryable error
                 if (
                     error.message.includes("Invalid API key") ||
@@ -2815,6 +2828,7 @@ Return only the JSON array with properly formatted category names, no additional
      * @returns {Promise<Array>} Batch results
      */
     async _processWithCerebras(prompt, batch, model) {
+        const maxTokens = this._calculateMaxTokens(batch.length);
         const requestBody = {
             model: model,
             messages: [
@@ -2829,7 +2843,7 @@ Return only the JSON array with properly formatted category names, no additional
                 },
             ],
             temperature: 0.3,
-            max_tokens: 4000,
+            max_tokens: maxTokens,
         };
 
         // Exponential backoff retry logic
@@ -3048,6 +3062,7 @@ Return only the JSON array with properly formatted category names, no additional
      * @returns {Promise<Array>} Batch results
      */
     async _processWithGroq(prompt, batch, model) {
+        const maxTokens = this._calculateMaxTokens(batch.length);
         const requestBody = {
             model: model,
             messages: [
@@ -3062,7 +3077,7 @@ Return only the JSON array with properly formatted category names, no additional
                 },
             ],
             temperature: 0.3,
-            max_tokens: 4000,
+            max_tokens: maxTokens,
         };
 
         // Exponential backoff retry logic
@@ -3595,6 +3610,9 @@ Return only the JSON array, no additional text or formatting`;
                 cleanText = jsonMatch[0];
             }
 
+            // Try to repair truncated JSON before parsing
+            cleanText = this._repairTruncatedJson(cleanText);
+
             const parsed = JSON.parse(cleanText);
 
             if (!Array.isArray(parsed)) {
@@ -3652,8 +3670,197 @@ Return only the JSON array, no additional text or formatting`;
         } catch (error) {
             console.error("Error parsing API response:", error);
             console.log("Raw response:", responseText);
+            
+            // Check if this might be a truncation error
+            if (error.message.includes('Unexpected end of JSON') || 
+                error.message.includes('Unexpected token') ||
+                error.message.includes('JSON')) {
+                const truncationError = new Error(`JSON truncation detected: ${error.message}`);
+                truncationError.isTruncation = true;
+                throw truncationError;
+            }
+            
             throw new Error(`Failed to parse AI response: ${error.message}`);
         }
+    }
+
+    /**
+     * Calculate dynamic max_tokens based on batch size
+     * @param {number} batchSize - Number of bookmarks in batch
+     * @returns {number} Calculated max_tokens value
+     */
+    _calculateMaxTokens(batchSize) {
+        const baseTokensPerBookmark = 150;
+        const overhead = 500;
+        const buffer = 1.2;
+        
+        const calculated = Math.ceil((batchSize * baseTokensPerBookmark + overhead) * buffer);
+        const min = 2000;
+        const max = 8000;
+        
+        const result = Math.max(min, Math.min(max, calculated));
+        console.log(`   📊 Dynamic max_tokens: ${result} (batch size: ${batchSize})`);
+        return result;
+    }
+
+    /**
+     * Retry processing with smaller batches when truncation is detected
+     * @param {Array} batch - Original batch that failed
+     * @param {Array} categories - Available categories
+     * @param {Object} learningData - Learning data
+     * @param {Object} model - Model that encountered truncation
+     * @returns {Promise<Array>} Combined results from split batches
+     */
+    async _retryWithSmallerBatches(batch, categories, learningData, model) {
+        const splitSize = Math.ceil(batch.length / 2);
+        console.log(
+            `🔀 Splitting batch of ${batch.length} into ${Math.ceil(
+                batch.length / splitSize
+            )} smaller batches of ~${splitSize} bookmarks each`
+        );
+
+        const results = [];
+        for (let i = 0; i < batch.length; i += splitSize) {
+            const subBatch = batch.slice(i, i + splitSize);
+            console.log(
+                `   📦 Processing sub-batch ${Math.floor(i / splitSize) + 1}/${Math.ceil(
+                    batch.length / splitSize
+                )} (${subBatch.length} bookmarks)`
+            );
+
+            try {
+                let subResult;
+                if (model.provider === 'gemini') {
+                    subResult = await this._processWithGemini(
+                        subBatch,
+                        categories,
+                        learningData,
+                        model.name
+                    );
+                } else if (model.provider === 'cerebras') {
+                    const prompt = await this._buildPrompt(
+                        subBatch,
+                        categories,
+                        learningData
+                    );
+                    subResult = await this._processWithCerebras(
+                        prompt,
+                        subBatch,
+                        model.name
+                    );
+                } else if (model.provider === 'groq') {
+                    const prompt = await this._buildPrompt(
+                        subBatch,
+                        categories,
+                        learningData
+                    );
+                    subResult = await this._processWithGroq(
+                        prompt,
+                        subBatch,
+                        model.name
+                    );
+                }
+
+                if (subResult) {
+                    results.push(...subResult);
+                }
+            } catch (subError) {
+                // If sub-batch also fails with truncation and can be split further
+                if (subError.isTruncation && subBatch.length > 1) {
+                    console.warn(
+                        `   ⚠️ Sub-batch truncation detected, splitting further...`
+                    );
+                    const deeperResults = await this._retryWithSmallerBatches(
+                        subBatch,
+                        categories,
+                        learningData,
+                        model
+                    );
+                    results.push(...deeperResults);
+                } else {
+                    // Re-throw if it's not a truncation error or can't split further
+                    throw subError;
+                }
+            }
+
+            // Small delay between sub-batches
+            if (i + splitSize < batch.length) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+        }
+
+        console.log(
+            `✅ Successfully processed split batch: ${results.length} results`
+        );
+        return results;
+    }
+
+    /**
+     * Repair truncated JSON by adding missing closing brackets/braces
+     * @param {string} jsonStr - Potentially truncated JSON string
+     * @returns {string} Repaired JSON string
+     */
+    _repairTruncatedJson(jsonStr) {
+        if (!jsonStr || jsonStr.trim() === '') {
+            return jsonStr;
+        }
+
+        let repaired = jsonStr.trim();
+        let modified = false;
+
+        // Count opening and closing brackets/braces
+        const openBrackets = (repaired.match(/\[/g) || []).length;
+        const closeBrackets = (repaired.match(/\]/g) || []).length;
+        const openBraces = (repaired.match(/\{/g) || []).length;
+        const closeBraces = (repaired.match(/\}/g) || []).length;
+
+        // If truncation detected, try to repair
+        if (openBrackets > closeBrackets || openBraces > closeBraces) {
+            console.warn(`⚠️ JSON truncation detected - attempting repair...`);
+            console.warn(`   Open brackets: ${openBrackets}, Close: ${closeBrackets}`);
+            console.warn(`   Open braces: ${openBraces}, Close: ${closeBraces}`);
+            
+            // Remove trailing incomplete entries
+            // Look for the last complete object in array
+            const lastCompleteObjectMatch = repaired.match(/\},\s*\{[^}]*$/);
+            if (lastCompleteObjectMatch) {
+                repaired = repaired.substring(0, lastCompleteObjectMatch.index + 1);
+                modified = true;
+                console.warn(`   ✂️ Removed incomplete trailing object`);
+            }
+
+            // Remove any trailing incomplete strings or values
+            repaired = repaired.replace(/,\s*"[^"]*$/, '');
+            repaired = repaired.replace(/,\s*[^,\]\}]*$/, '');
+            
+            // Add missing closing braces first (for objects)
+            const remainingOpenBraces = (repaired.match(/\{/g) || []).length;
+            const remainingCloseBraces = (repaired.match(/\}/g) || []).length;
+            const missingBraces = remainingOpenBraces - remainingCloseBraces;
+            
+            if (missingBraces > 0) {
+                repaired += '}'.repeat(missingBraces);
+                modified = true;
+                console.warn(`   🔧 Added ${missingBraces} missing closing brace(s)`);
+            }
+
+            // Add missing closing brackets (for arrays)
+            const remainingOpenBrackets = (repaired.match(/\[/g) || []).length;
+            const remainingCloseBrackets = (repaired.match(/\]/g) || []).length;
+            const missingBrackets = remainingOpenBrackets - remainingCloseBrackets;
+            
+            if (missingBrackets > 0) {
+                repaired += ']'.repeat(missingBrackets);
+                modified = true;
+                console.warn(`   🔧 Added ${missingBrackets} missing closing bracket(s)`);
+            }
+
+            if (modified) {
+                console.warn(`   ✅ JSON repair completed`);
+            }
+        }
+
+        return repaired;
     }
 
     /**
