@@ -3,41 +3,47 @@
  * Handles extension lifecycle and background processing
  */
 
+// Global flag to track script loading state
+let scriptsLoaded = false;
+
 // Import required modules using importScripts for Manifest V3
-try {
-  importScripts(
-    'bookmarkService.js',
-    'aiProcessor.js',
-    'categorizer.js',
-    'folderManager.js',
-    'folderInsights.js',
-    'learningService.js',
-    'snapshotManager.js',
-    'analyticsService.js',
-    'performanceMonitor.js',
-    'modelComparisonService.js',
-    'benchmarkService.js'
-  );
-  console.log('Background scripts loaded successfully');
+if (!scriptsLoaded) {
+  try {
+    importScripts(
+      'bookmarkService.js',
+      'aiProcessor.js',
+      'categorizer.js',
+      'folderManager.js',
+      'folderInsights.js',
+      'learningService.js',
+      'snapshotManager.js',
+      'analyticsService.js',
+      'performanceMonitor.js',
+      'modelComparisonService.js',
+      'benchmarkService.js'
+    );
+    scriptsLoaded = true;
+    console.log('Background scripts loaded successfully');
 
-  // Verify classes are available
-  console.log('Available classes:', {
-    BookmarkService: typeof BookmarkService !== 'undefined',
-    AIProcessor: typeof AIProcessor !== 'undefined',
-    Categorizer: typeof Categorizer !== 'undefined',
-    FolderManager: typeof FolderManager !== 'undefined',
-    FolderInsights: typeof FolderInsights !== 'undefined',
-    LearningService: typeof LearningService !== 'undefined',
-    SnapshotManager: typeof SnapshotManager !== 'undefined',
-    AnalyticsService: typeof AnalyticsService !== 'undefined',
-    PerformanceMonitor: typeof PerformanceMonitor !== 'undefined',
-    ModelComparisonService: typeof ModelComparisonService !== 'undefined',
-    BenchmarkService: typeof BenchmarkService !== 'undefined'
-  });
+    // Verify classes are available
+    console.log('Available classes:', {
+      BookmarkService: typeof BookmarkService !== 'undefined',
+      AIProcessor: typeof AIProcessor !== 'undefined',
+      Categorizer: typeof Categorizer !== 'undefined',
+      FolderManager: typeof FolderManager !== 'undefined',
+      FolderInsights: typeof FolderInsights !== 'undefined',
+      LearningService: typeof LearningService !== 'undefined',
+      SnapshotManager: typeof SnapshotManager !== 'undefined',
+      AnalyticsService: typeof AnalyticsService !== 'undefined',
+      PerformanceMonitor: typeof PerformanceMonitor !== 'undefined',
+      ModelComparisonService: typeof ModelComparisonService !== 'undefined',
+      BenchmarkService: typeof BenchmarkService !== 'undefined'
+    });
 
-} catch (error) {
-  console.error('Failed to load background scripts:', error);
-  console.log('Will create instances dynamically if needed');
+  } catch (error) {
+    console.error('Failed to load background scripts:', error);
+    console.log('Will create instances dynamically if needed');
+  }
 }
 
 // Global flag to track AI categorization state
@@ -128,41 +134,12 @@ async function initializeExtension() {
   }
 }
 
-// Ensure classes are loaded before handling messages
-async function ensureClassesLoaded() {
-  if (typeof Categorizer === 'undefined' ||
-    typeof BookmarkService === 'undefined' ||
-    typeof AIProcessor === 'undefined' ||
-    typeof FolderManager === 'undefined') {
-
-    console.log('Classes not loaded, attempting to reload...');
-    try {
-      importScripts(
-        'bookmarkService.js',
-        'aiProcessor.js',
-        'categorizer.js',
-        'folderManager.js'
-      );
-      console.log('Classes reloaded successfully');
-    } catch (error) {
-      console.error('Failed to reload classes:', error);
-      throw new Error('Extension classes not available. Please reload the extension.');
-    }
-  }
-}
-
 // Handle messages from popup and options pages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received message:', message);
 
   // Handle async operations properly
   (async () => {
-    try {
-      await ensureClassesLoaded();
-    } catch (error) {
-      sendResponse({ success: false, error: error.message });
-      return;
-    }
 
     switch (message.action) {
       case 'startCategorization':
