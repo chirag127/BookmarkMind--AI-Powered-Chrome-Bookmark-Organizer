@@ -17,6 +17,10 @@ class AIProcessor {
             typeof ModelComparisonService !== "undefined"
                 ? new ModelComparisonService()
                 : null;
+        this.performanceMonitor =
+            typeof PerformanceMonitor !== "undefined"
+                ? new PerformanceMonitor()
+                : null;
 
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
@@ -2245,6 +2249,11 @@ Return only the JSON array with properly formatted category names, no additional
                             });
                         }
 
+                        // Record rate limit tracking
+                        if (this.performanceMonitor) {
+                            await this.performanceMonitor.recordApiRequest("gemini", true, false, false);
+                        }
+
                         return this._parseResponse(responseText, batch);
                     } else {
                         throw new Error("Invalid API response format");
@@ -2276,6 +2285,13 @@ Return only the JSON array with properly formatted category names, no additional
                         response.status === 500 || // Server error
                         response.status === 502 || // Bad gateway
                         response.status === 504; // Gateway timeout
+
+                    // Record rate limit tracking
+                    if (this.performanceMonitor) {
+                        const throttled = response.status === 429;
+                        const rejected = response.status === 429;
+                        await this.performanceMonitor.recordApiRequest("gemini", false, throttled, rejected);
+                    }
 
                     if (!isRetryableError) {
                         // Non-retryable errors (auth, bad request, etc.) - don't try other models
@@ -2472,6 +2488,11 @@ Return only the JSON array with properly formatted category names, no additional
                             });
                         }
 
+                        // Record rate limit tracking
+                        if (this.performanceMonitor) {
+                            await this.performanceMonitor.recordApiRequest("cerebras", true, false, false);
+                        }
+
                         return this._parseResponse(responseText, batch);
                     } else {
                         throw new Error("Invalid Cerebras API response format");
@@ -2505,6 +2526,13 @@ Return only the JSON array with properly formatted category names, no additional
                             errorType: `${response.status}`,
                             retryAttempt: retryAttempt,
                         });
+                    }
+
+                    // Record rate limit tracking
+                    if (this.performanceMonitor) {
+                        const throttled = isRateLimitError;
+                        const rejected = isRateLimitError;
+                        await this.performanceMonitor.recordApiRequest("cerebras", false, throttled, rejected);
                     }
 
                     // Check if this is a retryable error
@@ -2687,6 +2715,11 @@ Return only the JSON array with properly formatted category names, no additional
                             });
                         }
 
+                        // Record rate limit tracking
+                        if (this.performanceMonitor) {
+                            await this.performanceMonitor.recordApiRequest("groq", true, false, false);
+                        }
+
                         return this._parseResponse(responseText, batch);
                     } else {
                         throw new Error("Invalid Groq API response format");
@@ -2720,6 +2753,13 @@ Return only the JSON array with properly formatted category names, no additional
                             errorType: `${response.status}`,
                             retryAttempt: retryAttempt,
                         });
+                    }
+
+                    // Record rate limit tracking
+                    if (this.performanceMonitor) {
+                        const throttled = isRateLimitError;
+                        const rejected = isRateLimitError;
+                        await this.performanceMonitor.recordApiRequest("groq", false, throttled, rejected);
                     }
 
                     // Check if this is a retryable error

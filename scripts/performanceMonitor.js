@@ -8,6 +8,9 @@ class PerformanceMonitor {
     this.storageKey = 'bookmarkMindPerformance';
     this.maxHistoryPoints = 100;
     this.analyticsService = null;
+    this.rateLimitStorageKey = 'bookmarkMindRateLimits';
+    this.rateLimitWindowMs = 60000;
+    this.requestQueue = [];
   }
 
   /**
@@ -17,6 +20,7 @@ class PerformanceMonitor {
     if (typeof AnalyticsService !== 'undefined') {
       this.analyticsService = new AnalyticsService();
     }
+    await this._cleanupOldRateLimitData();
   }
 
   /**
@@ -87,7 +91,8 @@ class PerformanceMonitor {
       memoryStats: this._getMemoryStats(perfData.memoryHistory),
       performanceHistory: this._getPerformanceHistory(analytics.sessions),
       insights: insights,
-      currentMemory: this.getCurrentMemoryUsage()
+      currentMemory: this.getCurrentMemoryUsage(),
+      rateLimits: await this.getRateLimitDashboard()
     };
 
     return dashboard;
@@ -322,6 +327,313 @@ class PerformanceMonitor {
       version: '1.0',
       created: Date.now(),
       memoryHistory: []
+    };
+  }
+
+  /**
+     * Record API request for rate limiting
+     * @param {string} provider - Provider name
+     * @param {boolean} success - Whether request succeeded
+     * @param {boolean} throttled - Whether request was throttled
+     * @param {boolean} rejected - Whether request was rejected
+     */
+  async recordApiRequest(provider, success = true, throttled = false, rejected = false) {
+    const rateLimitData = await this._getRateLimitData();
+    const timestamp = Date.now();
+
+    if (!rateLimitData.providers[provider]) {
+      rateLimitData.providers[provider] = {
+        requests: [],
+        throttledCount: 0,
+        rejectedCount: 0,
+        totalRequests: 0,
+        limits: this._getProviderLimits(provider)
+      };
+    }
+
+    const providerData = rateLimitData.providers[provider];
+
+    providerData.requests.push({
+      timestamp,
+      success,
+      throttled,
+      rejected
+    });
+
+    providerData.totalRequests++;
+    if (throttled) providerData.throttledCount++;
+    if (rejected) providerData.rejectedCount++;
+
+    await this._cleanupOldRequests(providerData);
+    await this._saveRateLimitData(rateLimitData);
+
+    const currentRpm = this._calculateRequestsPerMinute(providerData.requests);
+    const limitThreshold = providerData.limits.requestsPerMinute * 0.8;
+
+    if (currentRpm >= limitThreshold) {
+      await this._recordRateLimitAlert(provider, currentRpm, providerData.limits.requestsPerMinute);
+    }
+  }
+
+  /**
+     * Get rate limit dashboard data
+     * @returns {Promise<Object>} Rate limit dashboard data
+     */
+  async getRateLimitDashboard() {
+    const rateLimitData = await this._getRateLimitData();
+    const dashboard = {};
+
+    for (const [provider, data] of Object.entries(rateLimitData.providers)) {
+      const currentRpm = this._calculateRequestsPerMinute(data.requests);
+      const utilizationPercent = Math.round((currentRpm / data.limits.requestsPerMinute) * 100);
+      const recentHistory = this._getRpmHistory(data.requests);
+
+      dashboard[provider] = {
+        currentRpm,
+        maxRpm: data.limits.requestsPerMinute,
+        utilizationPercent,
+        status: this._getRateLimitStatus(utilizationPercent),
+        throttledCount: data.throttledCount,
+        rejectedCount: data.rejectedCount,
+        totalRequests: data.totalRequests,
+        queueDepth: this._getQueueDepth(provider),
+        rpmHistory: recentHistory,
+        recentAlerts: this._getRecentAlerts(rateLimitData.alerts, provider)
+      };
+    }
+
+    return dashboard;
+  }
+
+  /**
+     * Get historical rate limit events
+     * @param {string} provider - Provider name (optional)
+     * @param {number} timeRangeMs - Time range in milliseconds (default: 24 hours)
+     * @returns {Promise<Array>} Historical events
+     */
+  async getRateLimitHistory(provider = null, timeRangeMs = 24 * 60 * 60 * 1000) {
+    const rateLimitData = await this._getRateLimitData();
+    const cutoffTime = Date.now() - timeRangeMs;
+
+    const events = [];
+
+    for (const [providerName, data] of Object.entries(rateLimitData.providers)) {
+      if (provider && providerName !== provider) continue;
+
+      data.requests
+        .filter(req => req.timestamp >= cutoffTime)
+        .forEach(req => {
+          if (req.throttled || req.rejected) {
+            events.push({
+              timestamp: req.timestamp,
+              provider: providerName,
+              type: req.throttled ? 'throttled' : 'rejected',
+              success: req.success
+            });
+          }
+        });
+    }
+
+    return events.sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  /**
+     * Get provider rate limits
+     * @param {string} provider - Provider name
+     * @returns {Object} Rate limits
+     * @private
+     */
+  _getProviderLimits(provider) {
+    const limits = {
+      gemini: { requestsPerMinute: 15, requestsPerDay: 1500 },
+      cerebras: { requestsPerMinute: 60, requestsPerDay: 14400 },
+      groq: { requestsPerMinute: 30, requestsPerDay: 14400 },
+      agentrouter: { requestsPerMinute: 20, requestsPerDay: 10000 }
+    };
+
+    return limits[provider] || { requestsPerMinute: 10, requestsPerDay: 1000 };
+  }
+
+  /**
+     * Calculate requests per minute
+     * @param {Array} requests - Request history
+     * @returns {number} Requests per minute
+     * @private
+     */
+  _calculateRequestsPerMinute(requests) {
+    const now = Date.now();
+    const oneMinuteAgo = now - this.rateLimitWindowMs;
+    return requests.filter(req => req.timestamp >= oneMinuteAgo).length;
+  }
+
+  /**
+     * Get RPM history for charting
+     * @param {Array} requests - Request history
+     * @returns {Array} RPM history data points
+     * @private
+     */
+  _getRpmHistory(requests) {
+    const now = Date.now();
+    const history = [];
+    const intervalMs = 10000;
+    const intervals = 30;
+
+    for (let i = intervals; i >= 0; i--) {
+      const endTime = now - (i * intervalMs);
+      const startTime = endTime - this.rateLimitWindowMs;
+      const count = requests.filter(req => req.timestamp >= startTime && req.timestamp < endTime).length;
+
+      history.push({
+        timestamp: endTime,
+        rpm: count
+      });
+    }
+
+    return history;
+  }
+
+  /**
+     * Get rate limit status
+     * @param {number} utilizationPercent - Utilization percentage
+     * @returns {string} Status
+     * @private
+     */
+  _getRateLimitStatus(utilizationPercent) {
+    if (utilizationPercent >= 90) return 'critical';
+    if (utilizationPercent >= 80) return 'warning';
+    if (utilizationPercent >= 60) return 'moderate';
+    return 'healthy';
+  }
+
+  /**
+     * Get queue depth for provider
+     * @param {string} provider - Provider name
+     * @returns {number} Queue depth
+     * @private
+     */
+  _getQueueDepth(provider) {
+    return this.requestQueue.filter(req => req.provider === provider).length;
+  }
+
+  /**
+     * Record rate limit alert
+     * @param {string} provider - Provider name
+     * @param {number} currentRpm - Current RPM
+     * @param {number} maxRpm - Max RPM
+     * @private
+     */
+  async _recordRateLimitAlert(provider, currentRpm, maxRpm) {
+    const rateLimitData = await this._getRateLimitData();
+
+    const alert = {
+      timestamp: Date.now(),
+      provider,
+      currentRpm,
+      maxRpm,
+      utilizationPercent: Math.round((currentRpm / maxRpm) * 100),
+      type: 'approaching_limit'
+    };
+
+    if (!rateLimitData.alerts) {
+      rateLimitData.alerts = [];
+    }
+
+    const lastAlert = rateLimitData.alerts[rateLimitData.alerts.length - 1];
+    if (!lastAlert || lastAlert.timestamp < Date.now() - 60000) {
+      rateLimitData.alerts.push(alert);
+
+      if (rateLimitData.alerts.length > 100) {
+        rateLimitData.alerts = rateLimitData.alerts.slice(-100);
+      }
+
+      await this._saveRateLimitData(rateLimitData);
+    }
+  }
+
+  /**
+     * Get recent alerts
+     * @param {Array} alerts - All alerts
+     * @param {string} provider - Provider name
+     * @returns {Array} Recent alerts
+     * @private
+     */
+  _getRecentAlerts(alerts, provider) {
+    if (!alerts) return [];
+
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    return alerts
+      .filter(alert => alert.provider === provider && alert.timestamp >= oneHourAgo)
+      .slice(-5);
+  }
+
+  /**
+     * Cleanup old request data
+     * @param {Object} providerData - Provider data
+     * @private
+     */
+  async _cleanupOldRequests(providerData) {
+    const cutoffTime = Date.now() - 60 * 60 * 1000;
+    providerData.requests = providerData.requests.filter(req => req.timestamp >= cutoffTime);
+  }
+
+  /**
+     * Cleanup old rate limit data
+     * @private
+     */
+  async _cleanupOldRateLimitData() {
+    const rateLimitData = await this._getRateLimitData();
+    const cutoffTime = Date.now() - 24 * 60 * 60 * 1000;
+
+    for (const provider of Object.values(rateLimitData.providers)) {
+      provider.requests = provider.requests.filter(req => req.timestamp >= cutoffTime);
+    }
+
+    if (rateLimitData.alerts) {
+      rateLimitData.alerts = rateLimitData.alerts.filter(alert => alert.timestamp >= cutoffTime);
+    }
+
+    await this._saveRateLimitData(rateLimitData);
+  }
+
+  /**
+     * Get rate limit data from storage
+     * @returns {Promise<Object>} Rate limit data
+     * @private
+     */
+  async _getRateLimitData() {
+    try {
+      const result = await chrome.storage.local.get([this.rateLimitStorageKey]);
+      return result[this.rateLimitStorageKey] || this._getDefaultRateLimitData();
+    } catch (error) {
+      console.error('Error getting rate limit data:', error);
+      return this._getDefaultRateLimitData();
+    }
+  }
+
+  /**
+     * Save rate limit data to storage
+     * @param {Object} data - Rate limit data
+     * @private
+     */
+  async _saveRateLimitData(data) {
+    try {
+      await chrome.storage.local.set({ [this.rateLimitStorageKey]: data });
+    } catch (error) {
+      console.error('Error saving rate limit data:', error);
+    }
+  }
+
+  /**
+     * Get default rate limit data structure
+     * @returns {Object} Default data
+     * @private
+     */
+  _getDefaultRateLimitData() {
+    return {
+      version: '1.0',
+      created: Date.now(),
+      providers: {},
+      alerts: []
     };
   }
 }

@@ -17,6 +17,7 @@
             <button class="tab active" data-tab="overview">Overview</button>
             <button class="tab" data-tab="categorization">Categorization</button>
             <button class="tab" data-tab="api">API Usage</button>
+            <button class="tab" data-tab="ratelimits">Rate Limits</button>
             <button class="tab" data-tab="performance">Performance</button>
             <button class="tab" data-tab="consolidation">Consolidation</button>
         </nav>
@@ -181,6 +182,66 @@
             </section>
         </div>
 
+        <!-- Rate Limits Tab -->
+        <div id="ratelimits" class="tab-content">
+            <section>
+                <h2>Real-Time Rate Limit Status</h2>
+                <div id="rateLimitProviders" class="ratelimit-providers">
+                    <p class="empty-state">No rate limit data available</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Requests Per Minute</h2>
+                <div id="rpmChartContainer" class="chart-container">
+                    <canvas id="rpmChart"></canvas>
+                </div>
+            </section>
+
+            <section>
+                <h2>Queue Depth</h2>
+                <div id="queueDepthContainer" class="queue-container">
+                    <p class="empty-state">No queue data available</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Throttled & Rejected Requests</h2>
+                <div id="throttledRejectedStats" class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Throttled</div>
+                        <div class="stat-box-value" id="totalThrottled">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Rejected</div>
+                        <div class="stat-box-value error" id="totalRejected">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Last Hour Throttled</div>
+                        <div class="stat-box-value" id="lastHourThrottled">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Last Hour Rejected</div>
+                        <div class="stat-box-value error" id="lastHourRejected">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Recent Rate Limit Events</h2>
+                <div id="rateLimitEvents" class="ratelimit-events">
+                    <p class="empty-state">No rate limit events recorded</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Rate Limit Alerts</h2>
+                <div id="rateLimitAlerts" class="alert-list">
+                    <p class="empty-state">No alerts</p>
+                </div>
+            </section>
+        </div>
+
         <!-- Performance Tab -->
         <div id="performance" class="tab-content">
             <section>
@@ -238,6 +299,7 @@
     </div>
 
     <script src="../scripts/analyticsService.js"></script>
+    <script src="../scripts/performanceMonitor.js"></script>
     <script src="analytics.js"></script>
 </body>
 </html>
