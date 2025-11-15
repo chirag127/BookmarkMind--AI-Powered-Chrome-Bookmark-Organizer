@@ -1,23 +1,26 @@
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  setupFiles: ['<rootDir>/tests/setup.js'],
   testMatch: [
-    '**/tests/**/*.test.js',
-    '**/tests/**/*.spec.js'
-  ],
-  collectCoverageFrom: [
-    'scripts/**/*.js',
-    '!scripts/background.js',
-    '!**/node_modules/**'
+    '**/__tests__/**/*.js',
+    '**/?(*.)+(spec|test).js'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  collectCoverageFrom: [
+    'scripts/**/*.js',
+    'popup/**/*.js',
+    'options/**/*.js',
+    '!**/node_modules/**',
+    '!**/tests/**'
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/'
+  ],
+  moduleFileExtensions: ['js', 'json'],
   verbose: true,
-  testTimeout: 10000,
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1'
-  },
   globals: {
-    chrome: {}
-  }
+    TextEncoder: TextEncoder,
+    TextDecoder: TextDecoder
+  },
+  testTimeout: 10000
 };

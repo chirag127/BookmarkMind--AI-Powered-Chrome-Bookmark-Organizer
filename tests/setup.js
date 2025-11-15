@@ -3,6 +3,10 @@
  * Configures Chrome API mocks and test environment
  */
 
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 const chrome = require('sinon-chrome');
 
 // Setup Chrome API mock globally with proper Promise support
@@ -89,36 +93,43 @@ chrome.runtime.sendMessage.callsFake(() => {
   return Promise.resolve({ success: true });
 });
 
+// Export for tests
+module.exports = { chrome };
+
 // Reset mocks before each test
-beforeEach(() => {
-  chrome.flush();
-  
-  // Restore default mock behaviors
-  chrome.bookmarks.getTree.resolves([{
-    id: '0',
-    title: '',
-    children: [
-      { id: '1', title: 'Bookmarks Bar', children: [] },
-      { id: '2', title: 'Other Bookmarks', children: [] },
-      { id: '3', title: 'Mobile Bookmarks', children: [] }
-    ]
-  }]);
-  
-  chrome.bookmarks.getChildren.resolves([]);
-  chrome.bookmarks.get.callsFake((id) => {
-    return Promise.resolve([{
-      id: id,
-      title: 'Test Bookmark',
-      url: 'https://example.com',
-      parentId: '1'
+if (typeof beforeEach !== 'undefined') {
+  beforeEach(() => {
+    chrome.flush();
+    
+    // Restore default mock behaviors
+    chrome.bookmarks.getTree.resolves([{
+      id: '0',
+      title: '',
+      children: [
+        { id: '1', title: 'Bookmarks Bar', children: [] },
+        { id: '2', title: 'Other Bookmarks', children: [] },
+        { id: '3', title: 'Mobile Bookmarks', children: [] }
+      ]
     }]);
+    
+    chrome.bookmarks.getChildren.resolves([]);
+    chrome.bookmarks.get.callsFake((id) => {
+      return Promise.resolve([{
+        id: id,
+        title: 'Test Bookmark',
+        url: 'https://example.com',
+        parentId: '1'
+      }]);
+    });
   });
-});
+}
 
 // Cleanup after each test
-afterEach(() => {
-  chrome.reset();
-});
+if (typeof afterEach !== 'undefined') {
+  afterEach(() => {
+    chrome.reset();
+  });
+}
 
 // Global test utilities
 global.createMockBookmark = (id, title, url, parentId = '1') => ({
