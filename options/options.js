@@ -88,6 +88,33 @@ class OptionsController {
         this.minThresholdValueDisplay =
             document.getElementById("minThresholdValue");
 
+        // Advanced settings elements
+        this.preserveExistingFoldersCheckbox = document.getElementById("preserveExistingFolders");
+        this.mergeSimilarFoldersCheckbox = document.getElementById("mergeSimilarFolders");
+        this.aiConfidenceThresholdSlider = document.getElementById("aiConfidenceThreshold");
+        this.confidenceValueDisplay = document.getElementById("confidenceValue");
+        this.aiProviderSelect = document.getElementById("aiProvider");
+        this.enableFallbackProvidersCheckbox = document.getElementById("enableFallbackProviders");
+        this.enableLearningCheckbox = document.getElementById("enableLearning");
+        this.learningWeightSlider = document.getElementById("learningWeight");
+        this.learningWeightValueDisplay = document.getElementById("learningWeightValue");
+        this.retryAttemptsSelect = document.getElementById("retryAttempts");
+        this.requestTimeoutSelect = document.getElementById("requestTimeout");
+        this.enableCachingCheckbox = document.getElementById("enableCaching");
+        this.cacheExpirationSelect = document.getElementById("cacheExpiration");
+        this.autoSnapshotCheckbox = document.getElementById("autoSnapshot");
+        this.maxSnapshotsSelect = document.getElementById("maxSnapshots");
+        this.showProgressNotificationsCheckbox = document.getElementById("showProgressNotifications");
+        this.showDetailedLogsCheckbox = document.getElementById("showDetailedLogs");
+        this.themeSelect = document.getElementById("theme");
+        this.minCategoriesSlider = document.getElementById("minCategories");
+        this.minCategoriesValueDisplay = document.getElementById("minCategoriesValue");
+        this.maxCategoriesSlider = document.getElementById("maxCategories");
+        this.maxCategoriesValueDisplay = document.getElementById("maxCategoriesValue");
+        this.hierarchicalModeCheckbox = document.getElementById("hierarchicalMode");
+        this.saveAdvancedSettingsBtn = document.getElementById("saveAdvancedSettings");
+        this.resetAdvancedSettingsBtn = document.getElementById("resetAdvancedSettings");
+
         // Stats elements
         this.totalBookmarksCount = document.getElementById(
             "totalBookmarksCount"
@@ -247,6 +274,50 @@ class OptionsController {
             this.saveSettings()
         );
 
+        // Advanced settings events
+        if (this.aiConfidenceThresholdSlider) {
+            this.aiConfidenceThresholdSlider.addEventListener("input", () =>
+                this.onConfidenceThresholdChange()
+            );
+            this.aiConfidenceThresholdSlider.addEventListener("change", () =>
+                this.saveSettings()
+            );
+        }
+        if (this.learningWeightSlider) {
+            this.learningWeightSlider.addEventListener("input", () =>
+                this.onLearningWeightChange()
+            );
+            this.learningWeightSlider.addEventListener("change", () =>
+                this.saveSettings()
+            );
+        }
+        if (this.minCategoriesSlider) {
+            this.minCategoriesSlider.addEventListener("input", () =>
+                this.onMinCategoriesChange()
+            );
+            this.minCategoriesSlider.addEventListener("change", () =>
+                this.saveSettings()
+            );
+        }
+        if (this.maxCategoriesSlider) {
+            this.maxCategoriesSlider.addEventListener("input", () =>
+                this.onMaxCategoriesChange()
+            );
+            this.maxCategoriesSlider.addEventListener("change", () =>
+                this.saveSettings()
+            );
+        }
+        if (this.saveAdvancedSettingsBtn) {
+            this.saveAdvancedSettingsBtn.addEventListener("click", () =>
+                this.saveSettings()
+            );
+        }
+        if (this.resetAdvancedSettingsBtn) {
+            this.resetAdvancedSettingsBtn.addEventListener("click", () =>
+                this.resetAdvancedSettings()
+            );
+        }
+
         // Data management events
         this.consolidateFoldersBtn.addEventListener("click", () =>
             this.consolidateFolders()
@@ -361,6 +432,26 @@ class OptionsController {
             cleanupEmptyFolders: false,
             maxCategoryDepth: 2,
             minBookmarksThreshold: 3,
+            // Advanced settings
+            preserveExistingFolders: true,
+            mergeSimilarFolders: false,
+            aiConfidenceThreshold: 70,
+            aiProvider: "auto",
+            enableFallbackProviders: true,
+            enableLearning: true,
+            learningWeight: 50,
+            retryAttempts: 2,
+            requestTimeout: 30000,
+            enableCaching: true,
+            cacheExpiration: 2592000000, // 30 days
+            autoSnapshot: true,
+            maxSnapshots: 5,
+            showProgressNotifications: true,
+            showDetailedLogs: false,
+            theme: "auto",
+            minCategories: 15,
+            maxCategories: 50,
+            hierarchicalMode: true,
         };
     }
 
@@ -406,7 +497,7 @@ class OptionsController {
         // Categories
         this.renderCategories();
 
-        // Advanced settings
+        // Basic settings
         this.batchSizeSelect.value = this.settings.batchSize || 50;
         this.cleanupEmptyFoldersCheckbox.checked =
             this.settings.cleanupEmptyFolders !== false;
@@ -417,6 +508,97 @@ class OptionsController {
             this.settings.minBookmarksThreshold || 3;
         this.minThresholdValueDisplay.textContent =
             this.settings.minBookmarksThreshold || 3;
+
+        // Advanced settings - Folder Management
+        if (this.preserveExistingFoldersCheckbox) {
+            this.preserveExistingFoldersCheckbox.checked =
+                this.settings.preserveExistingFolders !== false;
+        }
+        if (this.mergeSimilarFoldersCheckbox) {
+            this.mergeSimilarFoldersCheckbox.checked =
+                this.settings.mergeSimilarFolders === true;
+        }
+
+        // Advanced settings - AI Behavior
+        if (this.aiConfidenceThresholdSlider) {
+            this.aiConfidenceThresholdSlider.value =
+                this.settings.aiConfidenceThreshold || 70;
+            this.confidenceValueDisplay.textContent =
+                this.settings.aiConfidenceThreshold || 70;
+        }
+        if (this.aiProviderSelect) {
+            this.aiProviderSelect.value = this.settings.aiProvider || "auto";
+        }
+        if (this.enableFallbackProvidersCheckbox) {
+            this.enableFallbackProvidersCheckbox.checked =
+                this.settings.enableFallbackProviders !== false;
+        }
+
+        // Advanced settings - Learning & Adaptation
+        if (this.enableLearningCheckbox) {
+            this.enableLearningCheckbox.checked =
+                this.settings.enableLearning !== false;
+        }
+        if (this.learningWeightSlider) {
+            this.learningWeightSlider.value = this.settings.learningWeight || 50;
+            this.learningWeightValueDisplay.textContent =
+                this.settings.learningWeight || 50;
+        }
+
+        // Advanced settings - Performance & Optimization
+        if (this.retryAttemptsSelect) {
+            this.retryAttemptsSelect.value = this.settings.retryAttempts || 2;
+        }
+        if (this.requestTimeoutSelect) {
+            this.requestTimeoutSelect.value =
+                this.settings.requestTimeout || 30000;
+        }
+        if (this.enableCachingCheckbox) {
+            this.enableCachingCheckbox.checked =
+                this.settings.enableCaching !== false;
+        }
+        if (this.cacheExpirationSelect) {
+            this.cacheExpirationSelect.value =
+                this.settings.cacheExpiration || 2592000000;
+        }
+
+        // Advanced settings - Snapshot & Backup
+        if (this.autoSnapshotCheckbox) {
+            this.autoSnapshotCheckbox.checked =
+                this.settings.autoSnapshot !== false;
+        }
+        if (this.maxSnapshotsSelect) {
+            this.maxSnapshotsSelect.value = this.settings.maxSnapshots || 5;
+        }
+
+        // Advanced settings - UI & Notifications
+        if (this.showProgressNotificationsCheckbox) {
+            this.showProgressNotificationsCheckbox.checked =
+                this.settings.showProgressNotifications !== false;
+        }
+        if (this.showDetailedLogsCheckbox) {
+            this.showDetailedLogsCheckbox.checked =
+                this.settings.showDetailedLogs === true;
+        }
+        if (this.themeSelect) {
+            this.themeSelect.value = this.settings.theme || "auto";
+        }
+
+        // Advanced settings - Category Generation
+        if (this.minCategoriesSlider) {
+            this.minCategoriesSlider.value = this.settings.minCategories || 15;
+            this.minCategoriesValueDisplay.textContent =
+                this.settings.minCategories || 15;
+        }
+        if (this.maxCategoriesSlider) {
+            this.maxCategoriesSlider.value = this.settings.maxCategories || 50;
+            this.maxCategoriesValueDisplay.textContent =
+                this.settings.maxCategories || 50;
+        }
+        if (this.hierarchicalModeCheckbox) {
+            this.hierarchicalModeCheckbox.checked =
+                this.settings.hierarchicalMode !== false;
+        }
 
         setTimeout(() => {
             this.updateGeminiButtonStates();
@@ -524,9 +706,8 @@ class OptionsController {
         </div>
         <div class="stat-row">
           <span class="stat-label">URL Patterns:</span>
-          <span class="stat-value">${
-              stats.patternsByType?.url_pattern || 0
-          }</span>
+          <span class="stat-value">${stats.patternsByType?.url_pattern || 0
+                }</span>
         </div>
       `;
 
@@ -1488,11 +1669,55 @@ class OptionsController {
     }
 
     /**
+     * Handle AI confidence threshold slider change
+     */
+    onConfidenceThresholdChange() {
+        if (this.aiConfidenceThresholdSlider && this.confidenceValueDisplay) {
+            const value = parseInt(this.aiConfidenceThresholdSlider.value);
+            this.confidenceValueDisplay.textContent = value;
+            this.settings.aiConfidenceThreshold = value;
+        }
+    }
+
+    /**
+     * Handle learning weight slider change
+     */
+    onLearningWeightChange() {
+        if (this.learningWeightSlider && this.learningWeightValueDisplay) {
+            const value = parseInt(this.learningWeightSlider.value);
+            this.learningWeightValueDisplay.textContent = value;
+            this.settings.learningWeight = value;
+        }
+    }
+
+    /**
+     * Handle min categories slider change
+     */
+    onMinCategoriesChange() {
+        if (this.minCategoriesSlider && this.minCategoriesValueDisplay) {
+            const value = parseInt(this.minCategoriesSlider.value);
+            this.minCategoriesValueDisplay.textContent = value;
+            this.settings.minCategories = value;
+        }
+    }
+
+    /**
+     * Handle max categories slider change
+     */
+    onMaxCategoriesChange() {
+        if (this.maxCategoriesSlider && this.maxCategoriesValueDisplay) {
+            const value = parseInt(this.maxCategoriesSlider.value);
+            this.maxCategoriesValueDisplay.textContent = value;
+            this.settings.maxCategories = value;
+        }
+    }
+
+    /**
      * Save all settings
      */
     async saveSettings() {
         try {
-            // Update settings from UI
+            // Update basic settings from UI
             this.settings.batchSize = parseInt(this.batchSizeSelect.value);
             this.settings.cleanupEmptyFolders =
                 this.cleanupEmptyFoldersCheckbox.checked;
@@ -1503,13 +1728,120 @@ class OptionsController {
                 this.minBookmarksThresholdSlider.value
             );
 
+            // Update advanced settings from UI
+            if (this.preserveExistingFoldersCheckbox) {
+                this.settings.preserveExistingFolders =
+                    this.preserveExistingFoldersCheckbox.checked;
+            }
+            if (this.mergeSimilarFoldersCheckbox) {
+                this.settings.mergeSimilarFolders =
+                    this.mergeSimilarFoldersCheckbox.checked;
+            }
+            if (this.aiConfidenceThresholdSlider) {
+                this.settings.aiConfidenceThreshold = parseInt(
+                    this.aiConfidenceThresholdSlider.value
+                );
+            }
+            if (this.aiProviderSelect) {
+                this.settings.aiProvider = this.aiProviderSelect.value;
+            }
+            if (this.enableFallbackProvidersCheckbox) {
+                this.settings.enableFallbackProviders =
+                    this.enableFallbackProvidersCheckbox.checked;
+            }
+            if (this.enableLearningCheckbox) {
+                this.settings.enableLearning = this.enableLearningCheckbox.checked;
+            }
+            if (this.learningWeightSlider) {
+                this.settings.learningWeight = parseInt(
+                    this.learningWeightSlider.value
+                );
+            }
+            if (this.retryAttemptsSelect) {
+                this.settings.retryAttempts = parseInt(this.retryAttemptsSelect.value);
+            }
+            if (this.requestTimeoutSelect) {
+                this.settings.requestTimeout = parseInt(this.requestTimeoutSelect.value);
+            }
+            if (this.enableCachingCheckbox) {
+                this.settings.enableCaching = this.enableCachingCheckbox.checked;
+            }
+            if (this.cacheExpirationSelect) {
+                this.settings.cacheExpiration = parseInt(this.cacheExpirationSelect.value);
+            }
+            if (this.autoSnapshotCheckbox) {
+                this.settings.autoSnapshot = this.autoSnapshotCheckbox.checked;
+            }
+            if (this.maxSnapshotsSelect) {
+                this.settings.maxSnapshots = parseInt(this.maxSnapshotsSelect.value);
+            }
+            if (this.showProgressNotificationsCheckbox) {
+                this.settings.showProgressNotifications = this.showProgressNotificationsCheckbox.checked;
+            }
+            if (this.showDetailedLogsCheckbox) {
+                this.settings.showDetailedLogs = this.showDetailedLogsCheckbox.checked;
+            }
+            if (this.themeSelect) {
+                this.settings.theme = this.themeSelect.value;
+            }
+            if (this.minCategoriesSlider) {
+                this.settings.minCategories = parseInt(this.minCategoriesSlider.value);
+            }
+            if (this.maxCategoriesSlider) {
+                this.settings.maxCategories = parseInt(this.maxCategoriesSlider.value);
+            }
+            if (this.hierarchicalModeCheckbox) {
+                this.settings.hierarchicalMode = this.hierarchicalModeCheckbox.checked;
+            }
+
             await chrome.storage.sync.set({
                 bookmarkMindSettings: this.settings,
             });
-            console.log("Settings saved");
+
+            this.showToast("Settings saved successfully", "success");
+            console.log("Settings saved:", this.settings);
         } catch (error) {
             console.error("Error saving settings:", error);
             this.showToast("Failed to save settings", "error");
+        }
+    }
+
+    /**
+     * Reset advanced settings to defaults
+     */
+    async resetAdvancedSettings() {
+        try {
+            const confirmed = confirm(
+                "This will reset all advanced settings to their default values. " +
+                "Your API keys and categories will not be affected.\n\n" +
+                "Do you want to continue?"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const defaults = this.getDefaultSettings();
+
+            // Keep API keys and categories
+            this.settings = {
+                ...defaults,
+                apiKey: this.settings.apiKey,
+                cerebrasApiKey: this.settings.cerebrasApiKey,
+                groqApiKey: this.settings.groqApiKey,
+                categories: this.settings.categories,
+                lastSortTime: this.settings.lastSortTime,
+            };
+
+            await chrome.storage.sync.set({
+                bookmarkMindSettings: this.settings,
+            });
+
+            this.updateSettingsUI();
+            this.showToast("Advanced settings reset to defaults", "success");
+        } catch (error) {
+            console.error("Error resetting advanced settings:", error);
+            this.showToast("Failed to reset settings", "error");
         }
     }
 
@@ -1522,8 +1854,8 @@ class OptionsController {
             const threshold = this.settings.minBookmarksThreshold || 3;
             const confirmed = confirm(
                 `This will move bookmarks from folders with less than ${threshold} bookmarks to their parent folders. ` +
-                    "Empty folders will also be removed. This action cannot be undone.\n\n" +
-                    "Do you want to continue?"
+                "Empty folders will also be removed. This action cannot be undone.\n\n" +
+                "Do you want to continue?"
             );
 
             if (!confirmed) {
@@ -1659,9 +1991,8 @@ class OptionsController {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `bookmarkmind-full-export-${
-                new Date().toISOString().split("T")[0]
-            }.json`;
+            a.download = `bookmarkmind-full-export-${new Date().toISOString().split("T")[0]
+                }.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1829,32 +2160,29 @@ class OptionsController {
         const html = `
       <div class="provider-comparison-grid">
         ${providers
-            .map((provider) => {
-                const data = providerData[provider];
-                const isFastest = provider === fastest && providers.length > 1;
-                const isSlowest = provider === slowest && providers.length > 1;
+                .map((provider) => {
+                    const data = providerData[provider];
+                    const isFastest = provider === fastest && providers.length > 1;
+                    const isSlowest = provider === slowest && providers.length > 1;
 
-                return `
+                    return `
             <div class="provider-card">
               <div class="provider-card-header">
                 <span class="provider-name">${provider}</span>
-                ${
-                    isFastest
-                        ? '<span class="provider-badge fastest">Fastest</span>'
-                        : ""
-                }
-                ${
-                    isSlowest
-                        ? '<span class="provider-badge slowest">Slowest</span>'
-                        : ""
-                }
+                ${isFastest
+                            ? '<span class="provider-badge fastest">Fastest</span>'
+                            : ""
+                        }
+                ${isSlowest
+                            ? '<span class="provider-badge slowest">Slowest</span>'
+                            : ""
+                        }
               </div>
               <div class="provider-stats">
                 <div class="provider-stat-row">
                   <span class="provider-stat-label">Avg Response:</span>
-                  <span class="provider-stat-value">${
-                      data.avgResponseTime
-                  }ms</span>
+                  <span class="provider-stat-value">${data.avgResponseTime
+                        }ms</span>
                 </div>
                 <div class="provider-stat-row">
                   <span class="provider-stat-label">Success Rate:</span>
@@ -1866,15 +2194,14 @@ class OptionsController {
                 </div>
                 <div class="provider-stat-row">
                   <span class="provider-stat-label">Last 24h:</span>
-                  <span class="provider-stat-value">${
-                      data.recentPerformance.last24h.calls
-                  } calls</span>
+                  <span class="provider-stat-value">${data.recentPerformance.last24h.calls
+                        } calls</span>
                 </div>
               </div>
             </div>
           `;
-            })
-            .join("")}
+                })
+                .join("")}
       </div>
     `;
 
@@ -2024,12 +2351,12 @@ class OptionsController {
             .map((insight) => {
                 const type =
                     insight.type === "error_rate" ||
-                    insight.type === "performance_decline" ||
-                    insight.type === "memory_usage"
+                        insight.type === "performance_decline" ||
+                        insight.type === "memory_usage"
                         ? "warning"
                         : insight.priority === "info"
-                        ? "info"
-                        : "recommendation";
+                            ? "info"
+                            : "recommendation";
 
                 const icon =
                     type === "warning" ? "⚠️" : type === "info" ? "✓" : "💡";
@@ -2040,11 +2367,11 @@ class OptionsController {
           <div class="insight-content">
             <div class="insight-title">${this.escapeHtml(insight.title)}</div>
             <div class="insight-description">${this.escapeHtml(
-                insight.description
-            )}</div>
+                    insight.description
+                )}</div>
             <div class="insight-action">→ ${this.escapeHtml(
-                insight.action
-            )}</div>
+                    insight.action
+                )}</div>
           </div>
         </div>
       `;

@@ -1088,3 +1088,165 @@ rning Data Section */
 .depth-labels span:last-child {
     text-align: right;
 }
+
+/* Advanced Settings Enhancements */
+.setting-item input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1a73e8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb:hover {
+    background: #1557b0;
+    transform: scale(1.1);
+}
+
+.setting-item input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1a73e8;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.setting-item input[type="range"]::-moz-range-thumb:hover {
+    background: #1557b0;
+    transform: scale(1.1);
+}
+
+.depth-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #5f6368;
+    margin-top: 4px;
+}
+
+.setting-help {
+    font-size: 13px;
+    color: #5f6368;
+    line-height: 1.4;
+}
+
+/* Checkbox styling */
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #1a73e8;
+}
+
+.checkbox-group label {
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+/* Settings section dividers */
+.settings-grid .setting-item:nth-child(4),
+.settings-grid .setting-item:nth-child(7),
+.settings-grid .setting-item:nth-child(10),
+.settings-grid .setting-item:nth-child(14),
+.settings-grid .setting-item:nth-child(17),
+.settings-grid .setting-item:nth-child(20) {
+    padding-top: 16px;
+    border-top: 1px solid #e8eaed;
+}
+
+/* Responsive adjustments for advanced settings */
+@media (max-width: 768px) {
+    .settings-grid {
+        gap: 20px;
+    }
+
+    .depth-labels {
+        font-size: 10px;
+    }
+
+    .depth-labels span:nth-child(2),
+    .depth-labels span:nth-child(3) {
+        display: none;
+    }
+}
+
+/* Enhanced button group for advanced settings */
+.form-actions {
+    flex-wrap: wrap;
+}
+
+.form-actions .primary-btn {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-actions .secondary-btn {
+    flex: 0 1 auto;
+}
+
+/* Small button variant */
+.small-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Settings saved indicator */
+.settings-saved-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #e8f5e8;
+    color: #137333;
+    border-radius: 4px;
+    font-size: 13px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tooltip for settings */
+.setting-item[data-tooltip] {
+    position: relative;
+}
+
+.setting-item[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #202124;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 8px;
+    animation: fadeIn 0.2s ease;
+}
