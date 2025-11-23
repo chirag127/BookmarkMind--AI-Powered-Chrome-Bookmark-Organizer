@@ -314,6 +314,19 @@ describe('PopupController', () => {
       expect(controller.resultsSection.classList.contains('hidden')).toBe(false);
       expect(controller.resultsMessage.textContent).toContain('No bookmarks');
     });
+
+    test('should show background start status title', () => {
+      const controller = new PopupController();
+      const results = {
+        started: true,
+        message: 'Categorization started in background'
+      };
+
+      controller.showResults(results);
+
+      expect(controller.resultsTitle.textContent).toContain('Categorization Started');
+      expect(controller.resultsMessage.textContent).toContain('Categorization started in background');
+    });
   });
 
   describe('Error Handling', () => {

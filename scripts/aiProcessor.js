@@ -1422,13 +1422,15 @@ class AIProcessor {
      * @param {string} newTitle - New AI-generated title
      * @param {number} bookmarkNumber - Current bookmark number
      * @param {number} totalBookmarks - Total bookmarks being processed
+     * @param {Function} onMarkAsAIMoved - Optional callback
      */
     async _moveBookmarkImmediately(
         bookmark,
         category,
         newTitle,
         bookmarkNumber,
-        totalBookmarks
+        totalBookmarks,
+        onMarkAsAIMoved = null
     ) {
         console.log(
             `🚚 IMMEDIATE MOVEMENT: Moving bookmark ${bookmarkNumber}/${totalBookmarks}...`
@@ -1471,13 +1473,22 @@ class AIProcessor {
 
         // Mark this bookmark as moved by AI BEFORE moving it to prevent learning
         try {
-            await chrome.runtime.sendMessage({
-                action: "markBookmarkAsAIMoved",
-                bookmarkId: bookmark.id,
-            });
-            console.log(
-                `🤖 Pre-marked bookmark ${bookmark.id} as AI-moved before direct move`
-            );
+            if (onMarkAsAIMoved) {
+                // Use direct callback if available (more reliable in background script)
+                onMarkAsAIMoved(bookmark.id);
+                console.log(
+                    `🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via DIRECT CALLBACK`
+                );
+            } else {
+                // Fallback to message passing
+                await chrome.runtime.sendMessage({
+                    action: "markBookmarkAsAIMoved",
+                    bookmarkId: bookmark.id,
+                });
+                console.log(
+                    `🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via MESSAGE`
+                );
+            }
 
             // ALSO store persistent metadata in Chrome storage for additional protection
             const metadataKey = `ai_moved_${bookmark.id}`;
@@ -2472,13 +2483,20 @@ Return only the JSON array with properly formatted category names, no additional
      * @param {Array} batch - Batch of bookmarks
      * @param {Array} dynamicCategories - Available categories
      * @param {Object} learningData - Learning data
+     * @param {Function} onMarkAsAIMoved - Optional callback to mark bookmark as AI-moved
      * @returns {Promise<Array>} Categorization results
      */
-    async processBatch(batch, dynamicCategories, learningData) {
+    async processBatch(
+        batch,
+        dynamicCategories,
+        learningData,
+        onMarkAsAIMoved = null
+    ) {
         return await this._processBatchWithProviderFallback(
             batch,
             dynamicCategories,
-            learningData
+            learningData,
+            onMarkAsAIMoved
         );
     }
 
@@ -2487,9 +2505,15 @@ Return only the JSON array with properly formatted category names, no additional
      * @param {Array} batch - Batch of bookmarks
      * @param {Array} categories - Available categories
      * @param {Object} learningData - Learning data
+     * @param {Function} onMarkAsAIMoved - Optional callback
      * @returns {Promise<Array>} Batch results
      */
-    async _processBatchWithProviderFallback(batch, categories, learningData) {
+    async _processBatchWithProviderFallback(
+        batch,
+        categories,
+        learningData,
+        onMarkAsAIMoved = null
+    ) {
         console.log(
             `\n🔄 === PROVIDER FALLBACK ORCHESTRATOR (Size-Based Model Ordering) ===`
         );
@@ -2608,7 +2632,8 @@ Return only the JSON array with properly formatted category names, no additional
                                     item.category,
                                     item.title,
                                     j + 1,
-                                    batch.length
+                                    batch.length,
+                                    onMarkAsAIMoved
                                 );
                             } catch (moveError) {
                                 console.error(

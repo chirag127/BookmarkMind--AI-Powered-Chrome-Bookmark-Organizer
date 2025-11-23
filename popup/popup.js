@@ -1645,8 +1645,14 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         }
 
         // Handle categorization results
-        if (results.message) {
-            // Special case for "already organized" message
+        if (results.started) {
+            this.resultsTitle.textContent = "Categorization Started";
+            this.resultsMessage.textContent =
+                results.message || "Categorization started in background";
+        } else if (
+            results.message &&
+            /already organized/i.test(results.message)
+        ) {
             this.resultsTitle.textContent = "Already Organized!";
             this.resultsMessage.textContent = results.message;
         } else {

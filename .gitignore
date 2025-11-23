@@ -62,3 +62,4 @@ key.pem
 # Icon generation artifacts
 icons/*.py
 create_simple_icons.html
+package-lock.json

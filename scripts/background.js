@@ -435,19 +435,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
 
     return true; // Keep message channel open for async response
-});
-
-// Handle alarms for persistent background processing
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (alarm.name === "process_categorization_batch") {
-        console.log("⏰ Alarm triggered: process_categorization_batch");
-
-        // Check if Categorizer class is available
-        if (typeof Categorizer === "undefined") {
-            console.error(
-                "Categorizer class not loaded during alarm execution"
-            );
-            return;
         }
 
         const categorizer = new Categorizer();
