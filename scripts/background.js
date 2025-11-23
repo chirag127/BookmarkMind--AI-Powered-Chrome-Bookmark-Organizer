@@ -168,6 +168,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 await handleBulkCategorization(message.data, sendResponse);
                 break;
 
+            case "getStats":
+                await handleGetStats(sendResponse);
+                break;
+
+            case "exportBookmarks":
+                await handleExportBookmarks(sendResponse);
+                break;
+
+            case "getAllBookmarks":
+                await handleGetAllBookmarks(sendResponse);
+                break;
+
+            case "moveAllToBookmarkBar":
+                await handleMoveAllToBookmarkBar(sendResponse);
+                break;
+
             case "testApiKey":
                 await handleApiKeyTest(message.data, sendResponse);
             case "getAvailableCategories":
@@ -1753,3 +1769,44 @@ chrome.runtime.onSuspend.addListener(() => {
 });
 
 console.log("BookmarkMind background script loaded");
+
+/**
+ * Handle move all to bookmark bar request
+ */
+async function handleMoveAllToBookmarkBar(sendResponse) {
+    try {
+        // Check if BookmarkService class is available
+        if (typeof BookmarkService === "undefined") {
+            throw new Error(
+                "BookmarkService class not loaded. Please reload the extension."
+            );
+        }
+
+        const bookmarkService = new BookmarkService();
+
+        // Execute move operation
+        const result = await bookmarkService.moveAllToBookmarkBar(
+            (progress) => {
+                // Send progress updates to popup
+                try {
+                    chrome.runtime
+                        .sendMessage({
+                            action: "categorizationProgress", // Reusing existing progress listener in popup
+                            data: progress,
+                        })
+                        .catch(() => {});
+                } catch (error) {
+                    console.log("Progress callback error:", error.message);
+                }
+            }
+        );
+
+        sendResponse({ success: true, ...result });
+    } catch (error) {
+        console.error("Move all to bookmark bar error:", error);
+        sendResponse({
+            success: false,
+            error: error.message || "Move operation failed",
+        });
+    }
+}
