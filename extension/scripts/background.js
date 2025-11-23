@@ -81,7 +81,10 @@ chrome.runtime.onStartup.addListener(async () => {
       }
     }
   } catch (_error) {
-    console.error('_error checking for interrupted categorization:', _error);
+    console.error(
+      '_error checking for interrupted categorization:',
+      _error
+    );
   }
 });
 
@@ -266,7 +269,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } catch (_error) {
         console.warn(
           'Failed to disable bookmark move listener:',
-          error
+          _error
         );
       }
 
@@ -302,7 +305,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } catch (_error) {
           console.warn(
             'Failed to re-enable bookmark move listener:',
-            error
+            _error
           );
         }
 
@@ -346,7 +349,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } catch (_error) {
         console.warn(
           'Failed to disable bookmark move listener:',
-          error
+          _error
         );
       }
       sendResponse({ success: true });
@@ -369,7 +372,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } catch (_error) {
           console.warn(
             'Failed to re-enable bookmark move listener:',
-            error
+            _error
           );
         }
       }, 5000);
@@ -547,7 +550,7 @@ async function handleCategorization(data, sendResponse) {
             action: 'categorizationProgress',
             data: progress
           })
-          .catch((error) => {
+          .catch((_error) => {
             console.log(
               'Progress message failed (popup likely closed):',
               _error.message
@@ -685,7 +688,7 @@ async function handleBulkCategorization(data, sendResponse) {
               action: 'categorizationProgress',
               data: progress
             })
-            .catch((error) => {
+            .catch((_error) => {
               console.log(
                 'Progress message failed (popup likely closed):',
                 _error.message
@@ -841,7 +844,8 @@ async function handleGetSnapshots(sendResponse) {
     console.error('Get snapshots _error:', _error);
     sendResponse({
       success: false,
-      error: _error.message || 'Failed to retrieve snapshots from storage'
+      error:
+                _error.message || 'Failed to retrieve snapshots from storage'
     });
   }
 }

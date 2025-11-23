@@ -3639,7 +3639,8 @@ Based on previous user corrections and manual categorizations, follow these patt
       for (const [pattern, category] of Object.entries(learningData)) {
         prompt += `\n- ✅ URLs/titles containing "${pattern}" → MUST go to "${category}"`;
       }
-      prompt += '\n\n**IMPORTANT:** These patterns are based on user corrections. Follow them exactly to avoid repeating mistakes.';
+      prompt +=
+                '\n\n**IMPORTANT:** These patterns are based on user corrections. Follow them exactly to avoid repeating mistakes.';
     } else {
       prompt +=
                 '\n- No previous learning data available - use content analysis for categorization';
@@ -4171,7 +4172,7 @@ Return only the JSON array, no additional text or formatting`;
           successCount++;
           return { success: true, updated: false };
         } catch (_error) {
-          if (error.name === 'AbortError') {
+          if (_error.name === 'AbortError') {
             timeoutCount++;
             return { success: false, reason: 'timeout' };
           }
@@ -4258,7 +4259,7 @@ Return only the JSON array, no additional text or formatting`;
       return null;
     } catch (_error) {
       // Distinguish between timeout and other errors for better debugging if needed
-      if (error.name === 'AbortError') {
+      if (_error.name === 'AbortError') {
         // console.warn(`Timeout fetching title for ${url}`);
       } else {
         // console.warn(`Error fetching title for ${url}:`, _error.message);

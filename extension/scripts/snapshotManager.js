@@ -12,9 +12,9 @@ class SnapshotManager {
   }
 
   /**
-   * Validate snapshot data structure
-   * @private
-   */
+     * Validate snapshot data structure
+     * @private
+     */
   _validateSnapshotStructure(snapshot) {
     const errors = [];
 
@@ -35,7 +35,10 @@ class SnapshotManager {
       errors.push('Invalid or missing description');
     }
 
-    if (!snapshot.bookmarkTree || typeof snapshot.bookmarkTree !== 'object') {
+    if (
+      !snapshot.bookmarkTree ||
+            typeof snapshot.bookmarkTree !== 'object'
+    ) {
       errors.push('Invalid or missing bookmark tree');
     } else {
       if (!this._validateBookmarkNode(snapshot.bookmarkTree)) {
@@ -50,15 +53,16 @@ class SnapshotManager {
   }
 
   /**
-   * Validate bookmark node structure recursively
-   * @private
-   */
+     * Validate bookmark node structure recursively
+     * @private
+     */
   _validateBookmarkNode(node) {
     if (!node || typeof node !== 'object') return false;
 
     if (!node.id || typeof node.id !== 'string') return false;
 
-    if (node.url !== undefined && typeof node.url !== 'string') return false;
+    if (node.url !== undefined && typeof node.url !== 'string')
+      return false;
 
     if (node.children && Array.isArray(node.children)) {
       for (const child of node.children) {
@@ -70,9 +74,9 @@ class SnapshotManager {
   }
 
   /**
-   * Get detailed storage state for diagnostics
-   * @private
-   */
+     * Get detailed storage state for diagnostics
+     * @private
+     */
   async _getStorageState() {
     try {
       const allData = await chrome.storage.local.get(null);
@@ -88,17 +92,27 @@ class SnapshotManager {
         keyDetails[key] = {
           size,
           sizeMB: (size / (1024 * 1024)).toFixed(4),
-          type: Array.isArray(allData[key]) ? 'array' : typeof allData[key],
-          itemCount: Array.isArray(allData[key]) ? allData[key].length : 'N/A'
+          type: Array.isArray(allData[key])
+            ? 'array'
+            : typeof allData[key],
+          itemCount: Array.isArray(allData[key])
+            ? allData[key].length
+            : 'N/A'
         };
       }
 
       return {
         totalSize,
         totalSizeMB: (totalSize / (1024 * 1024)).toFixed(4),
-        usagePercent: ((totalSize / this.QUOTA_BYTES_LIMIT) * 100).toFixed(2),
+        usagePercent: (
+          (totalSize / this.QUOTA_BYTES_LIMIT) *
+                    100
+        ).toFixed(2),
         quotaRemaining: this.QUOTA_BYTES_LIMIT - totalSize,
-        quotaRemainingMB: ((this.QUOTA_BYTES_LIMIT - totalSize) / (1024 * 1024)).toFixed(4),
+        quotaRemainingMB: (
+          (this.QUOTA_BYTES_LIMIT - totalSize) /
+                    (1024 * 1024)
+        ).toFixed(4),
         keys: allKeys,
         keyDetails
       };
@@ -109,16 +123,16 @@ class SnapshotManager {
   }
 
   /**
-   * Log detailed error with stack trace and storage state
-   * @private
-   */
-  async _logDetailedError(context, error, additionalData = {}) {
+     * Log detailed error with stack trace and storage state
+     * @private
+     */
+  async _logDetailedError(context, _error, additionalData = {}) {
     const errorDetails = {
       context,
       timestamp: new Date().toISOString(),
       error: {
         message: _error.message,
-        name: error.name,
+        name: _error.name,
         stack: _error.stack
       },
       ...additionalData
@@ -129,15 +143,18 @@ class SnapshotManager {
       errorDetails.storageState = storageState;
     }
 
-    console.error('🔴 SNAPSHOT _error DETAILS:', JSON.stringify(errorDetails, null, 2));
+    console.error(
+      '🔴 SNAPSHOT _error DETAILS:',
+      JSON.stringify(errorDetails, null, 2)
+    );
 
     return errorDetails;
   }
 
   /**
-   * Detect and repair corrupted snapshots
-   * @private
-   */
+     * Detect and repair corrupted snapshots
+     * @private
+     */
   async _detectAndRepairCorruption() {
     try {
       console.log('🔍 Checking for corrupted snapshots...');
@@ -151,7 +168,9 @@ class SnapshotManager {
       }
 
       if (!Array.isArray(snapshots)) {
-        console.error('🔴 Snapshots data is not an array, resetting...');
+        console.error(
+          '🔴 Snapshots data is not an array, resetting...'
+        );
         await chrome.storage.local.set({ [this.storageKey]: [] });
         return { repaired: true, removed: 'all', reason: 'not_array' };
       }
@@ -179,8 +198,12 @@ class SnapshotManager {
       }
 
       if (corruptedSnapshots.length > 0) {
-        console.log(`🔧 Removing ${corruptedSnapshots.length} corrupted snapshots...`);
-        await chrome.storage.local.set({ [this.storageKey]: validSnapshots });
+        console.log(
+          `🔧 Removing ${corruptedSnapshots.length} corrupted snapshots...`
+        );
+        await chrome.storage.local.set({
+          [this.storageKey]: validSnapshots
+        });
 
         return {
           repaired: true,
@@ -192,15 +215,20 @@ class SnapshotManager {
 
       console.log(`✅ All ${snapshots.length} snapshots are valid`);
       return { repaired: false, removed: 0 };
-
     } catch (_error) {
       console.error('Failed to detect/repair corruption:', _error);
-      await this._logDetailedError('detectAndRepairCorruption', error);
+      await this._logDetailedError('detectAndRepairCorruption', _error);
 
       try {
-        console.warn('⚠️ Attempting emergency reset of snapshots storage...');
+        console.warn(
+          '⚠️ Attempting emergency reset of snapshots storage...'
+        );
         await chrome.storage.local.set({ [this.storageKey]: [] });
-        return { repaired: true, removed: 'all', reason: 'emergency_reset' };
+        return {
+          repaired: true,
+          removed: 'all',
+          reason: 'emergency_reset'
+        };
       } catch (resetError) {
         console.error('Emergency reset failed:', resetError);
         throw resetError;
@@ -209,11 +237,11 @@ class SnapshotManager {
   }
 
   /**
-   * Create a snapshot of current bookmark state
-   * @param {string} description - Description of what operation this snapshot is for
-   * @param {Object} metadata - Additional metadata (e.g., operation type, bookmark count)
-   * @returns {Promise<Object>} Created snapshot object
-   */
+     * Create a snapshot of current bookmark state
+     * @param {string} description - Description of what operation this snapshot is for
+     * @param {Object} metadata - Additional metadata (e.g., operation type, bookmark count)
+     * @returns {Promise<Object>} Created snapshot object
+     */
   async createSnapshot(description, metadata = {}) {
     try {
       console.log(`📸 Creating snapshot: ${description}`);
@@ -221,7 +249,11 @@ class SnapshotManager {
       await this._detectAndRepairCorruption();
 
       const storageState = await this._getStorageState();
-      console.log(`📊 Current storage usage: ${storageState.usagePercent}% (${storageState.totalSizeMB}MB / ${(this.QUOTA_BYTES_LIMIT / (1024 * 1024)).toFixed(2)}MB)`);
+      console.log(
+        `📊 Current storage usage: ${storageState.usagePercent}% (${
+          storageState.totalSizeMB
+        }MB / ${(this.QUOTA_BYTES_LIMIT / (1024 * 1024)).toFixed(2)}MB)`
+      );
 
       const tree = await chrome.bookmarks.getTree();
 
@@ -239,7 +271,11 @@ class SnapshotManager {
 
       const validation = this._validateSnapshotStructure(snapshot);
       if (!validation.valid) {
-        throw new Error(`Invalid snapshot structure: ${validation.errors.join(', ')}`);
+        throw new Error(
+          `Invalid snapshot structure: ${validation.errors.join(
+            ', '
+          )}`
+        );
       }
 
       const snapshotSize = new Blob([JSON.stringify(snapshot)]).size;
@@ -247,7 +283,9 @@ class SnapshotManager {
       console.log(`📦 Snapshot size: ${snapshotSizeMB}MB`);
 
       if (snapshotSize > this.QUOTA_BYTES_LIMIT * this.SAFE_THRESHOLD) {
-        console.warn(`⚠️ Snapshot size (${snapshotSizeMB}MB) exceeds safe threshold, may cause storage issues`);
+        console.warn(
+          `⚠️ Snapshot size (${snapshotSizeMB}MB) exceeds safe threshold, may cause storage issues`
+        );
       }
 
       await this._saveSnapshot(snapshot);
@@ -255,15 +293,18 @@ class SnapshotManager {
       console.log(`✅ Snapshot created: ${snapshot.id}`);
       return snapshot;
     } catch (_error) {
-      await this._logDetailedError('createSnapshot', error, { description, metadata });
+      await this._logDetailedError('createSnapshot', _error, {
+        description,
+        metadata
+      });
       throw new Error(`Failed to create snapshot: ${_error.message}`);
     }
   }
 
   /**
-   * Get all available snapshots with corruption checking
-   * @returns {Promise<Array>} Array of snapshot metadata (without full tree data)
-   */
+     * Get all available snapshots with corruption checking
+     * @returns {Promise<Array>} Array of snapshot metadata (without full tree data)
+     */
   async getSnapshots() {
     try {
       await this._detectAndRepairCorruption();
@@ -278,24 +319,36 @@ class SnapshotManager {
 
       if (!Array.isArray(snapshots)) {
         console.error('🔴 Snapshots data is corrupted (not an array)');
-        await this._logDetailedError('getSnapshots', new Error('Snapshots data is not an array'), {
-          snapshotsType: typeof snapshots,
-          snapshotsValue: JSON.stringify(snapshots).substring(0, 500)
-        });
+        await this._logDetailedError(
+          'getSnapshots',
+          new Error('Snapshots data is not an array'),
+          {
+            snapshotsType: typeof snapshots,
+            snapshotsValue: JSON.stringify(snapshots).substring(
+              0,
+              500
+            )
+          }
+        );
         await chrome.storage.local.set({ [this.storageKey]: [] });
         return [];
       }
 
       const validSnapshots = snapshots
-        .filter(snapshot => {
-          const validation = this._validateSnapshotStructure(snapshot);
+        .filter((snapshot) => {
+          const validation =
+                        this._validateSnapshotStructure(snapshot);
           if (!validation.valid) {
-            console.warn('⚠️ Filtering out invalid snapshot:', snapshot?.id, validation.errors);
+            console.warn(
+              '⚠️ Filtering out invalid snapshot:',
+              snapshot?.id,
+              validation.errors
+            );
             return false;
           }
           return true;
         })
-        .map(snapshot => ({
+        .map((snapshot) => ({
           id: snapshot.id,
           timestamp: snapshot.timestamp,
           description: snapshot.description,
@@ -303,24 +356,29 @@ class SnapshotManager {
         }));
 
       if (validSnapshots.length !== snapshots.length) {
-        console.warn(`⚠️ Filtered ${snapshots.length - validSnapshots.length} invalid snapshots`);
+        console.warn(
+          `⚠️ Filtered ${
+            snapshots.length - validSnapshots.length
+          } invalid snapshots`
+        );
       }
 
       console.log(`📦 Loaded ${validSnapshots.length} valid snapshots`);
       return validSnapshots;
-
     } catch (_error) {
-      await this._logDetailedError('getSnapshots', error);
-      console.error('🔴 Critical _error getting snapshots, returning empty array for graceful degradation');
+      await this._logDetailedError('getSnapshots', _error);
+      console.error(
+        '🔴 Critical error getting snapshots, returning empty array for graceful degradation'
+      );
       return [];
     }
   }
 
   /**
-   * Get a specific snapshot by ID with validation
-   * @param {string} snapshotId - Snapshot ID
-   * @returns {Promise<Object|null>} Snapshot object or null if not found
-   */
+     * Get a specific snapshot by ID with validation
+     * @param {string} snapshotId - Snapshot ID
+     * @returns {Promise<Object|null>} Snapshot object or null if not found
+     */
   async getSnapshot(snapshotId) {
     try {
       if (!snapshotId || typeof snapshotId !== 'string') {
@@ -337,7 +395,7 @@ class SnapshotManager {
         return null;
       }
 
-      const snapshot = snapshots.find(s => s.id === snapshotId);
+      const snapshot = snapshots.find((s) => s.id === snapshotId);
 
       if (!snapshot) {
         console.warn(`⚠️ Snapshot ${snapshotId} not found`);
@@ -346,29 +404,35 @@ class SnapshotManager {
 
       const validation = this._validateSnapshotStructure(snapshot);
       if (!validation.valid) {
-        console.error(`🔴 Snapshot ${snapshotId} is corrupted:`, validation.errors);
-        await this._logDetailedError('getSnapshot', new Error('Snapshot validation failed'), {
-          snapshotId,
-          validationErrors: validation.errors
-        });
+        console.error(
+          `🔴 Snapshot ${snapshotId} is corrupted:`,
+          validation.errors
+        );
+        await this._logDetailedError(
+          'getSnapshot',
+          new Error('Snapshot validation failed'),
+          {
+            snapshotId,
+            validationErrors: validation.errors
+          }
+        );
         return null;
       }
 
       console.log(`✅ Loaded snapshot: ${snapshotId}`);
       return snapshot;
-
     } catch (_error) {
-      await this._logDetailedError('getSnapshot', error, { snapshotId });
+      await this._logDetailedError('getSnapshot', _error, { snapshotId });
       return null;
     }
   }
 
   /**
-   * Restore bookmarks from a snapshot
-   * @param {string} snapshotId - Snapshot ID to restore
-   * @param {Function} progressCallback - Progress update callback
-   * @returns {Promise<Object>} Restoration results
-   */
+     * Restore bookmarks from a snapshot
+     * @param {string} snapshotId - Snapshot ID to restore
+     * @param {Function} progressCallback - Progress update callback
+     * @returns {Promise<Object>} Restoration results
+     */
   async restoreSnapshot(snapshotId, progressCallback) {
     // Initialize counting variables at the start of the function
     const results = {
@@ -384,58 +448,103 @@ class SnapshotManager {
 
       // Notify background script to disable bookmark move listener
       try {
-        await chrome.runtime.sendMessage({ action: 'startSnapshotRestore' });
+        await chrome.runtime.sendMessage({
+          action: 'startSnapshotRestore'
+        });
       } catch (_error) {
-        console.warn('Could not notify background script about snapshot restore start:', error);
+        console.warn(
+          'Could not notify background script about snapshot restore start:',
+          _error
+        );
       }
 
-      progressCallback?.({ stage: 'loading', progress: 0, message: 'Loading snapshot...' });
+      progressCallback?.({
+        stage: 'loading',
+        progress: 0,
+        message: 'Loading snapshot...'
+      });
 
       const snapshot = await this.getSnapshot(snapshotId);
       if (!snapshot) {
         throw new Error('Snapshot not found or corrupted');
       }
 
-      progressCallback?.({ stage: 'preparing', progress: 10, message: 'Preparing restoration...' });
+      progressCallback?.({
+        stage: 'preparing',
+        progress: 10,
+        message: 'Preparing restoration...'
+      });
 
       const currentTree = await chrome.bookmarks.getTree();
 
-      progressCallback?.({ stage: 'clearing', progress: 20, message: 'Clearing current bookmarks...' });
-      await this._clearCurrentBookmarks(currentTree[0], results, progressCallback);
+      progressCallback?.({
+        stage: 'clearing',
+        progress: 20,
+        message: 'Clearing current bookmarks...'
+      });
+      await this._clearCurrentBookmarks(
+        currentTree[0],
+        results,
+        progressCallback
+      );
 
-      progressCallback?.({ stage: 'restoring', progress: 50, message: 'Restoring bookmarks...' });
-      await this._restoreBookmarkTree(snapshot.bookmarkTree, results, progressCallback);
+      progressCallback?.({
+        stage: 'restoring',
+        progress: 50,
+        message: 'Restoring bookmarks...'
+      });
+      await this._restoreBookmarkTree(
+        snapshot.bookmarkTree,
+        results,
+        progressCallback
+      );
 
-      progressCallback?.({ stage: 'complete', progress: 100, message: 'Restoration complete' });
+      progressCallback?.({
+        stage: 'complete',
+        progress: 100,
+        message: 'Restoration complete'
+      });
 
       console.log('✅ Snapshot restored successfully:', results);
 
       // Notify background script to re-enable bookmark move listener
       try {
-        await chrome.runtime.sendMessage({ action: 'endSnapshotRestore' });
+        await chrome.runtime.sendMessage({
+          action: 'endSnapshotRestore'
+        });
       } catch (_error) {
-        console.warn('Could not notify background script about snapshot restore end:', error);
+        console.warn(
+          'Could not notify background script about snapshot restore end:',
+          _error
+        );
       }
 
       return results;
     } catch (_error) {
       // Ensure listener is re-enabled even on error
       try {
-        await chrome.runtime.sendMessage({ action: 'endSnapshotRestore' });
+        await chrome.runtime.sendMessage({
+          action: 'endSnapshotRestore'
+        });
       } catch (msgError) {
-        console.warn('Could not notify background script about snapshot restore end (error case):', msgError);
+        console.warn(
+          'Could not notify background script about snapshot restore end (error case):',
+          msgError
+        );
       }
 
-      await this._logDetailedError('restoreSnapshot', error, { snapshotId });
+      await this._logDetailedError('restoreSnapshot', _error, {
+        snapshotId
+      });
       throw new Error(`Failed to restore snapshot: ${_error.message}`);
     }
   }
 
   /**
-   * Delete a snapshot
-   * @param {string} snapshotId - Snapshot ID to delete
-   * @returns {Promise<boolean>} Success status
-   */
+     * Delete a snapshot
+     * @param {string} snapshotId - Snapshot ID to delete
+     * @returns {Promise<boolean>} Success status
+     */
   async deleteSnapshot(snapshotId) {
     try {
       if (!snapshotId || typeof snapshotId !== 'string') {
@@ -451,7 +560,9 @@ class SnapshotManager {
         return false;
       }
 
-      const filteredSnapshots = snapshots.filter(s => s.id !== snapshotId);
+      const filteredSnapshots = snapshots.filter(
+        (s) => s.id !== snapshotId
+      );
 
       if (filteredSnapshots.length === snapshots.length) {
         console.warn(`⚠️ Snapshot ${snapshotId} not found`);
@@ -465,15 +576,17 @@ class SnapshotManager {
       console.log(`🗑️ Snapshot deleted: ${snapshotId}`);
       return true;
     } catch (_error) {
-      await this._logDetailedError('deleteSnapshot', error, { snapshotId });
+      await this._logDetailedError('deleteSnapshot', _error, {
+        snapshotId
+      });
       return false;
     }
   }
 
   /**
-   * Clear all snapshots
-   * @returns {Promise<boolean>} Success status
-   */
+     * Clear all snapshots
+     * @returns {Promise<boolean>} Success status
+     */
   async clearAllSnapshots() {
     try {
       await chrome.storage.local.set({
@@ -483,15 +596,15 @@ class SnapshotManager {
       console.log('🗑️ All snapshots cleared');
       return true;
     } catch (_error) {
-      await this._logDetailedError('clearAllSnapshots', error);
+      await this._logDetailedError('clearAllSnapshots', _error);
       return false;
     }
   }
 
   /**
-   * Save snapshot to storage with robust error handling
-   * @private
-   */
+     * Save snapshot to storage with robust error handling
+     * @private
+     */
   async _saveSnapshot(snapshot) {
     try {
       const result = await chrome.storage.local.get([this.storageKey]);
@@ -506,7 +619,9 @@ class SnapshotManager {
       snapshots.sort((a, b) => b.timestamp - a.timestamp);
 
       if (snapshots.length > this.maxSnapshots) {
-        console.log(`📦 Removing old snapshots (keeping ${this.maxSnapshots} most recent)`);
+        console.log(
+          `📦 Removing old snapshots (keeping ${this.maxSnapshots} most recent)`
+        );
         snapshots = snapshots.slice(0, this.maxSnapshots);
       }
 
@@ -514,7 +629,9 @@ class SnapshotManager {
       const dataSizeMB = (dataSize / (1024 * 1024)).toFixed(4);
 
       if (dataSize > this.QUOTA_BYTES_LIMIT) {
-        console.warn(`⚠️ Data size (${dataSizeMB}MB) exceeds quota, reducing snapshots...`);
+        console.warn(
+          `⚠️ Data size (${dataSizeMB}MB) exceeds quota, reducing snapshots...`
+        );
         throw new Error('QUOTA_BYTES quota exceeded');
       }
 
@@ -522,23 +639,30 @@ class SnapshotManager {
         [this.storageKey]: snapshots
       });
 
-      console.log(`💾 Saved ${snapshots.length} snapshots (${dataSizeMB}MB)`);
-
+      console.log(
+        `💾 Saved ${snapshots.length} snapshots (${dataSizeMB}MB)`
+      );
     } catch (_error) {
-      if (_error.message && (_error.message.includes('QUOTA_BYTES') || _error.message.includes('quota'))) {
-        console.warn('⚠️ Storage quota exceeded, initiating cleanup...');
+      if (
+        _error.message &&
+                (_error.message.includes('QUOTA_BYTES') ||
+                    _error.message.includes('quota'))
+      ) {
+        console.warn(
+          '⚠️ Storage quota exceeded, initiating cleanup...'
+        );
         await this._handleQuotaExceeded(snapshot);
       } else {
-        await this._logDetailedError('_saveSnapshot', error);
-        throw error;
+        await this._logDetailedError('_saveSnapshot', _error);
+        throw _error;
       }
     }
   }
 
   /**
-   * Handle storage quota exceeded with aggressive cleanup
-   * @private
-   */
+     * Handle storage quota exceeded with aggressive cleanup
+     * @private
+     */
   async _handleQuotaExceeded(newSnapshot) {
     try {
       console.log('🧹 Starting quota exceeded recovery...');
@@ -561,13 +685,18 @@ class SnapshotManager {
 
       while (!savedSuccessfully && keepCount > 0) {
         const trimmedSnapshots = snapshots.slice(0, keepCount);
-        const testSize = new Blob([JSON.stringify(trimmedSnapshots)]).size;
+        const testSize = new Blob([JSON.stringify(trimmedSnapshots)])
+          .size;
         const testSizeMB = (testSize / (1024 * 1024)).toFixed(4);
 
-        console.log(`🔄 Attempting save with ${keepCount} snapshots (${testSizeMB}MB)...`);
+        console.log(
+          `🔄 Attempting save with ${keepCount} snapshots (${testSizeMB}MB)...`
+        );
 
         if (testSize > this.QUOTA_BYTES_LIMIT * this.SAFE_THRESHOLD) {
-          console.log(`⚠️ ${keepCount} snapshots still too large, reducing further...`);
+          console.log(
+            `⚠️ ${keepCount} snapshots still too large, reducing further...`
+          );
           keepCount--;
           continue;
         }
@@ -577,28 +706,38 @@ class SnapshotManager {
             [this.storageKey]: trimmedSnapshots
           });
           savedSuccessfully = true;
-          console.log(`✅ Saved snapshot with ${keepCount} total snapshots (${testSizeMB}MB)`);
+          console.log(
+            `✅ Saved snapshot with ${keepCount} total snapshots (${testSizeMB}MB)`
+          );
         } catch (_error) {
-          console.warn(`❌ Failed to save with ${keepCount} snapshots, reducing...`);
+          console.warn(
+            `❌ Failed to save with ${keepCount} snapshots, reducing...`
+          );
           keepCount--;
         }
       }
 
       if (!savedSuccessfully) {
-        console.error('🔴 Unable to save snapshot even after aggressive cleanup');
-        await chrome.storage.local.set({ [this.storageKey]: [newSnapshot] });
-        console.log('⚠️ Saved only the new snapshot, all old snapshots removed');
+        console.error(
+          '🔴 Unable to save snapshot even after aggressive cleanup'
+        );
+        await chrome.storage.local.set({
+          [this.storageKey]: [newSnapshot]
+        });
+        console.log(
+          '⚠️ Saved only the new snapshot, all old snapshots removed'
+        );
       }
     } catch (_error) {
-      await this._logDetailedError('_handleQuotaExceeded', error);
+      await this._logDetailedError('_handleQuotaExceeded', _error);
       throw new Error(`Quota recovery failed: ${_error.message}`);
     }
   }
 
   /**
-   * Clear current bookmarks (except root folders)
-   * @private
-   */
+     * Clear current bookmarks (except root folders)
+     * @private
+     */
   async _clearCurrentBookmarks(rootNode, results, progressCallback) {
     const queue = [];
 
@@ -627,18 +766,24 @@ class SnapshotManager {
 
         processed++;
         const progress = 20 + Math.floor((processed / total) * 30);
-        progressCallback?.({ stage: 'clearing', progress, message: `Clearing... (${processed}/${total})` });
+        progressCallback?.({
+          stage: 'clearing',
+          progress,
+          message: `Clearing... (${processed}/${total})`
+        });
       } catch (_error) {
-        console.warn(`Failed to remove node ${node.id}:`, error);
-        results.errors.push(`Failed to remove: ${node.title || node.url}`);
+        console.warn(`Failed to remove node ${node.id}:`, _error);
+        results.errors.push(
+          `Failed to remove: ${node.title || node.url}`
+        );
       }
     }
   }
 
   /**
-   * Restore bookmark tree from snapshot
-   * @private
-   */
+     * Restore bookmark tree from snapshot
+     * @private
+     */
   async _restoreBookmarkTree(snapshotTree, results, progressCallback) {
     const folderMap = new Map();
     folderMap.set('0', '0');
@@ -652,7 +797,9 @@ class SnapshotManager {
         allNodes.push({ node, depth });
       }
       if (node.children) {
-        node.children.forEach(child => collectNodes(child, depth + 1));
+        node.children.forEach((child) =>
+          collectNodes(child, depth + 1)
+        );
       }
     };
 
@@ -668,7 +815,9 @@ class SnapshotManager {
         const parentId = folderMap.get(node.parentId);
 
         if (!parentId) {
-          console.warn(`Parent not found for node ${node.id}, skipping...`);
+          console.warn(
+            `Parent not found for node ${node.id}, skipping...`
+          );
           continue;
         }
 
@@ -695,26 +844,34 @@ class SnapshotManager {
 
         processed++;
         const progress = 50 + Math.floor((processed / total) * 45);
-        progressCallback?.({ stage: 'restoring', progress, message: `Restoring... (${processed}/${total})` });
+        progressCallback?.({
+          stage: 'restoring',
+          progress,
+          message: `Restoring... (${processed}/${total})`
+        });
       } catch (_error) {
         console.error(`Failed to restore node ${node.id}:`, _error);
-        results.errors.push(`Failed to restore: ${node.title || node.url}`);
+        results.errors.push(
+          `Failed to restore: ${node.title || node.url}`
+        );
       }
     }
   }
 
   /**
-   * Generate unique snapshot ID
-   * @private
-   */
+     * Generate unique snapshot ID
+     * @private
+     */
   _generateSnapshotId() {
-    return `snapshot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `snapshot_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
   }
 
   /**
-   * Get storage usage information
-   * @returns {Promise<Object>} Storage usage stats
-   */
+     * Get storage usage information
+     * @returns {Promise<Object>} Storage usage stats
+     */
   async getStorageInfo() {
     try {
       const result = await chrome.storage.local.get([this.storageKey]);
@@ -743,7 +900,7 @@ class SnapshotManager {
         quotaRemainingMB: storageState?.quotaRemainingMB || 'N/A'
       };
     } catch (_error) {
-      await this._logDetailedError('getStorageInfo', error);
+      await this._logDetailedError('getStorageInfo', _error);
       return {
         snapshotCount: 0,
         totalSizeBytes: 0,
@@ -755,9 +912,9 @@ class SnapshotManager {
   }
 
   /**
-   * Run diagnostics on snapshot storage
-   * @returns {Promise<Object>} Diagnostic report
-   */
+     * Run diagnostics on snapshot storage
+     * @returns {Promise<Object>} Diagnostic report
+     */
   async runDiagnostics() {
     try {
       console.log('🔍 Running snapshot storage diagnostics...');
@@ -786,9 +943,8 @@ class SnapshotManager {
 
       console.log('📊 Diagnostics complete:', diagnostics);
       return diagnostics;
-
     } catch (_error) {
-      await this._logDetailedError('runDiagnostics', error);
+      await this._logDetailedError('runDiagnostics', _error);
       return {
         timestamp: new Date().toISOString(),
         health: 'critical',
