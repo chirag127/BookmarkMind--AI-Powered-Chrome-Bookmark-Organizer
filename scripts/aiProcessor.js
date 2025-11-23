@@ -1184,7 +1184,7 @@ class AIProcessor {
                     );
                     await this._enrichBatchWithTitles(batch);
 
-                    const batchPromise = this._processBatch(
+                    const batchPromise = this.processBatch(
                         batch,
                         dynamicCategories,
                         learningData
@@ -2470,14 +2470,14 @@ Return only the JSON array with properly formatted category names, no additional
     /**
      * Process a batch of bookmarks
      * @param {Array} batch - Batch of bookmarks
-     * @param {Array} categories - Available categories
+     * @param {Array} dynamicCategories - Available categories
      * @param {Object} learningData - Learning data
-     * @returns {Promise<Array>} Batch results
+     * @returns {Promise<Array>} Categorization results
      */
-    async _processBatch(batch, categories, learningData) {
+    async processBatch(batch, dynamicCategories, learningData) {
         return await this._processBatchWithProviderFallback(
             batch,
-            categories,
+            dynamicCategories,
             learningData
         );
     }

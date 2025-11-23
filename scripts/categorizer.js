@@ -53,10 +53,10 @@ class Categorizer {
         this.sessionStartTime = Date.now();
 
         try {
-            console.log("Categorizer: Starting categorization...");
+            console.log("Categorizer: Starting persistent categorization...");
             progressCallback?.({ stage: "starting", progress: 0 });
 
-            // Create snapshot before starting categorization
+            // Create snapshot before starting
             if (this.snapshotManager) {
                 try {
                     progressCallback?.({
@@ -80,58 +80,31 @@ class Categorizer {
                             ).length,
                         }
                     );
-                    console.log("✅ Snapshot created successfully");
                 } catch (snapshotError) {
-                    console.warn(
-                        "Failed to create snapshot, continuing anyway:",
-                        snapshotError
-                    );
+                    console.warn("Failed to create snapshot:", snapshotError);
                 }
             }
 
-            // Get user settings
-            console.log("Categorizer: Getting settings...");
+            // Get settings
             const settings = await this._getSettings();
-            console.log("Categorizer: Settings loaded:", {
-                hasApiKey: !!settings.apiKey,
-                categories: settings.categories?.length,
-            });
-
             if (!settings.apiKey) {
-                throw new Error(
-                    "API key not configured. Please set up your Gemini API key in settings."
-                );
+                throw new Error("API key not configured.");
             }
 
-            console.log("Categorizer: Setting API keys...");
             this.aiProcessor.setApiKey(
                 settings.apiKey,
                 settings.cerebrasApiKey || null,
                 settings.groqApiKey || null
             );
 
-            // Get all bookmarks
-            console.log("Categorizer: Loading bookmarks...");
+            // Get bookmarks
             progressCallback?.({ stage: "loading", progress: 10 });
             const bookmarks = await this.bookmarkService.getAllBookmarks();
-            console.log(`Categorizer: Loaded ${bookmarks.length} bookmarks`);
-
-            if (bookmarks.length === 0) {
-                console.log("Categorizer: No bookmarks found");
-                return { processed: 0, categorized: 0, errors: 0 };
-            }
-
-            // Filter bookmarks that need categorization
-            // Check if user wants to force re-organization
 
             let uncategorizedBookmarks;
-
             if (forceReorganize) {
-                // Re-organize ALL bookmarks, including those already in folders
                 uncategorizedBookmarks = bookmarks;
-                console.log("Force re-organize mode: Processing ALL bookmarks");
             } else {
-                // Only process bookmarks in main folders (not in subfolders)
                 uncategorizedBookmarks = bookmarks.filter((bookmark) => {
                     const isInMainFolders = ["1", "2", "3"].includes(
                         bookmark.parentId
@@ -143,27 +116,12 @@ class Categorizer {
                             "Other Bookmarks",
                             "Mobile Bookmarks",
                         ].includes(bookmark.currentFolderName);
-
                     return isInMainFolders || isInRootLevel;
                 });
             }
 
-            console.log(
-                `Found ${uncategorizedBookmarks.length} bookmarks to process out of ${bookmarks.length} total`
-            );
-            console.log("Bookmark distribution:", {
-                bookmarksBar: uncategorizedBookmarks.filter(
-                    (b) => b.parentId === "1"
-                ).length,
-                otherBookmarks: uncategorizedBookmarks.filter(
-                    (b) => b.parentId === "2"
-                ).length,
-                mobileBookmarks: uncategorizedBookmarks.filter(
-                    (b) => b.parentId === "3"
-                ).length,
-            });
-
             if (uncategorizedBookmarks.length === 0) {
+                this.isProcessing = false;
                 return {
                     processed: bookmarks.length,
                     categorized: 0,
@@ -172,135 +130,199 @@ class Categorizer {
                 };
             }
 
-            // Calculate estimated processing time based on batch size
+            // Initialize persistent state
             const batchSize = settings.batchSize || 50;
-            const estimatedBatches = Math.ceil(
-                uncategorizedBookmarks.length / batchSize
-            );
-            const estimatedMinutes = Math.ceil(estimatedBatches * 0.5);
-
-            console.log(
-                `Processing ${uncategorizedBookmarks.length} bookmarks in ${estimatedBatches} batches (batch size: ${batchSize})`
-            );
-            console.log(`Estimated time: ${estimatedMinutes} minutes`);
-
-            if (uncategorizedBookmarks.length > 500) {
-                console.log(
-                    `Large collection detected: ${uncategorizedBookmarks.length} bookmarks will be processed in batches.`
-                );
-            }
-
-            // Get learning data
-            const learningData = await this._getLearningData();
-
-            // Categorize bookmarks using AI with dynamic category generation and batch progress tracking
-            console.log(
-                "Categorizer: Starting AI categorization with dynamic categories..."
-            );
-            progressCallback?.({
-                stage: "categorizing",
-                progress: 30,
-                message: `Processing ${uncategorizedBookmarks.length} bookmarks in batches...`,
-            });
-
-            // Process bookmarks in batches with progress tracking
-            const totalBatches = Math.ceil(
-                uncategorizedBookmarks.length / batchSize
-            );
-
-            console.log(
-                `Categorizer: Processing ${uncategorizedBookmarks.length} bookmarks in ${totalBatches} batches of ${batchSize}`
-            );
-
-            // Create a progress-aware categorization wrapper
-            const categorizationPromise = this._categorizeWithProgress(
-                uncategorizedBookmarks,
-                settings.categories,
-                learningData,
-                batchSize,
-                (batchProgress) => {
-                    // Map batch progress (0-100) to categorization stage (30-70)
-                    const overallProgress =
-                        30 + Math.floor(batchProgress * 0.4);
-                    progressCallback?.({
-                        stage: "categorizing",
-                        progress: overallProgress,
-                        message: `Processing batch ${batchProgress.currentBatch}/${batchProgress.totalBatches}...`,
-                    });
-                }
-            );
-
-            // Dynamic timeout based on actual batch count (3 minutes per batch minimum)
-            const timeoutMinutes = Math.max(5, totalBatches * 3);
-            const timeoutMs = timeoutMinutes * 60000;
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(
-                    () =>
-                        reject(
-                            new Error(
-                                `AI categorization timeout after ${timeoutMinutes} minutes. Check your internet connection or reduce batch size.`
-                            )
-                        ),
-                    timeoutMs
-                );
-            });
-
-            console.log(
-                `Categorizer: Timeout set to ${timeoutMinutes} minutes for ${totalBatches} batches`
-            );
-
-            const categorizationData = await Promise.race([
-                categorizationPromise,
-                timeoutPromise,
-            ]);
-
-            console.log(`Categorizer: AI categorization completed`);
-            console.log(`Generated categories:`, categorizationData.categories);
-            console.log(
-                `Categorization results:`,
-                categorizationData.results.length
-            );
-
-            const categorizations = categorizationData.results;
-            const generatedCategories = categorizationData.categories;
-
-            // Organization is now done immediately during categorization in aiProcessor.js
-            // We don't need to call _organizeBookmarks anymore
-            console.log(
-                "✅ Organization completed during categorization (real-time)"
-            );
-
-            const finalResults = {
-                processed: uncategorizedBookmarks.length,
-                categorized: categorizationData.results.length,
-                errors: 0, // Errors are handled per batch in aiProcessor
-                categories: new Set(
-                    categorizationData.results.map((r) => r.category)
-                ),
-                generatedCategories: generatedCategories,
+            const state = {
+                bookmarks: uncategorizedBookmarks,
+                totalBookmarks: uncategorizedBookmarks.length,
+                currentIndex: 0,
+                batchSize: batchSize,
+                results: [],
+                generatedCategories: [],
+                startTime: Date.now(),
+                forceReorganize: forceReorganize,
+                settings: settings,
             };
 
-            // Record analytics
-            if (this.analyticsService) {
-                const sessionDuration = Date.now() - this.sessionStartTime;
-                await this.analyticsService.recordCategorizationSession({
-                    processed: finalResults.processed,
-                    categorized: finalResults.categorized,
-                    errors: finalResults.errors,
-                    duration: sessionDuration,
-                    categories: Array.from(finalResults.categories),
-                    mode: "full",
-                });
+            await this._saveState(state);
+
+            // Notify background to start AI mode
+            await chrome.runtime.sendMessage({
+                action: "startAICategorization",
+            });
+
+            // Schedule first batch immediately via alarm
+            await chrome.alarms.create("process_categorization_batch", {
+                when: Date.now() + 100,
+            });
+
+            console.log(
+                `Categorization started: ${uncategorizedBookmarks.length} bookmarks queued.`
+            );
+            return {
+                started: true,
+                message: "Categorization started in background",
+            };
+        } catch (error) {
+            console.error("Categorization start error:", error);
+            this.isProcessing = false;
+            throw error;
+        }
+    }
+
+    /**
+     * Process the next batch of bookmarks (called by alarm)
+     */
+    async processNextBatch() {
+        try {
+            const state = await this._loadState();
+            if (!state || state.currentIndex >= state.totalBookmarks) {
+                await this._finishCategorization(state);
+                return;
             }
 
-            return finalResults;
+            console.log(
+                `Processing batch starting at index ${state.currentIndex}/${state.totalBookmarks}`
+            );
+
+            // Initialize services if needed (service worker might have restarted)
+            if (!this.aiProcessor.apiKey && state.settings?.apiKey) {
+                this.aiProcessor.setApiKey(
+                    state.settings.apiKey,
+                    state.settings.cerebrasApiKey || null,
+                    state.settings.groqApiKey || null
+                );
+            }
+
+            // Get batch
+            const batch = state.bookmarks.slice(
+                state.currentIndex,
+                state.currentIndex + state.batchSize
+            );
+
+            // Enrich titles
+            await this.aiProcessor._enrichBatchWithTitles(batch);
+
+            // Process batch
+            // We need to get learning data again as it might have changed or we are in a new worker
+            const learningData = await this._getLearningData();
+
+            // Get dynamic categories from state or generate new ones if first batch
+            let dynamicCategories = state.generatedCategories;
+            if (state.currentIndex === 0) {
+                dynamicCategories =
+                    await this.aiProcessor._generateDynamicCategories(
+                        state.bookmarks, // Use all bookmarks for better category generation
+                        state.settings.categories,
+                        learningData
+                    );
+                state.generatedCategories = dynamicCategories;
+            }
+
+            // Process with AI
+            const batchResults = await this.aiProcessor.processBatch(
+                batch,
+                dynamicCategories,
+                learningData
+            );
+
+            // Move bookmarks immediately (handled by processBatch, but we need to track results)
+            // Note: processBatch in aiProcessor now handles the movement.
+
+            // Update state
+            state.results = [...(state.results || []), ...batchResults];
+            state.currentIndex += state.batchSize;
+
+            // Calculate progress
+            const progress = Math.round(
+                (state.currentIndex / state.totalBookmarks) * 100
+            );
+
+            // Send progress update
+            try {
+                await chrome.runtime.sendMessage({
+                    action: "categorizationProgress",
+                    data: {
+                        stage: "categorizing",
+                        progress: 30 + Math.floor(progress * 0.7), // Map to 30-100% range
+                        message: `Processed ${Math.min(
+                            state.currentIndex,
+                            state.totalBookmarks
+                        )}/${state.totalBookmarks} bookmarks...`,
+                    },
+                });
+            } catch (e) {
+                /* ignore */
+            }
+
+            // Save updated state
+            await this._saveState(state);
+
+            // Schedule next batch
+            if (state.currentIndex < state.totalBookmarks) {
+                await chrome.alarms.create("process_categorization_batch", {
+                    when: Date.now() + 2000,
+                }); // 2s delay between batches
+            } else {
+                // Done!
+                await this.processNextBatch(); // Call again to trigger finish
+            }
         } catch (error) {
-            console.error("Categorization error:", error);
-            throw error;
-        } finally {
-            this.isProcessing = false;
-            this.sessionStartTime = null;
+            console.error("Batch processing error:", error);
+            // Retry logic could go here, or just abort
+            // For now, let's try to schedule a retry in 1 minute if it wasn't a fatal error
+            await chrome.alarms.create("process_categorization_batch", {
+                when: Date.now() + 60000,
+            });
         }
+    }
+
+    async _finishCategorization(state) {
+        if (!state) return;
+
+        console.log("Categorization finished!");
+
+        // Final cleanup
+        await this._clearState();
+        await chrome.runtime.sendMessage({ action: "endAICategorization" });
+
+        // Record analytics
+        if (this.analyticsService) {
+            const sessionDuration = Date.now() - state.startTime;
+            await this.analyticsService.recordCategorizationSession({
+                processed: state.totalBookmarks,
+                categorized: state.results.length,
+                errors: 0,
+                duration: sessionDuration,
+                categories: state.generatedCategories,
+                mode: "full",
+            });
+        }
+
+        // Send final success message
+        try {
+            await chrome.runtime.sendMessage({
+                action: "categorizationComplete",
+                data: {
+                    processed: state.totalBookmarks,
+                    categorized: state.results.length,
+                    categories: state.generatedCategories,
+                },
+            });
+        } catch (e) {}
+    }
+
+    async _saveState(state) {
+        await chrome.storage.local.set({ categorization_state: state });
+    }
+
+    async _loadState() {
+        const result = await chrome.storage.local.get("categorization_state");
+        return result.categorization_state;
+    }
+
+    async _clearState() {
+        await chrome.storage.local.remove("categorization_state");
     }
 
     /**

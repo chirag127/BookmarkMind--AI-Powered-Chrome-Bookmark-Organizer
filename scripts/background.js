@@ -67,8 +67,22 @@ function logAIState(context) {
 }
 
 // Initialize extension on startup
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
     console.log("BookmarkMind extension started");
+
+    // Resume categorization if it was in progress
+    try {
+        const result = await chrome.storage.local.get("categorization_state");
+        if (result.categorization_state) {
+            console.log("🔄 Resuming interrupted categorization...");
+            if (typeof Categorizer !== "undefined") {
+                const categorizer = new Categorizer();
+                await categorizer.processNextBatch();
+            }
+        }
+    } catch (error) {
+        console.error("Error checking for interrupted categorization:", error);
+    }
 });
 
 // Handle extension installation
@@ -421,6 +435,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
 
     return true; // Keep message channel open for async response
+});
+
+// Handle alarms for persistent background processing
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name === "process_categorization_batch") {
+        console.log("⏰ Alarm triggered: process_categorization_batch");
+
+        // Check if Categorizer class is available
+        if (typeof Categorizer === "undefined") {
+            console.error(
+                "Categorizer class not loaded during alarm execution"
+            );
+            return;
+        }
+
+        const categorizer = new Categorizer();
+        await categorizer.processNextBatch();
+    }
 });
 
 /**
