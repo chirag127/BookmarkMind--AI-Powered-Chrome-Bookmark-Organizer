@@ -2588,6 +2588,37 @@ Return only the JSON array with properly formatted category names, no additional
                             model.name
                         }`
                     );
+
+                    // IMMEDIATELY MOVE each bookmark in the batch after categorization
+                    console.log(
+                        `🚚 IMMEDIATE BATCH MOVEMENT: Moving ${result.length} bookmarks...`
+                    );
+
+                    for (let j = 0; j < result.length; j++) {
+                        const item = result[j];
+                        // Find original bookmark from batch
+                        const bookmark =
+                            batch.find((b) => b.id === item.bookmarkId) ||
+                            batch[j];
+
+                        if (bookmark) {
+                            try {
+                                await this._moveBookmarkImmediately(
+                                    bookmark,
+                                    item.category,
+                                    item.title,
+                                    j + 1,
+                                    batch.length
+                                );
+                            } catch (moveError) {
+                                console.error(
+                                    `❌ Failed to move bookmark ${bookmark.id}:`,
+                                    moveError
+                                );
+                            }
+                        }
+                    }
+
                     return result;
                 }
             } catch (error) {
