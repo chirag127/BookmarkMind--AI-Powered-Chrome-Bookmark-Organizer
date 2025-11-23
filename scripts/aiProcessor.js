@@ -4069,16 +4069,32 @@ Return only the JSON array, no additional text or formatting`;
 
     /**
      * Enrich a batch of bookmarks with live titles fetched from their URLs
+     * Optimized with configurable concurrency and performance metrics
      * @param {Array} batch - Batch of bookmarks to enrich
      */
     async _enrichBatchWithTitles(batch) {
-        const CONCURRENCY_LIMIT = 5;
+        // Configurable concurrency based on settings or use default
+        const settings = await this._getSettings();
+        const CONCURRENCY_LIMIT = settings.titleFetchConcurrency || 5;
+        const ENABLE_METRICS = settings.showDetailedLogs || false;
+
+        const startTime = Date.now();
+        let successCount = 0;
+        let errorCount = 0;
+        let timeoutCount = 0;
+        let updatedCount = 0;
+
+        console.log(
+            `🔄 Fetching live titles for ${batch.length} bookmarks (concurrency: ${CONCURRENCY_LIMIT})...`
+        );
 
         // Process in chunks to limit concurrency
         for (let i = 0; i < batch.length; i += CONCURRENCY_LIMIT) {
             const chunk = batch.slice(i, i + CONCURRENCY_LIMIT);
+            const chunkStartTime = Date.now();
+
             const promises = chunk.map(async (bookmark) => {
-                if (!bookmark.url) return;
+                if (!bookmark.url) return { success: false, reason: "no_url" };
 
                 try {
                     const liveTitle = await this._fetchPageTitle(bookmark.url);
@@ -4087,17 +4103,58 @@ Return only the JSON array, no additional text or formatting`;
                         liveTitle.length > 0 &&
                         liveTitle !== bookmark.title
                     ) {
-                        console.log(
-                            `   📝 Updated title: "${bookmark.title}" → "${liveTitle}"`
-                        );
+                        if (ENABLE_METRICS) {
+                            console.log(
+                                `   📝 Updated title: "${bookmark.title}" → "${liveTitle}"`
+                            );
+                        }
                         bookmark.title = liveTitle;
+                        updatedCount++;
+                        return { success: true, updated: true };
                     }
+                    successCount++;
+                    return { success: true, updated: false };
                 } catch (error) {
-                    // Ignore errors, keep original title
+                    if (error.name === "AbortError") {
+                        timeoutCount++;
+                        return { success: false, reason: "timeout" };
+                    }
+                    errorCount++;
+                    return {
+                        success: false,
+                        reason: "error",
+                        error: error.message,
+                    };
                 }
             });
 
             await Promise.all(promises);
+
+            if (ENABLE_METRICS) {
+                const chunkDuration = Date.now() - chunkStartTime;
+                console.log(
+                    `   ⏱️ Chunk ${
+                        Math.floor(i / CONCURRENCY_LIMIT) + 1
+                    }: ${chunkDuration}ms for ${chunk.length} bookmarks`
+                );
+            }
+        }
+
+        const totalDuration = Date.now() - startTime;
+        console.log(
+            `✅ Title fetch complete: ${updatedCount} updated, ${successCount} unchanged, ${errorCount} errors, ${timeoutCount} timeouts (${totalDuration}ms total)`
+        );
+
+        // Store metrics if analytics service is available
+        if (this.analyticsService && ENABLE_METRICS) {
+            this.analyticsService.recordTitleFetchMetrics({
+                total: batch.length,
+                updated: updatedCount,
+                errors: errorCount,
+                timeouts: timeoutCount,
+                duration: totalDuration,
+                avgPerBookmark: totalDuration / batch.length,
+            });
         }
     }
 
@@ -4122,7 +4179,10 @@ Return only the JSON array, no additional text or formatting`;
 
             clearTimeout(timeoutId);
 
-            if (!response.ok) return null;
+            if (!response.ok) {
+                // console.warn(`Failed to fetch title for ${url}: ${response.status} ${response.statusText}`);
+                return null;
+            }
 
             const text = await response.text();
 
@@ -4141,6 +4201,12 @@ Return only the JSON array, no additional text or formatting`;
             }
             return null;
         } catch (error) {
+            // Distinguish between timeout and other errors for better debugging if needed
+            if (error.name === "AbortError") {
+                // console.warn(`Timeout fetching title for ${url}`);
+            } else {
+                // console.warn(`Error fetching title for ${url}:`, error.message);
+            }
             return null;
         }
     }
