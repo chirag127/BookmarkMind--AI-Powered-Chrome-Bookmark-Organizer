@@ -350,9 +350,14 @@ class PopupController {
      * Update UI based on current state
      */
     updateUI() {
+        // Get stats first to avoid ReferenceError
+        const uncategorizedCount = this.stats.uncategorized || 0;
+        const totalBookmarks = this.stats.totalBookmarks || 0;
+        console.log("Popup stats:", this.stats); // Debug logging
+
         // Update stats display
-        this.totalBookmarks.textContent = this.stats.totalBookmarks || 0;
-        this.uncategorized.textContent = this.stats.uncategorized || 0;
+        this.totalBookmarks.textContent = totalBookmarks;
+        this.uncategorized.textContent = uncategorizedCount;
 
         // Update extension status
         this.updateExtensionStatus();
@@ -385,9 +390,6 @@ class PopupController {
         }
 
         // Update sort button text based on uncategorized count
-        const uncategorizedCount = this.stats.uncategorized || 0;
-        const totalBookmarks = this.stats.totalBookmarks || 0;
-        console.log("Popup stats:", this.stats); // Debug logging
 
         if (uncategorizedCount === 0 && totalBookmarks > 0) {
             this.sortBtn.innerHTML = `
