@@ -12,26 +12,26 @@ class RequestQueue {
         this.queue = [];
         this.processing = false;
         this.requestHistory = new Map();
-        
+
         this.rateLimits = {
             gemini: { rpm: 15, maxQueueSize: 100 },
             cerebras: { rpm: 60, maxQueueSize: 200 },
-            groq: { rpm: 30, maxQueueSize: 150 }
+            groq: { rpm: 30, maxQueueSize: 150 },
         };
-        
+
         this.priorities = {
             high: 0,
             normal: 1,
-            low: 2
+            low: 2,
         };
-        
+
         this.retryConfig = {
             maxRetries: 3,
             baseDelay: 1000,
             maxDelay: 30000,
-            jitterFactor: 0.3
+            jitterFactor: 0.3,
         };
-        
+
         this.metrics = {
             requestsPerMinute: new Map(),
             queueDepth: 0,
@@ -41,26 +41,26 @@ class RequestQueue {
             failedRequests: 0,
             retriedRequests: 0,
             averageWaitTime: 0,
-            providerMetrics: new Map()
+            providerMetrics: new Map(),
         };
-        
+
         this._initializeProviderMetrics();
         this._startMetricsCleanup();
     }
-    
+
     _initializeProviderMetrics() {
-        for (const provider of ['gemini', 'cerebras', 'groq']) {
+        for (const provider of ["gemini", "cerebras", "groq"]) {
             this.metrics.providerMetrics.set(provider, {
                 requests: 0,
                 successful: 0,
                 failed: 0,
                 throttled: 0,
                 averageLatency: 0,
-                lastRequestTime: null
+                lastRequestTime: null,
             });
         }
     }
-    
+
     _startMetricsCleanup() {
         setInterval(() => {
             const oneMinuteAgo = Date.now() - 60000;
@@ -72,35 +72,39 @@ class RequestQueue {
             this._updateRequestsPerMinute();
         }, 10000);
     }
-    
+
     _updateRequestsPerMinute() {
         const now = Date.now();
         const oneMinuteAgo = now - 60000;
-        
-        const overallCount = Array.from(this.requestHistory.keys())
-            .filter(ts => ts >= oneMinuteAgo).length;
-        this.metrics.requestsPerMinute.set('overall', overallCount);
-        
-        for (const provider of ['gemini', 'cerebras', 'groq']) {
-            const providerCount = Array.from(this.requestHistory.entries())
-                .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
+
+        const overallCount = Array.from(this.requestHistory.keys()).filter(
+            (ts) => ts >= oneMinuteAgo
+        ).length;
+        this.metrics.requestsPerMinute.set("overall", overallCount);
+
+        for (const provider of ["gemini", "cerebras", "groq"]) {
+            const providerCount = Array.from(
+                this.requestHistory.entries()
+            ).filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
             this.metrics.requestsPerMinute.set(provider, providerCount);
         }
     }
-    
-    async enqueue(request, provider = 'gemini', priority = 'normal') {
+
+    async enqueue(request, provider = "gemini", priority = "normal") {
         const limits = this.rateLimits[provider];
         if (!limits) {
             throw new Error(`Unknown provider: ${provider}`);
         }
-        
+
         if (this.queue.length >= limits.maxQueueSize) {
             this.metrics.throttledRequests++;
             const providerMetrics = this.metrics.providerMetrics.get(provider);
             providerMetrics.throttled++;
-            throw new Error(`Queue full for provider ${provider} (max: ${limits.maxQueueSize})`);
+            throw new Error(
+                `Queue full for provider ${provider} (max: ${limits.maxQueueSize})`
+            );
         }
-        
+
         const queueItem = {
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             request,
@@ -110,125 +114,153 @@ class RequestQueue {
             retries: 0,
             enqueuedAt: Date.now(),
             startedAt: null,
-            completedAt: null
+            completedAt: null,
         };
-        
+
         this.queue.push(queueItem);
         this.queue.sort((a, b) => a.priority - b.priority);
         this.metrics.queueDepth = this.queue.length;
         this.metrics.totalRequests++;
-        
-        console.log(`📥 Enqueued ${provider} request (priority: ${priority}, queue: ${this.queue.length}/${limits.maxQueueSize})`);
-        
+
+        console.log(
+            `📥 Enqueued ${provider} request (priority: ${priority}, queue: ${this.queue.length}/${limits.maxQueueSize})`
+        );
+
         if (!this.processing) {
             this._processQueue();
         }
-        
+
         return new Promise((resolve, reject) => {
             queueItem.resolve = resolve;
             queueItem.reject = reject;
         });
     }
-    
+
     async _processQueue() {
         if (this.processing || this.queue.length === 0) {
             return;
         }
-        
+
         this.processing = true;
-        
+
         while (this.queue.length > 0) {
             const item = this.queue[0];
             const provider = item.provider;
             const limits = this.rateLimits[provider];
-            
+
             if (await this._canProcessRequest(provider, limits)) {
                 this.queue.shift();
                 this.metrics.queueDepth = this.queue.length;
                 item.startedAt = Date.now();
-                
+
                 const waitTime = item.startedAt - item.enqueuedAt;
-                this.metrics.averageWaitTime = 
-                    (this.metrics.averageWaitTime * (this.metrics.totalRequests - 1) + waitTime) / 
+                this.metrics.averageWaitTime =
+                    (this.metrics.averageWaitTime *
+                        (this.metrics.totalRequests - 1) +
+                        waitTime) /
                     this.metrics.totalRequests;
-                
+
                 this._executeRequest(item);
             } else {
                 const delay = this._calculateThrottleDelay(provider, limits);
-                console.log(`⏳ Rate limit reached for ${provider}, waiting ${Math.round(delay)}ms...`);
+                console.log(
+                    `⏳ Rate limit reached for ${provider}, waiting ${Math.round(
+                        delay
+                    )}ms...`
+                );
                 await this._delay(delay);
             }
         }
-        
+
         this.processing = false;
     }
-    
+
     async _canProcessRequest(provider, limits) {
         const now = Date.now();
         const oneMinuteAgo = now - 60000;
-        
-        const recentRequests = Array.from(this.requestHistory.entries())
-            .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
-        
+
+        const recentRequests = Array.from(this.requestHistory.entries()).filter(
+            ([ts, p]) => ts >= oneMinuteAgo && p === provider
+        ).length;
+
         return recentRequests < limits.rpm;
     }
-    
+
     _calculateThrottleDelay(provider, limits) {
         const now = Date.now();
         const oneMinuteAgo = now - 60000;
-        
+
         const recentRequestTimes = Array.from(this.requestHistory.entries())
             .filter(([ts, p]) => ts >= oneMinuteAgo && p === provider)
             .map(([ts]) => ts)
             .sort((a, b) => a - b);
-        
+
         if (recentRequestTimes.length === 0) {
             return 0;
         }
-        
+
         const oldestRequest = recentRequestTimes[0];
         const timeUntilOldestExpires = 60000 - (now - oldestRequest);
-        
+
         return Math.max(100, timeUntilOldestExpires + 100);
     }
-    
+
     async _executeRequest(item) {
         const startTime = Date.now();
         const providerMetrics = this.metrics.providerMetrics.get(item.provider);
         providerMetrics.requests++;
-        
+
         try {
-            console.log(`🚀 Executing ${item.provider} request (${item.priorityName}, attempt ${item.retries + 1}/${this.retryConfig.maxRetries + 1})`);
-            
+            console.log(
+                `🚀 Executing ${item.provider} request (${
+                    item.priorityName
+                }, attempt ${item.retries + 1}/${
+                    this.retryConfig.maxRetries + 1
+                })`
+            );
+
             const result = await item.request();
-            
+
             const latency = Date.now() - startTime;
             providerMetrics.successful++;
-            providerMetrics.averageLatency = 
-                (providerMetrics.averageLatency * (providerMetrics.successful - 1) + latency) / 
+            providerMetrics.averageLatency =
+                (providerMetrics.averageLatency *
+                    (providerMetrics.successful - 1) +
+                    latency) /
                 providerMetrics.successful;
             providerMetrics.lastRequestTime = Date.now();
-            
+
             this.requestHistory.set(Date.now(), item.provider);
             this._updateRequestsPerMinute();
-            
+
             item.completedAt = Date.now();
             this.metrics.successfulRequests++;
-            
+
             console.log(`✅ ${item.provider} request completed (${latency}ms)`);
             item.resolve(result);
         } catch (error) {
-            console.error(`❌ ${item.provider} request failed (attempt ${item.retries + 1}):`, error.message);
-            
+            console.error(
+                `❌ ${item.provider} request failed (attempt ${
+                    item.retries + 1
+                }):`,
+                error.message
+            );
+
             if (this._shouldRetry(item, error)) {
                 item.retries++;
                 this.metrics.retriedRequests++;
-                
+
                 const delay = this._calculateRetryDelay(item.retries);
-                console.log(`🔄 Retrying ${item.provider} request in ${Math.round(delay)}ms (attempt ${item.retries + 1}/${this.retryConfig.maxRetries + 1})`);
-                
+                console.log(
+                    `🔄 Retrying ${item.provider} request in ${Math.round(
+                        delay
+                    )}ms (attempt ${item.retries + 1}/${
+                        this.retryConfig.maxRetries + 1
+                    })`
+                );
+
                 await this._delay(delay);
-                
+
                 this.queue.unshift(item);
                 this.metrics.queueDepth = this.queue.length;
             } else {
@@ -237,50 +269,55 @@ class RequestQueue {
                 item.reject(error);
             }
         }
-        
+
         this._processQueue();
     }
-    
+
     _shouldRetry(item, error) {
         if (item.retries >= this.retryConfig.maxRetries) {
             return false;
         }
-        
+
         const retryableErrors = [
-            'rate limit',
-            'timeout',
-            'network',
-            '429',
-            '500',
-            '502',
-            '503',
-            '504',
-            'ECONNRESET',
-            'ETIMEDOUT'
+            "rate limit",
+            "timeout",
+            "network",
+            "429",
+            "500",
+            "502",
+            "503",
+            "504",
+            "ECONNRESET",
+            "ETIMEDOUT",
         ];
-        
-        const errorMessage = error.message?.toLowerCase() || '';
-        return retryableErrors.some(pattern => errorMessage.includes(pattern));
+
+        const errorMessage = error.message?.toLowerCase() || "";
+        return retryableErrors.some((pattern) =>
+            errorMessage.includes(pattern)
+        );
     }
-    
+
     _calculateRetryDelay(retryCount) {
         const exponentialDelay = Math.min(
             this.retryConfig.baseDelay * Math.pow(2, retryCount - 1),
             this.retryConfig.maxDelay
         );
-        
-        const jitter = exponentialDelay * this.retryConfig.jitterFactor * (Math.random() * 2 - 1);
-        
+
+        const jitter =
+            exponentialDelay *
+            this.retryConfig.jitterFactor *
+            (Math.random() * 2 - 1);
+
         return Math.max(0, exponentialDelay + jitter);
     }
-    
+
     _delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
-    
+
     getMetrics() {
         this._updateRequestsPerMinute();
-        
+
         return {
             queueDepth: this.metrics.queueDepth,
             totalRequests: this.metrics.totalRequests,
@@ -289,28 +326,38 @@ class RequestQueue {
             retriedRequests: this.metrics.retriedRequests,
             throttledRequests: this.metrics.throttledRequests,
             averageWaitTime: Math.round(this.metrics.averageWaitTime),
-            requestsPerMinute: Object.fromEntries(this.metrics.requestsPerMinute),
+            requestsPerMinute: Object.fromEntries(
+                this.metrics.requestsPerMinute
+            ),
             providers: Object.fromEntries(
-                Array.from(this.metrics.providerMetrics.entries()).map(([provider, metrics]) => [
-                    provider,
-                    {
-                        ...metrics,
-                        averageLatency: Math.round(metrics.averageLatency),
-                        rpm: this.metrics.requestsPerMinute.get(provider) || 0,
-                        rpmLimit: this.rateLimits[provider].rpm,
-                        queueLimit: this.rateLimits[provider].maxQueueSize
-                    }
-                ])
-            )
+                Array.from(this.metrics.providerMetrics.entries()).map(
+                    ([provider, metrics]) => [
+                        provider,
+                        {
+                            ...metrics,
+                            averageLatency: Math.round(metrics.averageLatency),
+                            rpm:
+                                this.metrics.requestsPerMinute.get(provider) ||
+                                0,
+                            rpmLimit: this.rateLimits[provider].rpm,
+                            queueLimit: this.rateLimits[provider].maxQueueSize,
+                        },
+                    ]
+                )
+            ),
         };
     }
-    
+
     getDetailedMetrics() {
         const metrics = this.getMetrics();
-        
-        console.log('\n📊 ═══════════════════════════════════════════════════════');
-        console.log('📊 REQUEST QUEUE METRICS');
-        console.log('📊 ═══════════════════════════════════════════════════════');
+
+        console.log(
+            "\n📊 ═══════════════════════════════════════════════════════"
+        );
+        console.log("📊 REQUEST QUEUE METRICS");
+        console.log(
+            "📊 ═══════════════════════════════════════════════════════"
+        );
         console.log(`📦 Queue Depth: ${metrics.queueDepth}`);
         console.log(`📈 Total Requests: ${metrics.totalRequests}`);
         console.log(`✅ Successful: ${metrics.successfulRequests}`);
@@ -318,10 +365,12 @@ class RequestQueue {
         console.log(`🔄 Retried: ${metrics.retriedRequests}`);
         console.log(`⏸️  Throttled: ${metrics.throttledRequests}`);
         console.log(`⏱️  Average Wait: ${metrics.averageWaitTime}ms`);
-        console.log(`🕐 Overall RPM: ${metrics.requestsPerMinute.overall || 0}`);
-        console.log('');
-        console.log('📊 PROVIDER METRICS:');
-        
+        console.log(
+            `🕐 Overall RPM: ${metrics.requestsPerMinute.overall || 0}`
+        );
+        console.log("");
+        console.log("📊 PROVIDER METRICS:");
+
         for (const [provider, stats] of Object.entries(metrics.providers)) {
             console.log(`\n  🔹 ${provider.toUpperCase()}`);
             console.log(`     Requests: ${stats.requests}`);
@@ -332,12 +381,14 @@ class RequestQueue {
             console.log(`     Avg Latency: ${stats.averageLatency}ms`);
             console.log(`     Queue Limit: ${stats.queueLimit}`);
         }
-        
-        console.log('📊 ═══════════════════════════════════════════════════════\n');
-        
+
+        console.log(
+            "📊 ═══════════════════════════════════════════════════════\n"
+        );
+
         return metrics;
     }
-    
+
     clearMetrics() {
         this.requestHistory.clear();
         this.metrics.throttledRequests = 0;
@@ -347,7 +398,7 @@ class RequestQueue {
         this.metrics.retriedRequests = 0;
         this.metrics.averageWaitTime = 0;
         this._initializeProviderMetrics();
-        console.log('🧹 Request queue metrics cleared');
+        console.log("🧹 Request queue metrics cleared");
     }
 }
 
@@ -1117,7 +1168,7 @@ class AIProcessor {
                     try {
                         progressCallback(batchNumber, totalBatches);
                     } catch (err) {
-                        console.warn('Progress callback error:', err);
+                        console.warn("Progress callback error:", err);
                     }
                 }
 
@@ -1126,6 +1177,12 @@ class AIProcessor {
                     console.log(
                         `🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`
                     );
+
+                    // Enrich batch with live titles from URLs
+                    console.log(
+                        `🌐 Fetching live titles for batch ${batchNumber}...`
+                    );
+                    await this._enrichBatchWithTitles(batch);
 
                     const batchPromise = this._processBatch(
                         batch,
@@ -2312,8 +2369,8 @@ Return only the JSON array with properly formatted category names, no additional
                             body: JSON.stringify(requestBody),
                         });
                     },
-                    'gemini',
-                    'high'
+                    "gemini",
+                    "high"
                 );
 
                 if (response.ok) {
@@ -2627,8 +2684,8 @@ Return only the JSON array with properly formatted category names, no additional
                             body: JSON.stringify(requestBody),
                         });
                     },
-                    'gemini',
-                    'normal'
+                    "gemini",
+                    "normal"
                 );
                 const responseTime = Date.now() - requestStart;
 
@@ -2659,7 +2716,12 @@ Return only the JSON array with properly formatted category names, no additional
 
                         // Record rate limit tracking
                         if (this.performanceMonitor) {
-                            await this.performanceMonitor.recordApiRequest("gemini", true, false, false);
+                            await this.performanceMonitor.recordApiRequest(
+                                "gemini",
+                                true,
+                                false,
+                                false
+                            );
                         }
 
                         return this._parseResponse(responseText, batch);
@@ -2698,7 +2760,12 @@ Return only the JSON array with properly formatted category names, no additional
                     if (this.performanceMonitor) {
                         const throttled = response.status === 429;
                         const rejected = response.status === 429;
-                        await this.performanceMonitor.recordApiRequest("gemini", false, throttled, rejected);
+                        await this.performanceMonitor.recordApiRequest(
+                            "gemini",
+                            false,
+                            throttled,
+                            rejected
+                        );
                     }
 
                     if (!isRetryableError) {
@@ -2871,8 +2938,8 @@ Return only the JSON array with properly formatted category names, no additional
                             body: JSON.stringify(requestBody),
                         });
                     },
-                    'cerebras',
-                    'normal'
+                    "cerebras",
+                    "normal"
                 );
 
                 const responseTime = Date.now() - requestStart;
@@ -2905,7 +2972,12 @@ Return only the JSON array with properly formatted category names, no additional
 
                         // Record rate limit tracking
                         if (this.performanceMonitor) {
-                            await this.performanceMonitor.recordApiRequest("cerebras", true, false, false);
+                            await this.performanceMonitor.recordApiRequest(
+                                "cerebras",
+                                true,
+                                false,
+                                false
+                            );
                         }
 
                         return this._parseResponse(responseText, batch);
@@ -2947,7 +3019,12 @@ Return only the JSON array with properly formatted category names, no additional
                     if (this.performanceMonitor) {
                         const throttled = isRateLimitError;
                         const rejected = isRateLimitError;
-                        await this.performanceMonitor.recordApiRequest("cerebras", false, throttled, rejected);
+                        await this.performanceMonitor.recordApiRequest(
+                            "cerebras",
+                            false,
+                            throttled,
+                            rejected
+                        );
                     }
 
                     // Check if this is a retryable error
@@ -3105,8 +3182,8 @@ Return only the JSON array with properly formatted category names, no additional
                             body: JSON.stringify(requestBody),
                         });
                     },
-                    'groq',
-                    'normal'
+                    "groq",
+                    "normal"
                 );
 
                 const responseTime = Date.now() - requestStart;
@@ -3139,7 +3216,12 @@ Return only the JSON array with properly formatted category names, no additional
 
                         // Record rate limit tracking
                         if (this.performanceMonitor) {
-                            await this.performanceMonitor.recordApiRequest("groq", true, false, false);
+                            await this.performanceMonitor.recordApiRequest(
+                                "groq",
+                                true,
+                                false,
+                                false
+                            );
                         }
 
                         return this._parseResponse(responseText, batch);
@@ -3181,7 +3263,12 @@ Return only the JSON array with properly formatted category names, no additional
                     if (this.performanceMonitor) {
                         const throttled = isRateLimitError;
                         const rejected = isRateLimitError;
-                        await this.performanceMonitor.recordApiRequest("groq", false, throttled, rejected);
+                        await this.performanceMonitor.recordApiRequest(
+                            "groq",
+                            false,
+                            throttled,
+                            rejected
+                        );
                     }
 
                     // Check if this is a retryable error
@@ -3670,16 +3757,20 @@ Return only the JSON array, no additional text or formatting`;
         } catch (error) {
             console.error("Error parsing API response:", error);
             console.log("Raw response:", responseText);
-            
+
             // Check if this might be a truncation error
-            if (error.message.includes('Unexpected end of JSON') || 
-                error.message.includes('Unexpected token') ||
-                error.message.includes('JSON')) {
-                const truncationError = new Error(`JSON truncation detected: ${error.message}`);
+            if (
+                error.message.includes("Unexpected end of JSON") ||
+                error.message.includes("Unexpected token") ||
+                error.message.includes("JSON")
+            ) {
+                const truncationError = new Error(
+                    `JSON truncation detected: ${error.message}`
+                );
                 truncationError.isTruncation = true;
                 throw truncationError;
             }
-            
+
             throw new Error(`Failed to parse AI response: ${error.message}`);
         }
     }
@@ -3693,13 +3784,17 @@ Return only the JSON array, no additional text or formatting`;
         const baseTokensPerBookmark = 150;
         const overhead = 500;
         const buffer = 1.2;
-        
-        const calculated = Math.ceil((batchSize * baseTokensPerBookmark + overhead) * buffer);
+
+        const calculated = Math.ceil(
+            (batchSize * baseTokensPerBookmark + overhead) * buffer
+        );
         const min = 2000;
         const max = 8000;
-        
+
         const result = Math.max(min, Math.min(max, calculated));
-        console.log(`   📊 Dynamic max_tokens: ${result} (batch size: ${batchSize})`);
+        console.log(
+            `   📊 Dynamic max_tokens: ${result} (batch size: ${batchSize})`
+        );
         return result;
     }
 
@@ -3723,21 +3818,23 @@ Return only the JSON array, no additional text or formatting`;
         for (let i = 0; i < batch.length; i += splitSize) {
             const subBatch = batch.slice(i, i + splitSize);
             console.log(
-                `   📦 Processing sub-batch ${Math.floor(i / splitSize) + 1}/${Math.ceil(
-                    batch.length / splitSize
-                )} (${subBatch.length} bookmarks)`
+                `   📦 Processing sub-batch ${
+                    Math.floor(i / splitSize) + 1
+                }/${Math.ceil(batch.length / splitSize)} (${
+                    subBatch.length
+                } bookmarks)`
             );
 
             try {
                 let subResult;
-                if (model.provider === 'gemini') {
+                if (model.provider === "gemini") {
                     subResult = await this._processWithGemini(
                         subBatch,
                         categories,
                         learningData,
                         model.name
                     );
-                } else if (model.provider === 'cerebras') {
+                } else if (model.provider === "cerebras") {
                     const prompt = await this._buildPrompt(
                         subBatch,
                         categories,
@@ -3748,7 +3845,7 @@ Return only the JSON array, no additional text or formatting`;
                         subBatch,
                         model.name
                     );
-                } else if (model.provider === 'groq') {
+                } else if (model.provider === "groq") {
                     const prompt = await this._buildPrompt(
                         subBatch,
                         categories,
@@ -3801,7 +3898,7 @@ Return only the JSON array, no additional text or formatting`;
      * @returns {string} Repaired JSON string
      */
     _repairTruncatedJson(jsonStr) {
-        if (!jsonStr || jsonStr.trim() === '') {
+        if (!jsonStr || jsonStr.trim() === "") {
             return jsonStr;
         }
 
@@ -3817,42 +3914,54 @@ Return only the JSON array, no additional text or formatting`;
         // If truncation detected, try to repair
         if (openBrackets > closeBrackets || openBraces > closeBraces) {
             console.warn(`⚠️ JSON truncation detected - attempting repair...`);
-            console.warn(`   Open brackets: ${openBrackets}, Close: ${closeBrackets}`);
-            console.warn(`   Open braces: ${openBraces}, Close: ${closeBraces}`);
-            
+            console.warn(
+                `   Open brackets: ${openBrackets}, Close: ${closeBrackets}`
+            );
+            console.warn(
+                `   Open braces: ${openBraces}, Close: ${closeBraces}`
+            );
+
             // Remove trailing incomplete entries
             // Look for the last complete object in array
             const lastCompleteObjectMatch = repaired.match(/\},\s*\{[^}]*$/);
             if (lastCompleteObjectMatch) {
-                repaired = repaired.substring(0, lastCompleteObjectMatch.index + 1);
+                repaired = repaired.substring(
+                    0,
+                    lastCompleteObjectMatch.index + 1
+                );
                 modified = true;
                 console.warn(`   ✂️ Removed incomplete trailing object`);
             }
 
             // Remove any trailing incomplete strings or values
-            repaired = repaired.replace(/,\s*"[^"]*$/, '');
-            repaired = repaired.replace(/,\s*[^,\]\}]*$/, '');
-            
+            repaired = repaired.replace(/,\s*"[^"]*$/, "");
+            repaired = repaired.replace(/,\s*[^,\]\}]*$/, "");
+
             // Add missing closing braces first (for objects)
             const remainingOpenBraces = (repaired.match(/\{/g) || []).length;
             const remainingCloseBraces = (repaired.match(/\}/g) || []).length;
             const missingBraces = remainingOpenBraces - remainingCloseBraces;
-            
+
             if (missingBraces > 0) {
-                repaired += '}'.repeat(missingBraces);
+                repaired += "}".repeat(missingBraces);
                 modified = true;
-                console.warn(`   🔧 Added ${missingBraces} missing closing brace(s)`);
+                console.warn(
+                    `   🔧 Added ${missingBraces} missing closing brace(s)`
+                );
             }
 
             // Add missing closing brackets (for arrays)
             const remainingOpenBrackets = (repaired.match(/\[/g) || []).length;
             const remainingCloseBrackets = (repaired.match(/\]/g) || []).length;
-            const missingBrackets = remainingOpenBrackets - remainingCloseBrackets;
-            
+            const missingBrackets =
+                remainingOpenBrackets - remainingCloseBrackets;
+
             if (missingBrackets > 0) {
-                repaired += ']'.repeat(missingBrackets);
+                repaired += "]".repeat(missingBrackets);
                 modified = true;
-                console.warn(`   🔧 Added ${missingBrackets} missing closing bracket(s)`);
+                console.warn(
+                    `   🔧 Added ${missingBrackets} missing closing bracket(s)`
+                );
             }
 
             if (modified) {
@@ -3903,8 +4012,8 @@ Return only the JSON array, no additional text or formatting`;
                         }),
                     });
                 },
-                'gemini',
-                'high'
+                "gemini",
+                "high"
             );
 
             if (testResponse.ok) {
@@ -3956,6 +4065,84 @@ Return only the JSON array, no additional text or formatting`;
      */
     _delay(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Enrich a batch of bookmarks with live titles fetched from their URLs
+     * @param {Array} batch - Batch of bookmarks to enrich
+     */
+    async _enrichBatchWithTitles(batch) {
+        const CONCURRENCY_LIMIT = 5;
+
+        // Process in chunks to limit concurrency
+        for (let i = 0; i < batch.length; i += CONCURRENCY_LIMIT) {
+            const chunk = batch.slice(i, i + CONCURRENCY_LIMIT);
+            const promises = chunk.map(async (bookmark) => {
+                if (!bookmark.url) return;
+
+                try {
+                    const liveTitle = await this._fetchPageTitle(bookmark.url);
+                    if (
+                        liveTitle &&
+                        liveTitle.length > 0 &&
+                        liveTitle !== bookmark.title
+                    ) {
+                        console.log(
+                            `   📝 Updated title: "${bookmark.title}" → "${liveTitle}"`
+                        );
+                        bookmark.title = liveTitle;
+                    }
+                } catch (error) {
+                    // Ignore errors, keep original title
+                }
+            });
+
+            await Promise.all(promises);
+        }
+    }
+
+    /**
+     * Fetch the page title from a URL
+     * @param {string} url - URL to fetch
+     * @returns {Promise<string>} Page title or null
+     */
+    async _fetchPageTitle(url) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+            const response = await fetch(url, {
+                method: "GET",
+                signal: controller.signal,
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                },
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) return null;
+
+            const text = await response.text();
+
+            // Extract title using regex to avoid DOMParser overhead/issues in worker
+            const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+            if (titleMatch && titleMatch[1]) {
+                // Decode HTML entities
+                let title = titleMatch[1].trim();
+                title = title
+                    .replace(/&amp;/g, "&")
+                    .replace(/&lt;/g, "<")
+                    .replace(/&gt;/g, ">")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'");
+                return title;
+            }
+            return null;
+        } catch (error) {
+            return null;
+        }
     }
 }
 

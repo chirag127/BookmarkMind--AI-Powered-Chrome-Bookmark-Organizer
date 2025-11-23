@@ -6,12 +6,14 @@
     "permissions": [
         "bookmarks",
         "storage",
-        "activeTab"
+        "activeTab",
+        "tabs"
     ],
     "host_permissions": [
         "https://generativelanguage.googleapis.com/*",
         "https://api.cerebras.ai/*",
-        "https://api.groq.com/*"
+        "https://api.groq.com/*",
+        "<all_urls>"
     ],
     "background": {
         "service_worker": "scripts/background.js"
