@@ -919,6 +919,8 @@ class PopupController {
         if (!confirmed) return;
 
         this.isProcessing = true;
+        this.showProgress();
+        this.updateProgress({ stage: "moving", progress: 0 });
 
         try {
             console.log("Popup: Triggering background move operation...");
@@ -931,15 +933,12 @@ class PopupController {
             console.log("Popup: Background move response:", response);
 
             if (response && response.success) {
-                // Show success message and explain background operation
-                alert(
-                    `Move operation started!\\n\\n` +
-                        `Moving ${
-                            response.total || "all"
-                        } bookmarks to Bookmark Bar in the background.\\n\\n` +
-                        `You can close this popup - the operation will continue.\\n` +
-                        `You'll receive a notification when it's complete.`
-                );
+                // Show success message
+                this.showResults({
+                    processed: response.total,
+                    moved: response.moved,
+                    message: `Successfully moved ${response.moved} bookmarks to Bookmark Bar.`,
+                });
 
                 // Refresh stats to show updated state
                 await this.loadStats();
@@ -1554,6 +1553,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
                 loading: "Loading bookmarks...",
                 categorizing: "AI is categorizing bookmarks...",
                 organizing: "Moving bookmarks to folders...",
+                moving: "Moving bookmarks to Bookmark Bar...",
                 complete: "Organization complete!",
             };
 

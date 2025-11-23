@@ -264,29 +264,19 @@ class Categorizer {
             const categorizations = categorizationData.results;
             const generatedCategories = categorizationData.categories;
 
-            // Organize bookmarks into folders
-            console.log("🚨 ABOUT TO START ORGANIZATION STEP");
+            // Organization is now done immediately during categorization in aiProcessor.js
+            // We don't need to call _organizeBookmarks anymore
             console.log(
-                `Passing ${categorizations.length} categorizations and ${uncategorizedBookmarks.length} bookmarks to organization`
+                "✅ Organization completed during categorization (real-time)"
             );
-
-            progressCallback?.({ stage: "organizing", progress: 70 });
-            const results = await this._organizeBookmarks(
-                categorizations,
-                uncategorizedBookmarks,
-                progressCallback
-            );
-
-            console.log("🚨 ORGANIZATION STEP COMPLETED");
-            console.log("Organization results:", results);
-
-            progressCallback?.({ stage: "complete", progress: 100 });
 
             const finalResults = {
                 processed: uncategorizedBookmarks.length,
-                categorized: results.success,
-                errors: results.errors,
-                categories: results.categoriesUsed,
+                categorized: categorizationData.results.length,
+                errors: 0, // Errors are handled per batch in aiProcessor
+                categories: new Set(
+                    categorizationData.results.map((r) => r.category)
+                ),
                 generatedCategories: generatedCategories,
             };
 
@@ -298,7 +288,7 @@ class Categorizer {
                     categorized: finalResults.categorized,
                     errors: finalResults.errors,
                     duration: sessionDuration,
-                    categories: Array.from(results.categoriesUsed),
+                    categories: Array.from(finalResults.categories),
                     mode: "full",
                 });
             }
@@ -464,6 +454,12 @@ class Categorizer {
                     }
                 );
 
+            // Organization is now done immediately during categorization in aiProcessor.js
+            // We don't need to call _organizeBookmarks anymore
+            console.log(
+                "✅ Bulk organization completed during categorization (real-time)"
+            );
+
             const allCategorizations = categorizationData.results || [];
             console.log(
                 `Bulk categorization complete. Got ${allCategorizations.length} categorizations`
@@ -477,36 +473,13 @@ class Categorizer {
                 }
             });
 
-            let totalErrors = 0;
-
-            // Organize bookmarks into folders
-            progressCallback?.({ stage: "organizing", progress: 80 });
-            console.log("Categorizer: Organizing bookmarks into folders...");
-
-            const organizationResults = await this._organizeBookmarks(
-                allCategorizations,
-                validBookmarks,
-                (orgProgress) => {
-                    const adjustedProgress = Math.round(80 + orgProgress * 0.2);
-                    progressCallback?.({
-                        stage: "organizing",
-                        progress: adjustedProgress,
-                    });
-                }
-            );
-
-            totalCategorized = organizationResults.success;
-            totalErrors += organizationResults.errors;
-
             // Final results
             const results = {
                 processed: selectedBookmarks.length,
-                categorized: totalCategorized,
-                errors: totalErrors,
-                categories: organizationResults.categoriesUsed,
-                generatedCategories: Array.from(
-                    organizationResults.categoriesUsed
-                ).sort(),
+                categorized: allCategorizations.length,
+                errors: 0, // Errors tracked in aiProcessor
+                categories: categoriesUsed,
+                generatedCategories: Array.from(categoriesUsed).sort(),
             };
 
             console.log("Bulk categorization results:", results);

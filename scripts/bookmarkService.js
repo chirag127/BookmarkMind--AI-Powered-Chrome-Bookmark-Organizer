@@ -387,7 +387,7 @@ class BookmarkService {
                         (i / bookmarksToMove.length) * 100
                     );
                     progressCallback({
-                        stage: "organizing",
+                        stage: "moving",
                         progress: percent,
                         current: i,
                         total: bookmarksToMove.length,
