@@ -106,11 +106,11 @@ class BenchmarkService {
 
         results.summary.totalTests += providerResult.totalTests;
         results.summary.totalCost += providerResult.totalCost;
-      } catch (error) {
-        console.error(`Error testing provider ${provider}:`, error);
+      } catch (_error) {
+        console.error(`_error testing provider ${provider}:`, _error);
         results.providers.push({
           provider,
-          error: error.message,
+          error: _error.message,
           totalTests: 0,
           successRate: 0,
           averageSpeed: 0,
@@ -259,8 +259,8 @@ class BenchmarkService {
           categoryResult.cost += batchCost;
           modelResult.totalCost += batchCost;
 
-        } catch (error) {
-          console.error(`Error testing batch for ${category}:`, error);
+        } catch (_error) {
+          console.error(`_error testing batch for ${category}:`, _error);
           categoryResult.incorrect += batch.length;
         }
       }
@@ -305,8 +305,8 @@ class BenchmarkService {
     try {
       const result = await aiProcessor.categorizeBookmarks(mockBookmarks, [], {});
       return result.results || [];
-    } catch (error) {
-      console.error('Categorization error:', error);
+    } catch (_error) {
+      console.error('Categorization _error:', _error);
       return mockBookmarks.map(() => ({ category: 'Other', confidence: 0, reasoning: 'Error' }));
     }
   }
@@ -463,8 +463,8 @@ class BenchmarkService {
 
       await chrome.storage.local.set({ benchmarkHistory: trimmedHistory });
       console.log('✅ Benchmark results saved');
-    } catch (error) {
-      console.error('Error saving benchmark results:', error);
+    } catch (_error) {
+      console.error('_error saving benchmark results:', _error);
     }
   }
 
@@ -478,8 +478,8 @@ class BenchmarkService {
       const stored = await chrome.storage.local.get(['benchmarkHistory']);
       const history = stored.benchmarkHistory || [];
       return history.slice(0, limit);
-    } catch (error) {
-      console.error('Error loading benchmark history:', error);
+    } catch (_error) {
+      console.error('_error loading benchmark history:', _error);
       return [];
     }
   }

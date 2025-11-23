@@ -20,8 +20,8 @@ class FolderManager {
       try {
         const folderId = await this._createCategoryFolder(category);
         folderMap[category] = folderId;
-      } catch (error) {
-        console.error(`Error creating folder for category ${category}:`, error);
+      } catch (_error) {
+        console.error(`_error creating folder for category ${category}:`, _error);
       }
     }
 
@@ -70,8 +70,8 @@ class FolderManager {
     try {
       const children = await chrome.bookmarks.getChildren(parentId);
       return children.find(child => !child.url && child.title === name) || null;
-    } catch (error) {
-      console.error('Error finding folder:', error);
+    } catch (_error) {
+      console.error('_error finding folder:', _error);
       return null;
     }
   }
@@ -90,8 +90,8 @@ class FolderManager {
       });
       console.log(`Created folder: ${title} in ${parentId}`);
       return folder;
-    } catch (error) {
-      console.error(`Error creating folder ${title}:`, error);
+    } catch (_error) {
+      console.error(`_error creating folder ${title}:`, _error);
       throw error;
     }
   }
@@ -122,12 +122,12 @@ class FolderManager {
           parentId: move.folderId
         });
         results.success++;
-      } catch (error) {
-        console.error(`Error moving bookmark ${move.bookmarkId}:`, error);
+      } catch (_error) {
+        console.error(`_error moving bookmark ${move.bookmarkId}:`, _error);
         results.errors++;
         results.errorDetails.push({
           bookmarkId: move.bookmarkId,
-          error: error.message
+          error: _error.message
         });
       }
     }
@@ -144,8 +144,8 @@ class FolderManager {
     try {
       const tree = await chrome.bookmarks.getSubTree(rootId);
       return this._buildFolderTree(tree[0]);
-    } catch (error) {
-      console.error('Error getting folder structure:', error);
+    } catch (_error) {
+      console.error('_error getting folder structure:', _error);
       return null;
     }
   }
@@ -191,8 +191,8 @@ class FolderManager {
     try {
       const tree = await this.getFolderStructure(rootId);
       removedCount = await this._removeEmptyFolders(tree);
-    } catch (error) {
-      console.error('Error cleaning up empty folders:', error);
+    } catch (_error) {
+      console.error('_error cleaning up empty folders:', _error);
     }
 
     return removedCount;
@@ -217,8 +217,8 @@ class FolderManager {
         await chrome.bookmarks.remove(folderTree.id);
         console.log(`Removed empty folder: ${folderTree.title}`);
         removedCount++;
-      } catch (error) {
-        console.error(`Error removing empty folder ${folderTree.title}:`, error);
+      } catch (_error) {
+        console.error(`_error removing empty folder ${folderTree.title}:`, _error);
       }
     }
 
@@ -239,8 +239,8 @@ class FolderManager {
       };
 
       return exportData;
-    } catch (error) {
-      console.error('Error exporting organization:', error);
+    } catch (_error) {
+      console.error('_error exporting organization:', _error);
       throw error;
     }
   }

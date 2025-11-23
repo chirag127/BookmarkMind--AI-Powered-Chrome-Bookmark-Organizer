@@ -49,8 +49,8 @@ async function loadFolders() {
 
     populateFolderSelect();
     populateFolderCheckboxes();
-  } catch (error) {
-    console.error('Error loading folders:', error);
+  } catch (_error) {
+    console.error('_error loading folders:', _error);
     showError('Failed to load folders');
   } finally {
     hideLoading();
@@ -154,8 +154,8 @@ async function loadFolderStats(folderId) {
     displayRecommendations(health.recommendations);
 
     document.getElementById('folderStatsSection').classList.remove('hidden');
-  } catch (error) {
-    console.error('Error loading folder stats:', error);
+  } catch (_error) {
+    console.error('_error loading folder stats:', _error);
     showError('Failed to load folder statistics');
   } finally {
     hideLoading();
@@ -271,8 +271,8 @@ async function handleAddFavorite() {
     await folderInsights.addFavoriteFolder(currentFolder);
     showSuccess('Folder added to favorites!');
     loadFavorites();
-  } catch (error) {
-    console.error('Error adding favorite:', error);
+  } catch (_error) {
+    console.error('_error adding favorite:', _error);
     showError('Failed to add folder to favorites');
   }
 }
@@ -312,8 +312,8 @@ async function handleCompare() {
     const comparison = await folderInsights.compareFolders(selectedFolders);
     displayComparison(comparison);
     document.getElementById('comparisonResults').classList.remove('hidden');
-  } catch (error) {
-    console.error('Error comparing folders:', error);
+  } catch (_error) {
+    console.error('_error comparing folders:', _error);
     showError('Failed to compare folders');
   } finally {
     hideLoading();
@@ -407,8 +407,8 @@ async function handleGenerateTreemap() {
   try {
     const treeData = await folderInsights.generateTreeMap(rootId);
     displayTreemap(treeData);
-  } catch (error) {
-    console.error('Error generating treemap:', error);
+  } catch (_error) {
+    console.error('_error generating treemap:', _error);
     showError('Failed to generate tree map');
   } finally {
     hideLoading();
@@ -490,8 +490,8 @@ async function loadFavorites() {
 
     displayFavorites(favorites);
     displayAccessStats(accessStats);
-  } catch (error) {
-    console.error('Error loading favorites:', error);
+  } catch (_error) {
+    console.error('_error loading favorites:', _error);
   }
 }
 
@@ -542,8 +542,8 @@ async function displayFavorites(favoriteIds) {
       });
 
       container.appendChild(item);
-    } catch (error) {
-      console.error(`Error loading favorite folder ${folderId}:`, error);
+    } catch (_error) {
+      console.error(`_error loading favorite folder ${folderId}:`, _error);
     }
   }
 
@@ -594,8 +594,8 @@ async function displayAccessStats(accessStats) {
       });
 
       container.appendChild(item);
-    } catch (error) {
-      console.error(`Error loading folder ${folderId}:`, error);
+    } catch (_error) {
+      console.error(`_error loading folder ${folderId}:`, _error);
     }
   }
 }

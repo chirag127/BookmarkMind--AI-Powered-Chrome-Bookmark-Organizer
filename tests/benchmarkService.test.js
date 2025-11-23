@@ -8,12 +8,12 @@ const path = require('path');
 
 // Load source files
 const benchmarkServiceSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/benchmarkService.js'),
+  path.join(__dirname, '../extension/scripts/benchmarkService.js'),
   'utf-8'
 );
 
 const aiProcessorSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/aiProcessor.js'),
+  path.join(__dirname, '../extension/scripts/aiProcessor.js'),
   'utf-8'
 );
 

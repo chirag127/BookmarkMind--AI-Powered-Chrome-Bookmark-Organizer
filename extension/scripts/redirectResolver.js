@@ -12,7 +12,7 @@ class RedirectResolver {
     this.REQUEST_TIMEOUT = 10000; // 10 seconds
     this.MAX_RETRIES = 3;
     this.CACHE_EXPIRY_DAYS = 7;
-    
+
     // Statistics tracking
     this.stats = {
       resolved: 0,
@@ -60,12 +60,12 @@ class RedirectResolver {
       try {
         // Use fetch with manual redirect handling to capture intermediate URLs
         const redirectChain = await this._followRedirects(url, controller.signal);
-        
+
         clearTimeout(timeoutId);
 
         const finalUrl = redirectChain[redirectChain.length - 1].url;
         const finalStatus = redirectChain[redirectChain.length - 1].status;
-        
+
         console.log(`✅ Successfully resolved: ${url}`);
         console.log(`   ├─ Final URL: ${finalUrl}`);
         console.log(`   ├─ Status: ${finalStatus}`);
@@ -99,9 +99,9 @@ class RedirectResolver {
         throw fetchError;
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Failed to resolve URL after ${retryCount + 1} attempts: ${url}`);
-      console.error(`   └─ Error: ${error.message}`);
+      console.error(`   └─ _error: ${_error.message}`);
 
       return {
         originalUrl: url,
@@ -109,7 +109,7 @@ class RedirectResolver {
         chain: [url],
         redirectChain: [{ url: url, status: 'error' }],
         success: false,
-        error: error.message
+        error: _error.message
       };
     }
   }
@@ -150,7 +150,7 @@ class RedirectResolver {
           // Final destination reached
           break;
         }
-      } catch (error) {
+      } catch (_error) {
         // If HEAD fails, try GET
         try {
           const response = await fetch(currentUrl, {
@@ -264,7 +264,7 @@ class RedirectResolver {
     this.stats.failed = results.filter(r => !r.success).length;
     this.stats.unchanged = results.filter(r => r.success && r.finalUrl === r.originalUrl).length;
 
-    console.log(`\n📊 Batch Resolution Summary:`);
+    console.log('\n📊 Batch Resolution Summary:');
     console.log(`   ├─ Total URLs: ${total}`);
     console.log(`   ├─ Resolved (changed): ${this.stats.resolved}`);
     console.log(`   ├─ Unchanged: ${this.stats.unchanged}`);
@@ -302,20 +302,20 @@ class RedirectResolver {
         result.updated = true;
         this.stats.updated++;
 
-        console.log(`✅ Bookmark updated successfully`);
+        console.log('✅ Bookmark updated successfully');
         console.log(`   ├─ Original URL: ${resolution.originalUrl}`);
         console.log(`   ├─ Final URL: ${resolution.finalUrl}`);
         console.log(`   ├─ Redirect chain: ${resolution.chain.join(' → ')}`);
         console.log(`   └─ Title preserved: "${bookmark.title}"`);
 
-      } catch (error) {
-        console.error(`❌ Failed to update bookmark: ${error.message}`);
-        result.error = error.message;
+      } catch (_error) {
+        console.error(`❌ Failed to update bookmark: ${_error.message}`);
+        result.error = _error.message;
       }
     } else if (resolution.success) {
-      console.log(`ℹ️ No update needed - URL unchanged`);
+      console.log('ℹ️ No update needed - URL unchanged');
     } else {
-      console.log(`❌ Resolution failed - bookmark not updated`);
+      console.log('❌ Resolution failed - bookmark not updated');
     }
 
     return result;
@@ -328,9 +328,9 @@ class RedirectResolver {
    * @returns {Promise<Object>} Summary statistics and detailed results
    */
   async processBookmarks(bookmarks, progressCallback = null) {
-    console.log(`\n🚀 ========================================`);
-    console.log(`📚 Starting Bookmark Redirect Resolution`);
-    console.log(`🚀 ========================================`);
+    console.log('\n🚀 ========================================');
+    console.log('📚 Starting Bookmark Redirect Resolution');
+    console.log('🚀 ========================================');
     console.log(`Total bookmarks to process: ${bookmarks.length}`);
 
     // Reset statistics
@@ -352,9 +352,9 @@ class RedirectResolver {
       const batchNumber = Math.floor(i / this.CONCURRENT_LIMIT) + 1;
       const totalBatches = Math.ceil(bookmarks.length / this.CONCURRENT_LIMIT);
 
-      console.log(`\n📦 ======================================`);
+      console.log('\n📦 ======================================');
       console.log(`📦 Batch ${batchNumber}/${totalBatches}`);
-      console.log(`📦 ======================================`);
+      console.log('📦 ======================================');
       console.log(`Processing ${batch.length} bookmarks concurrently...`);
 
       // Process batch concurrently
@@ -389,16 +389,16 @@ class RedirectResolver {
       results: results
     };
 
-    console.log(`\n📊 ========================================`);
-    console.log(`📊 FINAL SUMMARY`);
-    console.log(`📊 ========================================`);
+    console.log('\n📊 ========================================');
+    console.log('📊 FINAL SUMMARY');
+    console.log('📊 ========================================');
     console.log(`Total bookmarks: ${summary.total}`);
     console.log(`Successfully resolved (changed): ${summary.resolved}`);
     console.log(`Unchanged: ${summary.unchanged}`);
     console.log(`Failed: ${summary.failed}`);
     console.log(`Cache hits: ${summary.cached}`);
     console.log(`Bookmarks updated: ${summary.updated}`);
-    console.log(`📊 ========================================\n`);
+    console.log('📊 ========================================\n');
 
     // Save statistics to storage
     await this._saveStats(summary);
@@ -437,8 +437,8 @@ class RedirectResolver {
       }
 
       return null;
-    } catch (error) {
-      console.error('Error reading cache:', error);
+    } catch (_error) {
+      console.error('_error reading cache:', _error);
       return null;
     }
   }
@@ -463,8 +463,8 @@ class RedirectResolver {
       await chrome.storage.local.set({ [this.CACHE_KEY]: cacheData });
       console.log(`💾 Cached result for: ${url} (expires in ${this.CACHE_EXPIRY_DAYS} days)`);
 
-    } catch (error) {
-      console.error('Error writing cache:', error);
+    } catch (_error) {
+      console.error('_error writing cache:', _error);
     }
   }
 
@@ -481,8 +481,8 @@ class RedirectResolver {
         }
       });
       console.log('💾 Statistics saved to storage');
-    } catch (error) {
-      console.error('Error saving statistics:', error);
+    } catch (_error) {
+      console.error('_error saving statistics:', _error);
     }
   }
 
@@ -494,8 +494,8 @@ class RedirectResolver {
     try {
       const result = await chrome.storage.local.get(this.STATS_KEY);
       return result[this.STATS_KEY] || null;
-    } catch (error) {
-      console.error('Error reading statistics:', error);
+    } catch (_error) {
+      console.error('_error reading statistics:', _error);
       return null;
     }
   }
@@ -508,8 +508,8 @@ class RedirectResolver {
     try {
       await chrome.storage.local.remove(this.CACHE_KEY);
       console.log('🗑️ Cache cleared successfully');
-    } catch (error) {
-      console.error('Error clearing cache:', error);
+    } catch (_error) {
+      console.error('_error clearing cache:', _error);
       throw error;
     }
   }
@@ -537,8 +537,8 @@ class RedirectResolver {
         expiredEntries: expired,
         expiryDays: this.CACHE_EXPIRY_DAYS
       };
-    } catch (error) {
-      console.error('Error getting cache info:', error);
+    } catch (_error) {
+      console.error('_error getting cache info:', _error);
       return {
         totalEntries: 0,
         validEntries: 0,
@@ -575,8 +575,8 @@ class RedirectResolver {
       }
 
       return removed;
-    } catch (error) {
-      console.error('Error cleaning cache:', error);
+    } catch (_error) {
+      console.error('_error cleaning cache:', _error);
       return 0;
     }
   }

@@ -25,8 +25,8 @@ class LearningService {
 
       console.log(`Loaded ${Object.keys(learningData.patterns || {}).length} learning patterns`);
       return learningData;
-    } catch (error) {
-      console.error('Error loading learning data:', error);
+    } catch (_error) {
+      console.error('_error loading learning data:', _error);
       return {
         version: this.LEARNING_VERSION,
         patterns: {},
@@ -92,8 +92,8 @@ class LearningService {
       console.log(`✅ Learned from correction: "${bookmark.title}" → "${correctedCategory}"`);
       console.log(`Total patterns: ${Object.keys(learningData.patterns).length}`);
 
-    } catch (error) {
-      console.error('Error recording correction:', error);
+    } catch (_error) {
+      console.error('_error recording correction:', _error);
     }
   }
 
@@ -342,8 +342,8 @@ class LearningService {
         merged: merge
       };
 
-    } catch (error) {
-      console.error('Error importing learning data:', error);
+    } catch (_error) {
+      console.error('_error importing learning data:', _error);
       throw error;
     }
   }
@@ -356,8 +356,8 @@ class LearningService {
     try {
       await chrome.storage.local.remove(this.STORAGE_KEY);
       console.log('✅ Learning data cleared');
-    } catch (error) {
-      console.error('Error clearing learning data:', error);
+    } catch (_error) {
+      console.error('_error clearing learning data:', _error);
       throw error;
     }
   }
@@ -410,7 +410,7 @@ class LearningService {
     try {
       const urlObj = new URL(url);
       return urlObj.hostname.replace('www.', '');
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   }
@@ -451,14 +451,14 @@ class LearningService {
     try {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/').filter(p => p);
-      
+
       // Take first 2 path segments (e.g., /blog/posts -> blog/posts)
       if (pathParts.length > 0) {
         return pathParts.slice(0, 2).join('/');
       }
-      
+
       return '';
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   }
@@ -470,8 +470,8 @@ class LearningService {
    */
   _getMostFrequent(obj) {
     if (!obj || Object.keys(obj).length === 0) return null;
-    
-    return Object.entries(obj).reduce((a, b) => 
+
+    return Object.entries(obj).reduce((a, b) =>
       b[1] > a[1] ? b : a
     )[0];
   }

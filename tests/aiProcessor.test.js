@@ -8,7 +8,7 @@ const path = require('path');
 
 // Load the actual source file
 const aiProcessorSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/aiProcessor.js'),
+  path.join(__dirname, '../extension/scripts/aiProcessor.js'),
   'utf-8'
 );
 

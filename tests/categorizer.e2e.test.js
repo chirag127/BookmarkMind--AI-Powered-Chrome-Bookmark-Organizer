@@ -7,9 +7,9 @@ const fs = require('fs');
 const path = require('path');
 
 // Load all required modules
-const bookmarkServiceSource = fs.readFileSync(path.join(__dirname, '../scripts/bookmarkService.js'), 'utf-8');
-const folderManagerSource = fs.readFileSync(path.join(__dirname, '../scripts/folderManager.js'), 'utf-8');
-const aiProcessorSource = fs.readFileSync(path.join(__dirname, '../scripts/aiProcessor.js'), 'utf-8');
+const bookmarkServiceSource = fs.readFileSync(path.join(__dirname, '../extension/scripts/bookmarkService.js'), 'utf-8');
+const folderManagerSource = fs.readFileSync(path.join(__dirname, '../extension/scripts/folderManager.js'), 'utf-8');
+const aiProcessorSource = fs.readFileSync(path.join(__dirname, '../extension/scripts/aiProcessor.js'), 'utf-8');
 
 // Execute in global context
 eval(bookmarkServiceSource);

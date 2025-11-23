@@ -9,13 +9,13 @@ const { JSDOM } = require('jsdom');
 
 // Load popup HTML
 const popupHtml = fs.readFileSync(
-  path.join(__dirname, '../popup/popup.html'),
+  path.join(__dirname, '../extension/popup/popup.html'),
   'utf-8'
 );
 
 // Load popup JS
 const popupSource = fs.readFileSync(
-  path.join(__dirname, '../popup/popup.js'),
+  path.join(__dirname, '../extension/popup/popup.js'),
   'utf-8'
 );
 

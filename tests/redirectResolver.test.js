@@ -8,7 +8,7 @@ const path = require('path');
 
 // Load the actual source file
 const redirectResolverSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/redirectResolver.js'),
+  path.join(__dirname, '../extension/scripts/redirectResolver.js'),
   'utf-8'
 );
 

@@ -190,8 +190,8 @@ class ModelComparisonController {
         this.updatePerformanceTable();
         this.updatePreviousABTests();
       }
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
+    } catch (_error) {
+      console.error('_error loading dashboard:', _error);
       this.showError('Failed to load dashboard data');
     }
   }
@@ -275,8 +275,8 @@ class ModelComparisonController {
         this.updateCostReport();
         this.updateBudgetStatus();
       }
-    } catch (error) {
-      console.error('Error loading cost report:', error);
+    } catch (_error) {
+      console.error('_error loading cost report:', _error);
     }
   }
 
@@ -413,8 +413,8 @@ class ModelComparisonController {
         this.showSuccess('Budget settings saved successfully');
         this.loadCostReport();
       }
-    } catch (error) {
-      console.error('Error saving budget settings:', error);
+    } catch (_error) {
+      console.error('_error saving budget settings:', _error);
       this.showError('Failed to save budget settings');
     }
   }
@@ -440,7 +440,7 @@ class ModelComparisonController {
 
       this.startABTestBtn.disabled = true;
       this.startABTestBtn.textContent = 'Running test...';
-      
+
       // Hide previous results
       this.abtestResults.classList.add('hidden');
 
@@ -460,7 +460,7 @@ class ModelComparisonController {
 
       // Take random sample
       const bookmarks = this._getRandomSample(allBookmarks, sampleSize);
-      
+
       this.startABTestBtn.textContent = `Processing ${bookmarks.length} bookmarks...`;
 
       // Run A/B test
@@ -475,9 +475,9 @@ class ModelComparisonController {
       } else {
         throw new Error(response.error || 'Failed to run A/B test');
       }
-    } catch (error) {
-      console.error('Error in A/B test:', error);
-      this.showError(`Failed to run A/B test: ${error.message}`);
+    } catch (_error) {
+      console.error('_error in A/B test:', _error);
+      this.showError(`Failed to run A/B test: ${_error.message}`);
     } finally {
       this.startABTestBtn.disabled = false;
       this.startABTestBtn.textContent = 'Start A/B Test';
@@ -611,8 +611,8 @@ class ModelComparisonController {
           }
         }
       }
-    } catch (error) {
-      console.error('Error loading model config:', error);
+    } catch (_error) {
+      console.error('_error loading model config:', _error);
     }
   }
 
@@ -637,8 +637,8 @@ class ModelComparisonController {
       if (response && response.success) {
         this.showSuccess('Model configuration saved successfully');
       }
-    } catch (error) {
-      console.error('Error saving model config:', error);
+    } catch (_error) {
+      console.error('_error saving model config:', _error);
       this.showError('Failed to save model configuration');
     }
   }
@@ -712,9 +712,9 @@ class ModelComparisonController {
         this.benchmarkProgress.classList.add('hidden');
       }, 2000);
 
-    } catch (error) {
-      console.error('Error running benchmark:', error);
-      this.showError('Failed to run benchmark: ' + error.message);
+    } catch (_error) {
+      console.error('_error running benchmark:', _error);
+      this.showError('Failed to run benchmark: ' + _error.message);
       this.benchmarkProgress.classList.add('hidden');
     } finally {
       this.runBenchmarkBtn.disabled = false;
@@ -824,8 +824,8 @@ class ModelComparisonController {
       html += '</div>';
 
       this.benchmarkHistoryList.innerHTML = html;
-    } catch (error) {
-      console.error('Error loading benchmark history:', error);
+    } catch (_error) {
+      console.error('_error loading benchmark history:', _error);
       this.benchmarkHistoryList.innerHTML = '<p>Error loading history</p>';
     }
   }
@@ -842,8 +842,8 @@ class ModelComparisonController {
       await this.benchmarkService.clearHistory();
       this.loadBenchmarkHistory();
       this.showSuccess('Benchmark history cleared');
-    } catch (error) {
-      console.error('Error clearing history:', error);
+    } catch (_error) {
+      console.error('_error clearing history:', _error);
       this.showError('Failed to clear benchmark history');
     }
   }

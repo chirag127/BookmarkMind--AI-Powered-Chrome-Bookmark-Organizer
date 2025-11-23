@@ -8,7 +8,7 @@ const path = require('path');
 
 // Load the actual source file
 const folderManagerSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/folderManager.js'),
+  path.join(__dirname, '../extension/scripts/folderManager.js'),
   'utf-8'
 );
 

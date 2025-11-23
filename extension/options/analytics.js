@@ -64,8 +64,8 @@ async function loadAnalytics() {
     } else {
       showError('Failed to load analytics: ' + response.error);
     }
-  } catch (error) {
-    console.error('Error loading analytics:', error);
+  } catch (_error) {
+    console.error('_error loading analytics:', _error);
     showError('Failed to load analytics data');
   }
 }
@@ -340,8 +340,8 @@ async function exportAnalytics() {
 
     URL.revokeObjectURL(url);
     showSuccess('Analytics data exported successfully');
-  } catch (error) {
-    console.error('Export error:', error);
+  } catch (_error) {
+    console.error('Export _error:', _error);
     showError('Failed to export analytics data');
   }
 }
@@ -360,8 +360,8 @@ async function clearAnalytics() {
     } else {
       showError('Failed to clear analytics: ' + response.error);
     }
-  } catch (error) {
-    console.error('Clear error:', error);
+  } catch (_error) {
+    console.error('Clear _error:', _error);
     showError('Failed to clear analytics data');
   }
 }
@@ -469,8 +469,8 @@ async function updateRateLimits() {
     const history = await performanceMonitor.getRateLimitHistory();
     updateRateLimitEvents(history);
 
-  } catch (error) {
-    console.error('Error updating rate limits:', error);
+  } catch (_error) {
+    console.error('_error updating rate limits:', _error);
   }
 }
 

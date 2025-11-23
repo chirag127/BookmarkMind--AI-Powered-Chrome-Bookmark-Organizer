@@ -12,7 +12,7 @@
         "test:e2e": "jest tests/categorizer.e2e.test.js",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
-        "lint": "eslint scripts/**/*.js popup/**/*.js options/**/*.js",
+        "lint": "eslint extension/scripts/**/*.js extension/popup/**/*.js extension/options/**/*.js",
         "package": "zip -r bookmarkmind-v1.0.0.zip . -x '*.git*' 'node_modules/*' '*.zip' '*.md' 'package*.json' 'create_simple_icons.html' 'icons/create_icons.py'"
     },
     "repository": {

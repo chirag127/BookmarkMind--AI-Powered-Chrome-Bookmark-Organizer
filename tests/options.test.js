@@ -9,13 +9,13 @@ const { JSDOM } = require('jsdom');
 
 // Load options HTML
 const optionsHtml = fs.readFileSync(
-  path.join(__dirname, '../options/options.html'),
+  path.join(__dirname, '../extension/options/options.html'),
   'utf-8'
 );
 
 // Load options JS
 const optionsSource = fs.readFileSync(
-  path.join(__dirname, '../options/options.js'),
+  path.join(__dirname, '../extension/options/options.js'),
   'utf-8'
 );
 

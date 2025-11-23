@@ -300,8 +300,8 @@ class PerformanceMonitor {
     try {
       const result = await chrome.storage.local.get([this.storageKey]);
       return result[this.storageKey] || this._getDefaultPerformanceData();
-    } catch (error) {
-      console.error('Error getting performance data:', error);
+    } catch (_error) {
+      console.error('_error getting performance data:', _error);
       return this._getDefaultPerformanceData();
     }
   }
@@ -313,8 +313,8 @@ class PerformanceMonitor {
   async _savePerformanceData(data) {
     try {
       await chrome.storage.local.set({ [this.storageKey]: data });
-    } catch (error) {
-      console.error('Error saving performance data:', error);
+    } catch (_error) {
+      console.error('_error saving performance data:', _error);
     }
   }
 
@@ -604,8 +604,8 @@ class PerformanceMonitor {
     try {
       const result = await chrome.storage.local.get([this.rateLimitStorageKey]);
       return result[this.rateLimitStorageKey] || this._getDefaultRateLimitData();
-    } catch (error) {
-      console.error('Error getting rate limit data:', error);
+    } catch (_error) {
+      console.error('_error getting rate limit data:', _error);
       return this._getDefaultRateLimitData();
     }
   }
@@ -618,8 +618,8 @@ class PerformanceMonitor {
   async _saveRateLimitData(data) {
     try {
       await chrome.storage.local.set({ [this.rateLimitStorageKey]: data });
-    } catch (error) {
-      console.error('Error saving rate limit data:', error);
+    } catch (_error) {
+      console.error('_error saving rate limit data:', _error);
     }
   }
 

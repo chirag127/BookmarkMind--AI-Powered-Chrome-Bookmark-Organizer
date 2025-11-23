@@ -8,7 +8,7 @@ const path = require('path');
 
 // Load the actual source file
 const analyticsServiceSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/analyticsService.js'),
+  path.join(__dirname, '../extension/scripts/analyticsService.js'),
   'utf-8'
 );
 

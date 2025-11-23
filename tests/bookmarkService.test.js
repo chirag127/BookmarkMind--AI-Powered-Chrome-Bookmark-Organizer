@@ -8,7 +8,7 @@ const path = require('path');
 
 // Load the actual source file
 const bookmarkServiceSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/bookmarkService.js'),
+  path.join(__dirname, '../extension/scripts/bookmarkService.js'),
   'utf-8'
 );
 

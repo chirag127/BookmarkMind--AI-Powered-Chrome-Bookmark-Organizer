@@ -8,12 +8,12 @@ const path = require('path');
 
 // Load the actual source files
 const performanceMonitorSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/performanceMonitor.js'),
+  path.join(__dirname, '../extension/scripts/performanceMonitor.js'),
   'utf-8'
 );
 
 const analyticsServiceSource = fs.readFileSync(
-  path.join(__dirname, '../scripts/analyticsService.js'),
+  path.join(__dirname, '../extension/scripts/analyticsService.js'),
   'utf-8'
 );
 
