@@ -6,7 +6,7 @@ describe('RequestQueue', () => {
   let RequestQueue;
 
   beforeEach(() => {
-    eval(require('fs').readFileSync('scripts/aiProcessor.js', 'utf8'));
+    eval(require('fs').readFileSync('extension/scripts/aiProcessor.js', 'utf8'));
     jest.useFakeTimers();
   });
 
