@@ -7,9 +7,9 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'scripts/**/*.js',
-    'popup/**/*.js',
-    'options/**/*.js',
+    'extension/scripts/**/*.js',
+    'extension/popup/**/*.js',
+    'extension/options/**/*.js',
     '!**/node_modules/**',
     '!**/tests/**'
   ],
