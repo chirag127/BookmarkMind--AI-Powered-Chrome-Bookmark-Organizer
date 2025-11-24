@@ -63,3 +63,6 @@ key.pem
 icons/*.py
 create_simple_icons.html
 package-lock.json
+lint_errors_detailed.txt
+.gitignore
+temp_lint_errors.txt

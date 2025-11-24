@@ -10,9 +10,9 @@ class LearningService {
   }
 
   /**
-   * Get all learning data
-   * @returns {Promise<Object>} Learning data
-   */
+     * Get all learning data
+     * @returns {Promise<Object>} Learning data
+     */
   async getLearningData() {
     try {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
@@ -23,7 +23,11 @@ class LearningService {
         lastUpdated: null
       };
 
-      console.log(`Loaded ${Object.keys(learningData.patterns || {}).length} learning patterns`);
+      console.log(
+        `Loaded ${
+          Object.keys(learningData.patterns || {}).length
+        } learning patterns`
+      );
       return learningData;
     } catch (_error) {
       console.error('_error loading learning data:', _error);
@@ -37,14 +41,19 @@ class LearningService {
   }
 
   /**
-   * Record a user correction (manual recategorization)
-   * @param {Object} bookmark - Bookmark object
-   * @param {string} originalCategory - AI-assigned category (if any)
-   * @param {string} correctedCategory - User-selected category
-   * @param {boolean} isManual - Whether this was a manual correction (true) or automatic (false)
-   * @returns {Promise<void>}
-   */
-  async recordCorrection(bookmark, originalCategory, correctedCategory, isManual = true) {
+     * Record a user correction (manual recategorization)
+     * @param {Object} bookmark - Bookmark object
+     * @param {string} originalCategory - AI-assigned category (if any)
+     * @param {string} correctedCategory - User-selected category
+     * @param {boolean} isManual - Whether this was a manual correction (true) or automatic (false)
+     * @returns {Promise<void>}
+     */
+  async recordCorrection(
+    bookmark,
+    originalCategory,
+    correctedCategory,
+    isManual = true
+  ) {
     // CRITICAL: Only learn from manual corrections, never from automatic categorization
     if (!isManual) {
       console.log('Skipping learning from automatic categorization');
@@ -52,7 +61,10 @@ class LearningService {
     }
 
     if (!bookmark || !correctedCategory) {
-      console.warn('Invalid correction data:', { bookmark, correctedCategory });
+      console.warn('Invalid correction data:', {
+        bookmark,
+        correctedCategory
+      });
       return;
     }
 
@@ -77,7 +89,8 @@ class LearningService {
 
       // Limit corrections history to last 1000 entries
       if (learningData.corrections.length > 1000) {
-        learningData.corrections = learningData.corrections.slice(-1000);
+        learningData.corrections =
+                    learningData.corrections.slice(-1000);
       }
 
       // Update learning patterns
@@ -87,21 +100,26 @@ class LearningService {
       learningData.lastUpdated = new Date().toISOString();
 
       // Save to storage
-      await chrome.storage.local.set({ [this.STORAGE_KEY]: learningData });
+      await chrome.storage.local.set({
+        [this.STORAGE_KEY]: learningData
+      });
 
-      console.log(`✅ Learned from correction: "${bookmark.title}" → "${correctedCategory}"`);
-      console.log(`Total patterns: ${Object.keys(learningData.patterns).length}`);
-
+      console.log(
+        `✅ Learned from correction: "${bookmark.title}" → "${correctedCategory}"`
+      );
+      console.log(
+        `Total patterns: ${Object.keys(learningData.patterns).length}`
+      );
     } catch (_error) {
       console.error('_error recording correction:', _error);
     }
   }
 
   /**
-   * Update learning patterns based on correction
-   * @param {Object} learningData - Learning data object
-   * @param {Object} correction - Correction record
-   */
+     * Update learning patterns based on correction
+     * @param {Object} learningData - Learning data object
+     * @param {Object} correction - Correction record
+     */
   _updatePatterns(learningData, correction) {
     learningData.patterns = learningData.patterns || {};
 
@@ -120,7 +138,10 @@ class LearningService {
         const pattern = learningData.patterns[domainKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(0.99, pattern.confidence + 0.05);
+          pattern.confidence = Math.min(
+            0.99,
+            pattern.confidence + 0.05
+          );
         } else {
           // User changed their mind about this domain's category
           pattern.category = correction.correctedCategory;
@@ -131,7 +152,7 @@ class LearningService {
     }
 
     // Pattern 2: Keyword-based learning
-    correction.keywords.forEach(keyword => {
+    correction.keywords.forEach((keyword) => {
       const keywordKey = `keyword:${keyword.toLowerCase()}`;
       if (!learningData.patterns[keywordKey]) {
         learningData.patterns[keywordKey] = {
@@ -145,7 +166,10 @@ class LearningService {
         const pattern = learningData.patterns[keywordKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(0.95, pattern.confidence + 0.03);
+          pattern.confidence = Math.min(
+            0.95,
+            pattern.confidence + 0.03
+          );
         }
       }
     });
@@ -166,24 +190,30 @@ class LearningService {
         const pattern = learningData.patterns[urlKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(0.98, pattern.confidence + 0.04);
+          pattern.confidence = Math.min(
+            0.98,
+            pattern.confidence + 0.04
+          );
         }
       }
     }
   }
 
   /**
-   * Get category suggestions based on learning data
-   * @param {Object} bookmark - Bookmark to categorize
-   * @param {Object} learningData - Learning data (optional, will load if not provided)
-   * @returns {Promise<Array>} Array of category suggestions with confidence scores
-   */
+     * Get category suggestions based on learning data
+     * @param {Object} bookmark - Bookmark to categorize
+     * @param {Object} learningData - Learning data (optional, will load if not provided)
+     * @returns {Promise<Array>} Array of category suggestions with confidence scores
+     */
   async getSuggestions(bookmark, learningData = null) {
     if (!learningData) {
       learningData = await this.getLearningData();
     }
 
-    if (!learningData.patterns || Object.keys(learningData.patterns).length === 0) {
+    if (
+      !learningData.patterns ||
+            Object.keys(learningData.patterns).length === 0
+    ) {
       return [];
     }
 
@@ -219,7 +249,7 @@ class LearningService {
     }
 
     // Check keyword patterns
-    keywords.forEach(keyword => {
+    keywords.forEach((keyword) => {
       const keywordKey = `keyword:${keyword.toLowerCase()}`;
       if (learningData.patterns[keywordKey]) {
         const pattern = learningData.patterns[keywordKey];
@@ -234,7 +264,7 @@ class LearningService {
 
     // Aggregate suggestions by category
     const categoryScores = {};
-    suggestions.forEach(suggestion => {
+    suggestions.forEach((suggestion) => {
       if (!categoryScores[suggestion.category]) {
         categoryScores[suggestion.category] = {
           category: suggestion.category,
@@ -243,7 +273,8 @@ class LearningService {
           reasons: []
         };
       }
-      categoryScores[suggestion.category].totalWeight += suggestion.weight;
+      categoryScores[suggestion.category].totalWeight +=
+                suggestion.weight;
       categoryScores[suggestion.category].maxConfidence = Math.max(
         categoryScores[suggestion.category].maxConfidence,
         suggestion.confidence
@@ -253,7 +284,7 @@ class LearningService {
 
     // Convert to array and sort by weight
     const aggregatedSuggestions = Object.values(categoryScores)
-      .map(cat => ({
+      .map((cat) => ({
         category: cat.category,
         confidence: Math.min(0.99, cat.totalWeight / 2), // Normalize confidence
         reasons: cat.reasons
@@ -264,10 +295,10 @@ class LearningService {
   }
 
   /**
-   * Get corrections history
-   * @param {number} limit - Maximum number of corrections to return
-   * @returns {Promise<Array>} Array of correction records
-   */
+     * Get corrections history
+     * @param {number} limit - Maximum number of corrections to return
+     * @returns {Promise<Array>} Array of correction records
+     */
   async getCorrectionsHistory(limit = 100) {
     const learningData = await this.getLearningData();
     const corrections = learningData.corrections || [];
@@ -275,9 +306,9 @@ class LearningService {
   }
 
   /**
-   * Export learning data
-   * @returns {Promise<Object>} Learning data for export
-   */
+     * Export learning data
+     * @returns {Promise<Object>} Learning data for export
+     */
   async exportLearningData() {
     const learningData = await this.getLearningData();
     return {
@@ -288,11 +319,11 @@ class LearningService {
   }
 
   /**
-   * Import learning data
-   * @param {Object} importedData - Learning data to import
-   * @param {boolean} merge - Whether to merge with existing data (true) or replace (false)
-   * @returns {Promise<Object>} Import result
-   */
+     * Import learning data
+     * @param {Object} importedData - Learning data to import
+     * @param {boolean} merge - Whether to merge with existing data (true) or replace (false)
+     * @returns {Promise<Object>} Import result
+     */
   async importLearningData(importedData, merge = true) {
     try {
       // Validate imported data
@@ -301,7 +332,9 @@ class LearningService {
       }
 
       if (!importedData.patterns || !importedData.corrections) {
-        throw new Error('Import data missing required fields (patterns, corrections)');
+        throw new Error(
+          'Import data missing required fields (patterns, corrections)'
+        );
       }
 
       let finalData;
@@ -311,8 +344,14 @@ class LearningService {
         const existingData = await this.getLearningData();
         finalData = {
           version: this.LEARNING_VERSION,
-          patterns: { ...existingData.patterns, ...importedData.patterns },
-          corrections: [...(existingData.corrections || []), ...(importedData.corrections || [])],
+          patterns: {
+            ...existingData.patterns,
+            ...importedData.patterns
+          },
+          corrections: [
+            ...(existingData.corrections || []),
+            ...(importedData.corrections || [])
+          ],
           lastUpdated: new Date().toISOString()
         };
 
@@ -333,7 +372,11 @@ class LearningService {
       // Save to storage
       await chrome.storage.local.set({ [this.STORAGE_KEY]: finalData });
 
-      console.log(`✅ Imported learning data: ${Object.keys(finalData.patterns).length} patterns, ${finalData.corrections.length} corrections`);
+      console.log(
+        `✅ Imported learning data: ${
+          Object.keys(finalData.patterns).length
+        } patterns, ${finalData.corrections.length} corrections`
+      );
 
       return {
         success: true,
@@ -341,31 +384,30 @@ class LearningService {
         correctionsCount: finalData.corrections.length,
         merged: merge
       };
-
     } catch (_error) {
       console.error('_error importing learning data:', _error);
-      throw error;
+      throw _error;
     }
   }
 
   /**
-   * Clear all learning data
-   * @returns {Promise<void>}
-   */
+     * Clear all learning data
+     * @returns {Promise<void>}
+     */
   async clearLearningData() {
     try {
       await chrome.storage.local.remove(this.STORAGE_KEY);
       console.log('✅ Learning data cleared');
     } catch (_error) {
       console.error('_error clearing learning data:', _error);
-      throw error;
+      throw _error;
     }
   }
 
   /**
-   * Get learning statistics
-   * @returns {Promise<Object>} Statistics object
-   */
+     * Get learning statistics
+     * @returns {Promise<Object>} Statistics object
+     */
   async getStatistics() {
     const learningData = await this.getLearningData();
     const patterns = learningData.patterns || {};
@@ -378,7 +420,7 @@ class LearningService {
       url_pattern: 0
     };
 
-    Object.values(patterns).forEach(pattern => {
+    Object.values(patterns).forEach((pattern) => {
       if (patternsByType.hasOwnProperty(pattern.type)) {
         patternsByType[pattern.type]++;
       }
@@ -386,9 +428,10 @@ class LearningService {
 
     // Get category distribution
     const categoryDistribution = {};
-    corrections.forEach(correction => {
+    corrections.forEach((correction) => {
       const category = correction.correctedCategory;
-      categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+      categoryDistribution[category] =
+                (categoryDistribution[category] || 0) + 1;
     });
 
     return {
@@ -402,10 +445,10 @@ class LearningService {
   }
 
   /**
-   * Extract domain from URL
-   * @param {string} url - URL string
-   * @returns {string} Domain
-   */
+     * Extract domain from URL
+     * @param {string} url - URL string
+     * @returns {string} Domain
+     */
   _extractDomain(url) {
     try {
       const urlObj = new URL(url);
@@ -416,41 +459,84 @@ class LearningService {
   }
 
   /**
-   * Extract keywords from title
-   * @param {string} title - Bookmark title
-   * @returns {Array<string>} Array of keywords
-   */
+     * Extract keywords from title
+     * @param {string} title - Bookmark title
+     * @returns {Array<string>} Array of keywords
+     */
   _extractKeywords(title) {
     if (!title) return [];
 
     // Remove common words and extract meaningful keywords
     const commonWords = new Set([
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
-      'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-      'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this',
-      'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they'
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'as',
+      'is',
+      'was',
+      'are',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'could',
+      'should',
+      'may',
+      'might',
+      'must',
+      'can',
+      'this',
+      'that',
+      'these',
+      'those',
+      'i',
+      'you',
+      'he',
+      'she',
+      'it',
+      'we',
+      'they'
     ]);
 
     const words = title
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(word => word.length > 2 && !commonWords.has(word));
+      .filter((word) => word.length > 2 && !commonWords.has(word));
 
     // Return unique keywords, limited to top 5
     return [...new Set(words)].slice(0, 5);
   }
 
   /**
-   * Extract URL pattern (path structure)
-   * @param {string} url - URL string
-   * @returns {string} URL pattern
-   */
+     * Extract URL pattern (path structure)
+     * @param {string} url - URL string
+     * @returns {string} URL pattern
+     */
   _extractUrlPattern(url) {
     try {
       const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split('/').filter(p => p);
+      const pathParts = urlObj.pathname.split('/').filter((p) => p);
 
       // Take first 2 path segments (e.g., /blog/posts -> blog/posts)
       if (pathParts.length > 0) {
@@ -464,16 +550,14 @@ class LearningService {
   }
 
   /**
-   * Get most frequent value from object
-   * @param {Object} obj - Object with counts
-   * @returns {string} Most frequent key
-   */
+     * Get most frequent value from object
+     * @param {Object} obj - Object with counts
+     * @returns {string} Most frequent key
+     */
   _getMostFrequent(obj) {
     if (!obj || Object.keys(obj).length === 0) return null;
 
-    return Object.entries(obj).reduce((a, b) =>
-      b[1] > a[1] ? b : a
-    )[0];
+    return Object.entries(obj).reduce((a, b) => (b[1] > a[1] ? b : a))[0];
   }
 }
 

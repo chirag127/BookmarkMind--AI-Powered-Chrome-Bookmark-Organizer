@@ -2137,7 +2137,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       );
     } catch (_error) {
       console.error('_error loading recategorize bookmarks:', _error);
-      throw error;
+      throw _error;
     }
   }
 

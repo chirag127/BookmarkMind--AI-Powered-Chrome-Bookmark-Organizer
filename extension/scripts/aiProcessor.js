@@ -1411,7 +1411,7 @@ class AIProcessor {
       }
 
       // Re-throw the original error
-      throw error;
+      throw _error;
     }
   }
 
@@ -2455,7 +2455,7 @@ Return only the JSON array with properly formatted category names, no additional
                     _error.message.includes('API access denied') ||
                     _error.message.includes('Bad request')
         ) {
-          throw error;
+          throw _error;
         }
       }
 
@@ -2859,7 +2859,7 @@ Return only the JSON array with properly formatted category names, no additional
                     _error.message.includes('API access denied') ||
                     _error.message.includes('Bad request')
         ) {
-          throw error;
+          throw _error;
         }
       }
 
@@ -2928,7 +2928,7 @@ Return only the JSON array with properly formatted category names, no additional
                     _error.message.includes('API access denied') ||
                     _error.message.includes('Unauthorized')
         ) {
-          throw error;
+          throw _error;
         }
 
         // Small delay between model attempts
@@ -3156,12 +3156,12 @@ Return only the JSON array with properly formatted category names, no additional
                     _error.message.includes('Unauthorized') ||
                     _error.message.includes('Bad request')
         ) {
-          throw error;
+          throw _error;
         }
 
         // If this is the last retry, throw the error
         if (retryAttempt >= this.maxRetries) {
-          throw error;
+          throw _error;
         }
 
         // Retry with exponential backoff
@@ -3400,12 +3400,12 @@ Return only the JSON array with properly formatted category names, no additional
                     _error.message.includes('Unauthorized') ||
                     _error.message.includes('Bad request')
         ) {
-          throw error;
+          throw _error;
         }
 
         // If this is the last retry, throw the error
         if (retryAttempt >= this.maxRetries) {
-          throw error;
+          throw _error;
         }
 
         // Retry with exponential backoff
