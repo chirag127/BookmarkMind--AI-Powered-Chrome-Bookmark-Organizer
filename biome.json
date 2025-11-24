@@ -48,15 +48,19 @@
             "recommended": true,
             "style": {
                 "noVar": "error",
-                "useConst": "error",
-                "useTemplate": "warn"
+                "useConst": "warn",
+                "noUselessElse": "warn"
             },
             "suspicious": {
-                "noConsoleLog": "warn",
-                "noDoubleEquals": "error"
+                "noConsoleLog": "off",
+                "noDoubleEquals": "warn"
             },
             "correctness": {
-                "noUnusedVariables": "error"
+                "noUnusedVariables": "warn"
+            },
+            "complexity": {
+                "noForEach": "off",
+                "useOptionalChain": "warn"
             }
         }
     },
