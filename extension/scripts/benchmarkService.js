@@ -16,52 +16,192 @@ class BenchmarkService {
   _initializeTestSets() {
     return {
       technical: [
-        { title: 'React Documentation', url: 'https://react.dev', expectedCategory: 'Development > Frontend' },
-        { title: 'Stack Overflow - JavaScript', url: 'https://stackoverflow.com/questions/tagged/javascript', expectedCategory: 'Development > Resources' },
-        { title: 'GitHub - TypeScript', url: 'https://github.com/microsoft/TypeScript', expectedCategory: 'Development > Tools' },
-        { title: 'MDN Web Docs', url: 'https://developer.mozilla.org', expectedCategory: 'Development > Resources' },
-        { title: 'Node.js Documentation', url: 'https://nodejs.org/docs', expectedCategory: 'Development > Backend' },
-        { title: 'AWS Console', url: 'https://console.aws.amazon.com', expectedCategory: 'Development > Cloud' },
-        { title: 'Docker Hub', url: 'https://hub.docker.com', expectedCategory: 'Development > DevOps' },
-        { title: 'VS Code Tips', url: 'https://code.visualstudio.com/docs', expectedCategory: 'Development > Tools' },
-        { title: 'Python Tutorial', url: 'https://docs.python.org/3/tutorial', expectedCategory: 'Development > Learning' },
-        { title: 'CSS-Tricks', url: 'https://css-tricks.com', expectedCategory: 'Development > Design' }
+        {
+          title: 'React Documentation',
+          url: 'https://react.dev',
+          expectedCategory: 'Development > Frontend'
+        },
+        {
+          title: 'Stack Overflow - JavaScript',
+          url: 'https://stackoverflow.com/questions/tagged/javascript',
+          expectedCategory: 'Development > Resources'
+        },
+        {
+          title: 'GitHub - TypeScript',
+          url: 'https://github.com/microsoft/TypeScript',
+          expectedCategory: 'Development > Tools'
+        },
+        {
+          title: 'MDN Web Docs',
+          url: 'https://developer.mozilla.org',
+          expectedCategory: 'Development > Resources'
+        },
+        {
+          title: 'Node.js Documentation',
+          url: 'https://nodejs.org/docs',
+          expectedCategory: 'Development > Backend'
+        },
+        {
+          title: 'AWS Console',
+          url: 'https://console.aws.amazon.com',
+          expectedCategory: 'Development > Cloud'
+        },
+        {
+          title: 'Docker Hub',
+          url: 'https://hub.docker.com',
+          expectedCategory: 'Development > DevOps'
+        },
+        {
+          title: 'VS Code Tips',
+          url: 'https://code.visualstudio.com/docs',
+          expectedCategory: 'Development > Tools'
+        },
+        {
+          title: 'Python Tutorial',
+          url: 'https://docs.python.org/3/tutorial',
+          expectedCategory: 'Development > Learning'
+        },
+        {
+          title: 'CSS-Tricks',
+          url: 'https://css-tricks.com',
+          expectedCategory: 'Development > Design'
+        }
       ],
       news: [
-        { title: 'TechCrunch', url: 'https://techcrunch.com', expectedCategory: 'News > Technology' },
+        {
+          title: 'TechCrunch',
+          url: 'https://techcrunch.com',
+          expectedCategory: 'News > Technology'
+        },
         { title: 'BBC News', url: 'https://www.bbc.com/news', expectedCategory: 'News > World' },
-        { title: 'The Verge', url: 'https://www.theverge.com', expectedCategory: 'News > Technology' },
-        { title: 'Hacker News', url: 'https://news.ycombinator.com', expectedCategory: 'News > Technology' },
+        {
+          title: 'The Verge',
+          url: 'https://www.theverge.com',
+          expectedCategory: 'News > Technology'
+        },
+        {
+          title: 'Hacker News',
+          url: 'https://news.ycombinator.com',
+          expectedCategory: 'News > Technology'
+        },
         { title: 'Reuters', url: 'https://www.reuters.com', expectedCategory: 'News > World' },
-        { title: 'Bloomberg', url: 'https://www.bloomberg.com', expectedCategory: 'News > Finance' },
-        { title: 'Wired Magazine', url: 'https://www.wired.com', expectedCategory: 'News > Technology' },
-        { title: 'The Guardian', url: 'https://www.theguardian.com', expectedCategory: 'News > World' },
-        { title: 'Ars Technica', url: 'https://arstechnica.com', expectedCategory: 'News > Technology' },
+        {
+          title: 'Bloomberg',
+          url: 'https://www.bloomberg.com',
+          expectedCategory: 'News > Finance'
+        },
+        {
+          title: 'Wired Magazine',
+          url: 'https://www.wired.com',
+          expectedCategory: 'News > Technology'
+        },
+        {
+          title: 'The Guardian',
+          url: 'https://www.theguardian.com',
+          expectedCategory: 'News > World'
+        },
+        {
+          title: 'Ars Technica',
+          url: 'https://arstechnica.com',
+          expectedCategory: 'News > Technology'
+        },
         { title: 'NPR News', url: 'https://www.npr.org', expectedCategory: 'News > World' }
       ],
       shopping: [
         { title: 'Amazon', url: 'https://www.amazon.com', expectedCategory: 'Shopping > General' },
-        { title: 'eBay Deals', url: 'https://www.ebay.com/deals', expectedCategory: 'Shopping > Deals' },
-        { title: 'Etsy Handmade', url: 'https://www.etsy.com/market/handmade', expectedCategory: 'Shopping > Handmade' },
-        { title: 'Best Buy Electronics', url: 'https://www.bestbuy.com', expectedCategory: 'Shopping > Electronics' },
+        {
+          title: 'eBay Deals',
+          url: 'https://www.ebay.com/deals',
+          expectedCategory: 'Shopping > Deals'
+        },
+        {
+          title: 'Etsy Handmade',
+          url: 'https://www.etsy.com/market/handmade',
+          expectedCategory: 'Shopping > Handmade'
+        },
+        {
+          title: 'Best Buy Electronics',
+          url: 'https://www.bestbuy.com',
+          expectedCategory: 'Shopping > Electronics'
+        },
         { title: 'Target', url: 'https://www.target.com', expectedCategory: 'Shopping > General' },
-        { title: 'Walmart', url: 'https://www.walmart.com', expectedCategory: 'Shopping > General' },
-        { title: 'Newegg Tech', url: 'https://www.newegg.com', expectedCategory: 'Shopping > Electronics' },
-        { title: 'Zappos Shoes', url: 'https://www.zappos.com', expectedCategory: 'Shopping > Fashion' },
-        { title: 'IKEA Furniture', url: 'https://www.ikea.com', expectedCategory: 'Shopping > Home' },
-        { title: 'AliExpress', url: 'https://www.aliexpress.com', expectedCategory: 'Shopping > International' }
+        {
+          title: 'Walmart',
+          url: 'https://www.walmart.com',
+          expectedCategory: 'Shopping > General'
+        },
+        {
+          title: 'Newegg Tech',
+          url: 'https://www.newegg.com',
+          expectedCategory: 'Shopping > Electronics'
+        },
+        {
+          title: 'Zappos Shoes',
+          url: 'https://www.zappos.com',
+          expectedCategory: 'Shopping > Fashion'
+        },
+        {
+          title: 'IKEA Furniture',
+          url: 'https://www.ikea.com',
+          expectedCategory: 'Shopping > Home'
+        },
+        {
+          title: 'AliExpress',
+          url: 'https://www.aliexpress.com',
+          expectedCategory: 'Shopping > International'
+        }
       ],
       entertainment: [
-        { title: 'Netflix', url: 'https://www.netflix.com', expectedCategory: 'Entertainment > Streaming' },
-        { title: 'YouTube', url: 'https://www.youtube.com', expectedCategory: 'Entertainment > Video' },
-        { title: 'Spotify', url: 'https://www.spotify.com', expectedCategory: 'Entertainment > Music' },
-        { title: 'IMDb Movies', url: 'https://www.imdb.com', expectedCategory: 'Entertainment > Movies' },
-        { title: 'Twitch', url: 'https://www.twitch.tv', expectedCategory: 'Entertainment > Gaming' },
-        { title: 'Reddit', url: 'https://www.reddit.com', expectedCategory: 'Entertainment > Social' },
-        { title: 'Steam Games', url: 'https://store.steampowered.com', expectedCategory: 'Entertainment > Gaming' },
-        { title: 'SoundCloud', url: 'https://soundcloud.com', expectedCategory: 'Entertainment > Music' },
-        { title: 'Disney Plus', url: 'https://www.disneyplus.com', expectedCategory: 'Entertainment > Streaming' },
-        { title: 'IGN Gaming News', url: 'https://www.ign.com', expectedCategory: 'Entertainment > Gaming' }
+        {
+          title: 'Netflix',
+          url: 'https://www.netflix.com',
+          expectedCategory: 'Entertainment > Streaming'
+        },
+        {
+          title: 'YouTube',
+          url: 'https://www.youtube.com',
+          expectedCategory: 'Entertainment > Video'
+        },
+        {
+          title: 'Spotify',
+          url: 'https://www.spotify.com',
+          expectedCategory: 'Entertainment > Music'
+        },
+        {
+          title: 'IMDb Movies',
+          url: 'https://www.imdb.com',
+          expectedCategory: 'Entertainment > Movies'
+        },
+        {
+          title: 'Twitch',
+          url: 'https://www.twitch.tv',
+          expectedCategory: 'Entertainment > Gaming'
+        },
+        {
+          title: 'Reddit',
+          url: 'https://www.reddit.com',
+          expectedCategory: 'Entertainment > Social'
+        },
+        {
+          title: 'Steam Games',
+          url: 'https://store.steampowered.com',
+          expectedCategory: 'Entertainment > Gaming'
+        },
+        {
+          title: 'SoundCloud',
+          url: 'https://soundcloud.com',
+          expectedCategory: 'Entertainment > Music'
+        },
+        {
+          title: 'Disney Plus',
+          url: 'https://www.disneyplus.com',
+          expectedCategory: 'Entertainment > Streaming'
+        },
+        {
+          title: 'IGN Gaming News',
+          url: 'https://www.ign.com',
+          expectedCategory: 'Entertainment > Gaming'
+        }
       ]
     };
   }
@@ -101,7 +241,12 @@ class BenchmarkService {
       console.log(`\n📊 Testing provider: ${provider}`);
 
       try {
-        const providerResult = await this._testProvider(provider, testCategories, batchSize, models);
+        const providerResult = await this._testProvider(
+          provider,
+          testCategories,
+          batchSize,
+          models
+        );
         results.providers.push(providerResult);
 
         results.summary.totalTests += providerResult.totalTests;
@@ -164,7 +309,13 @@ class BenchmarkService {
     for (const model of modelsToTest) {
       console.log(`  Testing model: ${model.name}`);
 
-      const modelResult = await this._testModel(aiProcessor, model, testCategories, batchSize, provider);
+      const modelResult = await this._testModel(
+        aiProcessor,
+        model,
+        testCategories,
+        batchSize,
+        provider
+      );
       providerResult.models.push(modelResult);
 
       providerResult.totalTests += modelResult.totalTests;
@@ -173,9 +324,15 @@ class BenchmarkService {
 
     // Calculate provider averages
     if (providerResult.models.length > 0) {
-      providerResult.successRate = providerResult.models.reduce((sum, m) => sum + m.successRate, 0) / providerResult.models.length;
-      providerResult.averageSpeed = providerResult.models.reduce((sum, m) => sum + m.averageSpeed, 0) / providerResult.models.length;
-      providerResult.folderConsistency = providerResult.models.reduce((sum, m) => sum + m.folderConsistency, 0) / providerResult.models.length;
+      providerResult.successRate =
+        providerResult.models.reduce((sum, m) => sum + m.successRate, 0) /
+        providerResult.models.length;
+      providerResult.averageSpeed =
+        providerResult.models.reduce((sum, m) => sum + m.averageSpeed, 0) /
+        providerResult.models.length;
+      providerResult.folderConsistency =
+        providerResult.models.reduce((sum, m) => sum + m.folderConsistency, 0) /
+        providerResult.models.length;
     }
 
     return providerResult;
@@ -258,22 +415,24 @@ class BenchmarkService {
           const batchCost = this._calculateBatchCost(batch, results, model);
           categoryResult.cost += batchCost;
           modelResult.totalCost += batchCost;
-
         } catch (_error) {
           console.error(`_error testing batch for ${category}:`, _error);
           categoryResult.incorrect += batch.length;
         }
       }
 
-      categoryResult.avgSpeed = categoryResult.avgSpeed / Math.ceil(categoryTests.length / batchSize);
+      categoryResult.avgSpeed =
+        categoryResult.avgSpeed / Math.ceil(categoryTests.length / batchSize);
       modelResult.categoryResults[category] = categoryResult;
       modelResult.totalTests += categoryResult.total;
-      modelResult.correctPredictions += categoryResult.correct + (categoryResult.partial * 0.5);
+      modelResult.correctPredictions += categoryResult.correct + categoryResult.partial * 0.5;
     }
 
     // Calculate overall metrics
     modelResult.successRate = (modelResult.correctPredictions / modelResult.totalTests) * 100;
-    modelResult.averageSpeed = modelResult.responseTimesMs.reduce((sum, t) => sum + t, 0) / modelResult.responseTimesMs.length;
+    modelResult.averageSpeed =
+      modelResult.responseTimesMs.reduce((sum, t) => sum + t, 0) /
+      modelResult.responseTimesMs.length;
     modelResult.folderConsistency = this._evaluateFolderConsistency(modelResult.categoryResults);
 
     return modelResult;
@@ -298,7 +457,7 @@ class BenchmarkService {
 
     // Set the specific model to test
     if (provider === 'gemini') {
-      const modelIndex = aiProcessor.geminiModels.findIndex(m => m.name === model.name);
+      const modelIndex = aiProcessor.geminiModels.findIndex((m) => m.name === model.name);
       if (modelIndex >= 0) aiProcessor.currentModelIndex = modelIndex;
     }
 
@@ -324,8 +483,8 @@ class BenchmarkService {
     if (predicted === expected) return 'correct';
 
     // Partial match (parent category matches)
-    const predictedParts = predicted.split('>').map(p => p.trim());
-    const expectedParts = expected.split('>').map(p => p.trim());
+    const predictedParts = predicted.split('>').map((p) => p.trim());
+    const expectedParts = expected.split('>').map((p) => p.trim());
 
     // Check if parent category matches
     if (predictedParts[0] === expectedParts[0]) {
@@ -344,10 +503,10 @@ class BenchmarkService {
     let totalPredictions = 0;
     let consistentPredictions = 0;
 
-    Object.values(categoryResults).forEach(result => {
+    Object.values(categoryResults).forEach((result) => {
       const folderMap = {};
 
-      result.predictions.forEach(pred => {
+      result.predictions.forEach((pred) => {
         const parentFolder = pred.predicted.split('>')[0]?.trim();
         if (parentFolder) {
           folderMap[parentFolder] = (folderMap[parentFolder] || 0) + 1;
@@ -376,7 +535,9 @@ class BenchmarkService {
     const avgUrlLength = batch.reduce((sum, b) => sum + b.url.length, 0) / batch.length;
     const inputTokens = (avgTitleLength + avgUrlLength) * batch.length * 0.75; // ~0.75 tokens per char
 
-    const avgResultLength = results.reduce((sum, r) => sum + (r.category?.length || 0) + (r.reasoning?.length || 0), 0) / results.length;
+    const avgResultLength =
+      results.reduce((sum, r) => sum + (r.category?.length || 0) + (r.reasoning?.length || 0), 0) /
+      results.length;
     const outputTokens = avgResultLength * results.length * 0.75;
 
     const inputCost = (inputTokens / 1000000) * model.costPer1MInputTokens;
@@ -404,7 +565,7 @@ class BenchmarkService {
     }
 
     if (specificModels) {
-      return allModels.filter(m => specificModels.includes(m.name));
+      return allModels.filter((m) => specificModels.includes(m.name));
     }
 
     // Test top 3 models per provider for efficiency
@@ -417,7 +578,7 @@ class BenchmarkService {
    * @returns {number} Average accuracy percentage
    */
   _calculateAverageAccuracy(providers) {
-    const validProviders = providers.filter(p => !p.error && p.successRate);
+    const validProviders = providers.filter((p) => !p.error && p.successRate);
     if (validProviders.length === 0) return 0;
     return validProviders.reduce((sum, p) => sum + p.successRate, 0) / validProviders.length;
   }
@@ -428,7 +589,7 @@ class BenchmarkService {
    * @returns {number} Average speed in ms
    */
   _calculateAverageSpeed(providers) {
-    const validProviders = providers.filter(p => !p.error && p.averageSpeed);
+    const validProviders = providers.filter((p) => !p.error && p.averageSpeed);
     if (validProviders.length === 0) return 0;
     return validProviders.reduce((sum, p) => sum + p.averageSpeed, 0) / validProviders.length;
   }
@@ -503,20 +664,16 @@ class BenchmarkService {
     let bestScore = 0;
     let bestModel = null;
 
-    results.providers.forEach(provider => {
-      provider.models?.forEach(model => {
+    results.providers.forEach((provider) => {
+      provider.models?.forEach((model) => {
         // Weighted score: 40% accuracy, 30% speed, 20% cost, 10% consistency
         const accuracyScore = model.successRate / 100;
-        const speedScore = Math.max(0, 1 - (model.averageSpeed / 5000)); // Normalize to 5s max
-        const costScore = Math.max(0, 1 - (model.totalCost / 1)); // Normalize to $1 max
+        const speedScore = Math.max(0, 1 - model.averageSpeed / 5000); // Normalize to 5s max
+        const costScore = Math.max(0, 1 - model.totalCost / 1); // Normalize to $1 max
         const consistencyScore = model.folderConsistency;
 
-        const weightedScore = (
-          accuracyScore * 0.4 +
-          speedScore * 0.3 +
-          costScore * 0.2 +
-          consistencyScore * 0.1
-        );
+        const weightedScore =
+          accuracyScore * 0.4 + speedScore * 0.3 + costScore * 0.2 + consistencyScore * 0.1;
 
         report.comparison.push({
           provider: provider.provider,
@@ -544,7 +701,7 @@ class BenchmarkService {
     });
 
     report.bestModel = bestModel;
-    report.comparison.sort((a, b) => parseFloat(b.score) - parseFloat(a.score));
+    report.comparison.sort((a, b) => Number.parseFloat(b.score) - Number.parseFloat(a.score));
 
     // Generate recommendations
     if (bestModel) {
@@ -557,7 +714,7 @@ class BenchmarkService {
 
     // Find fastest model
     const fastest = report.comparison.reduce((min, m) =>
-      parseFloat(m.averageSpeed) < parseFloat(min.averageSpeed) ? m : min
+      Number.parseFloat(m.averageSpeed) < Number.parseFloat(min.averageSpeed) ? m : min
     );
     if (fastest) {
       report.recommendations.push({
@@ -569,7 +726,7 @@ class BenchmarkService {
 
     // Find cheapest model
     const cheapest = report.comparison.reduce((min, m) =>
-      parseFloat(m.totalCost) < parseFloat(min.totalCost) ? m : min
+      Number.parseFloat(m.totalCost) < Number.parseFloat(min.totalCost) ? m : min
     );
     if (cheapest) {
       report.recommendations.push({
@@ -581,7 +738,7 @@ class BenchmarkService {
 
     // Find most accurate model
     const accurate = report.comparison.reduce((max, m) =>
-      parseFloat(m.successRate) > parseFloat(max.successRate) ? m : max
+      Number.parseFloat(m.successRate) > Number.parseFloat(max.successRate) ? m : max
     );
     if (accurate) {
       report.recommendations.push({

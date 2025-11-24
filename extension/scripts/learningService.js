@@ -10,9 +10,9 @@ class LearningService {
   }
 
   /**
-     * Get all learning data
-     * @returns {Promise<Object>} Learning data
-     */
+   * Get all learning data
+   * @returns {Promise<Object>} Learning data
+   */
   async getLearningData() {
     try {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
@@ -23,11 +23,7 @@ class LearningService {
         lastUpdated: null
       };
 
-      console.log(
-        `Loaded ${
-          Object.keys(learningData.patterns || {}).length
-        } learning patterns`
-      );
+      console.log(`Loaded ${Object.keys(learningData.patterns || {}).length} learning patterns`);
       return learningData;
     } catch (_error) {
       console.error('_error loading learning data:', _error);
@@ -41,19 +37,14 @@ class LearningService {
   }
 
   /**
-     * Record a user correction (manual recategorization)
-     * @param {Object} bookmark - Bookmark object
-     * @param {string} originalCategory - AI-assigned category (if any)
-     * @param {string} correctedCategory - User-selected category
-     * @param {boolean} isManual - Whether this was a manual correction (true) or automatic (false)
-     * @returns {Promise<void>}
-     */
-  async recordCorrection(
-    bookmark,
-    originalCategory,
-    correctedCategory,
-    isManual = true
-  ) {
+   * Record a user correction (manual recategorization)
+   * @param {Object} bookmark - Bookmark object
+   * @param {string} originalCategory - AI-assigned category (if any)
+   * @param {string} correctedCategory - User-selected category
+   * @param {boolean} isManual - Whether this was a manual correction (true) or automatic (false)
+   * @returns {Promise<void>}
+   */
+  async recordCorrection(bookmark, originalCategory, correctedCategory, isManual = true) {
     // CRITICAL: Only learn from manual corrections, never from automatic categorization
     if (!isManual) {
       console.log('Skipping learning from automatic categorization');
@@ -89,8 +80,7 @@ class LearningService {
 
       // Limit corrections history to last 1000 entries
       if (learningData.corrections.length > 1000) {
-        learningData.corrections =
-                    learningData.corrections.slice(-1000);
+        learningData.corrections = learningData.corrections.slice(-1000);
       }
 
       // Update learning patterns
@@ -104,22 +94,18 @@ class LearningService {
         [this.STORAGE_KEY]: learningData
       });
 
-      console.log(
-        `✅ Learned from correction: "${bookmark.title}" → "${correctedCategory}"`
-      );
-      console.log(
-        `Total patterns: ${Object.keys(learningData.patterns).length}`
-      );
+      console.log(`✅ Learned from correction: "${bookmark.title}" → "${correctedCategory}"`);
+      console.log(`Total patterns: ${Object.keys(learningData.patterns).length}`);
     } catch (_error) {
       console.error('_error recording correction:', _error);
     }
   }
 
   /**
-     * Update learning patterns based on correction
-     * @param {Object} learningData - Learning data object
-     * @param {Object} correction - Correction record
-     */
+   * Update learning patterns based on correction
+   * @param {Object} learningData - Learning data object
+   * @param {Object} correction - Correction record
+   */
   _updatePatterns(learningData, correction) {
     learningData.patterns = learningData.patterns || {};
 
@@ -138,10 +124,7 @@ class LearningService {
         const pattern = learningData.patterns[domainKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(
-            0.99,
-            pattern.confidence + 0.05
-          );
+          pattern.confidence = Math.min(0.99, pattern.confidence + 0.05);
         } else {
           // User changed their mind about this domain's category
           pattern.category = correction.correctedCategory;
@@ -166,10 +149,7 @@ class LearningService {
         const pattern = learningData.patterns[keywordKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(
-            0.95,
-            pattern.confidence + 0.03
-          );
+          pattern.confidence = Math.min(0.95, pattern.confidence + 0.03);
         }
       }
     });
@@ -190,30 +170,24 @@ class LearningService {
         const pattern = learningData.patterns[urlKey];
         if (pattern.category === correction.correctedCategory) {
           pattern.count++;
-          pattern.confidence = Math.min(
-            0.98,
-            pattern.confidence + 0.04
-          );
+          pattern.confidence = Math.min(0.98, pattern.confidence + 0.04);
         }
       }
     }
   }
 
   /**
-     * Get category suggestions based on learning data
-     * @param {Object} bookmark - Bookmark to categorize
-     * @param {Object} learningData - Learning data (optional, will load if not provided)
-     * @returns {Promise<Array>} Array of category suggestions with confidence scores
-     */
+   * Get category suggestions based on learning data
+   * @param {Object} bookmark - Bookmark to categorize
+   * @param {Object} learningData - Learning data (optional, will load if not provided)
+   * @returns {Promise<Array>} Array of category suggestions with confidence scores
+   */
   async getSuggestions(bookmark, learningData = null) {
     if (!learningData) {
       learningData = await this.getLearningData();
     }
 
-    if (
-      !learningData.patterns ||
-            Object.keys(learningData.patterns).length === 0
-    ) {
+    if (!learningData.patterns || Object.keys(learningData.patterns).length === 0) {
       return [];
     }
 
@@ -273,8 +247,7 @@ class LearningService {
           reasons: []
         };
       }
-      categoryScores[suggestion.category].totalWeight +=
-                suggestion.weight;
+      categoryScores[suggestion.category].totalWeight += suggestion.weight;
       categoryScores[suggestion.category].maxConfidence = Math.max(
         categoryScores[suggestion.category].maxConfidence,
         suggestion.confidence
@@ -295,10 +268,10 @@ class LearningService {
   }
 
   /**
-     * Get corrections history
-     * @param {number} limit - Maximum number of corrections to return
-     * @returns {Promise<Array>} Array of correction records
-     */
+   * Get corrections history
+   * @param {number} limit - Maximum number of corrections to return
+   * @returns {Promise<Array>} Array of correction records
+   */
   async getCorrectionsHistory(limit = 100) {
     const learningData = await this.getLearningData();
     const corrections = learningData.corrections || [];
@@ -306,9 +279,9 @@ class LearningService {
   }
 
   /**
-     * Export learning data
-     * @returns {Promise<Object>} Learning data for export
-     */
+   * Export learning data
+   * @returns {Promise<Object>} Learning data for export
+   */
   async exportLearningData() {
     const learningData = await this.getLearningData();
     return {
@@ -319,11 +292,11 @@ class LearningService {
   }
 
   /**
-     * Import learning data
-     * @param {Object} importedData - Learning data to import
-     * @param {boolean} merge - Whether to merge with existing data (true) or replace (false)
-     * @returns {Promise<Object>} Import result
-     */
+   * Import learning data
+   * @param {Object} importedData - Learning data to import
+   * @param {boolean} merge - Whether to merge with existing data (true) or replace (false)
+   * @returns {Promise<Object>} Import result
+   */
   async importLearningData(importedData, merge = true) {
     try {
       // Validate imported data
@@ -332,9 +305,7 @@ class LearningService {
       }
 
       if (!importedData.patterns || !importedData.corrections) {
-        throw new Error(
-          'Import data missing required fields (patterns, corrections)'
-        );
+        throw new Error('Import data missing required fields (patterns, corrections)');
       }
 
       let finalData;
@@ -348,10 +319,7 @@ class LearningService {
             ...existingData.patterns,
             ...importedData.patterns
           },
-          corrections: [
-            ...(existingData.corrections || []),
-            ...(importedData.corrections || [])
-          ],
+          corrections: [...(existingData.corrections || []), ...(importedData.corrections || [])],
           lastUpdated: new Date().toISOString()
         };
 
@@ -391,9 +359,9 @@ class LearningService {
   }
 
   /**
-     * Clear all learning data
-     * @returns {Promise<void>}
-     */
+   * Clear all learning data
+   * @returns {Promise<void>}
+   */
   async clearLearningData() {
     try {
       await chrome.storage.local.remove(this.STORAGE_KEY);
@@ -405,9 +373,9 @@ class LearningService {
   }
 
   /**
-     * Get learning statistics
-     * @returns {Promise<Object>} Statistics object
-     */
+   * Get learning statistics
+   * @returns {Promise<Object>} Statistics object
+   */
   async getStatistics() {
     const learningData = await this.getLearningData();
     const patterns = learningData.patterns || {};
@@ -430,8 +398,7 @@ class LearningService {
     const categoryDistribution = {};
     corrections.forEach((correction) => {
       const category = correction.correctedCategory;
-      categoryDistribution[category] =
-                (categoryDistribution[category] || 0) + 1;
+      categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
     });
 
     return {
@@ -445,10 +412,10 @@ class LearningService {
   }
 
   /**
-     * Extract domain from URL
-     * @param {string} url - URL string
-     * @returns {string} Domain
-     */
+   * Extract domain from URL
+   * @param {string} url - URL string
+   * @returns {string} Domain
+   */
   _extractDomain(url) {
     try {
       const urlObj = new URL(url);
@@ -459,10 +426,10 @@ class LearningService {
   }
 
   /**
-     * Extract keywords from title
-     * @param {string} title - Bookmark title
-     * @returns {Array<string>} Array of keywords
-     */
+   * Extract keywords from title
+   * @param {string} title - Bookmark title
+   * @returns {Array<string>} Array of keywords
+   */
   _extractKeywords(title) {
     if (!title) return [];
 
@@ -529,10 +496,10 @@ class LearningService {
   }
 
   /**
-     * Extract URL pattern (path structure)
-     * @param {string} url - URL string
-     * @returns {string} URL pattern
-     */
+   * Extract URL pattern (path structure)
+   * @param {string} url - URL string
+   * @returns {string} URL pattern
+   */
   _extractUrlPattern(url) {
     try {
       const urlObj = new URL(url);
@@ -550,10 +517,10 @@ class LearningService {
   }
 
   /**
-     * Get most frequent value from object
-     * @param {Object} obj - Object with counts
-     * @returns {string} Most frequent key
-     */
+   * Get most frequent value from object
+   * @param {Object} obj - Object with counts
+   * @returns {string} Most frequent key
+   */
   _getMostFrequent(obj) {
     if (!obj || Object.keys(obj).length === 0) return null;
 

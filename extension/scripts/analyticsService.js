@@ -10,8 +10,8 @@ class AnalyticsService {
   }
 
   /**
-     * Initialize analytics with default data
-     */
+   * Initialize analytics with default data
+   */
   async initialize() {
     const existing = await this._getAnalytics();
     if (!existing || !existing.version) {
@@ -20,9 +20,9 @@ class AnalyticsService {
   }
 
   /**
-     * Record a categorization session
-     * @param {Object} sessionData - Session metrics
-     */
+   * Record a categorization session
+   * @param {Object} sessionData - Session metrics
+   */
   async recordCategorizationSession(sessionData) {
     const analytics = await this._getAnalytics();
 
@@ -43,7 +43,7 @@ class AnalyticsService {
     analytics.totalErrors += session.errors;
 
     // Update category usage stats
-    session.categoriesUsed.forEach(category => {
+    session.categoriesUsed.forEach((category) => {
       analytics.categoryUsage[category] = (analytics.categoryUsage[category] || 0) + 1;
     });
 
@@ -56,9 +56,9 @@ class AnalyticsService {
   }
 
   /**
-     * Record API usage
-     * @param {Object} apiData - API call metrics
-     */
+   * Record API usage
+   * @param {Object} apiData - API call metrics
+   */
   async recordApiUsage(apiData) {
     const analytics = await this._getAnalytics();
 
@@ -99,7 +99,8 @@ class AnalyticsService {
     analytics.apiByProvider[providerKey].totalTokens += apiCall.tokensUsed;
     analytics.apiByProvider[providerKey].totalResponseTime += apiCall.responseTime;
     analytics.apiByProvider[providerKey].avgResponseTime = Math.round(
-      analytics.apiByProvider[providerKey].totalResponseTime / analytics.apiByProvider[providerKey].total
+      analytics.apiByProvider[providerKey].totalResponseTime /
+        analytics.apiByProvider[providerKey].total
     );
 
     if (apiCall.success) {
@@ -117,10 +118,10 @@ class AnalyticsService {
   }
 
   /**
-     * Record processing time for a specific operation
-     * @param {string} operation - Operation name
-     * @param {number} duration - Duration in milliseconds
-     */
+   * Record processing time for a specific operation
+   * @param {string} operation - Operation name
+   * @param {number} duration - Duration in milliseconds
+   */
   async recordProcessingTime(operation, duration) {
     const analytics = await this._getAnalytics();
 
@@ -142,9 +143,9 @@ class AnalyticsService {
   }
 
   /**
-     * Record folder consolidation metrics
-     * @param {Object} consolidationData - Consolidation results
-     */
+   * Record folder consolidation metrics
+   * @param {Object} consolidationData - Consolidation results
+   */
   async recordConsolidation(consolidationData) {
     const analytics = await this._getAnalytics();
 
@@ -169,9 +170,9 @@ class AnalyticsService {
   }
 
   /**
-     * Get comprehensive analytics report
-     * @returns {Promise<Object>} Analytics report
-     */
+   * Get comprehensive analytics report
+   * @returns {Promise<Object>} Analytics report
+   */
   async getAnalyticsReport() {
     const analytics = await this._getAnalytics();
     const now = Date.now();
@@ -241,37 +242,37 @@ class AnalyticsService {
   }
 
   /**
-     * Get success rate percentage
-     * @param {number} successful - Successful operations
-     * @param {number} total - Total operations
-     * @returns {number} Success rate percentage
-     */
+   * Get success rate percentage
+   * @param {number} successful - Successful operations
+   * @param {number} total - Total operations
+   * @returns {number} Success rate percentage
+   */
   _calculateSuccessRate(successful, total) {
     if (total === 0) return 0;
     return Math.round((successful / total) * 100);
   }
 
   /**
-     * Calculate average time per operation
-     * @param {number} totalDuration - Total duration
-     * @param {number} count - Number of operations
-     * @returns {number} Average time in milliseconds
-     */
+   * Calculate average time per operation
+   * @param {number} totalDuration - Total duration
+   * @param {number} count - Number of operations
+   * @returns {number} Average time in milliseconds
+   */
   _calculateAvgTime(totalDuration, count) {
     if (count === 0) return 0;
     return Math.round(totalDuration / count);
   }
 
   /**
-     * Get session metrics for a time period
-     * @param {Array} sessions - All sessions
-     * @param {number} startTime - Period start timestamp
-     * @param {number} endTime - Period end timestamp
-     * @returns {Object} Period metrics
-     */
+   * Get session metrics for a time period
+   * @param {Array} sessions - All sessions
+   * @param {number} startTime - Period start timestamp
+   * @param {number} endTime - Period end timestamp
+   * @returns {Object} Period metrics
+   */
   _getSessionMetrics(sessions, startTime, endTime) {
-    const periodSessions = sessions.filter(s =>
-      s.timestamp >= startTime && s.timestamp <= endTime
+    const periodSessions = sessions.filter(
+      (s) => s.timestamp >= startTime && s.timestamp <= endTime
     );
 
     const totalProcessed = periodSessions.reduce((sum, s) => sum + s.bookmarksProcessed, 0);
@@ -284,25 +285,24 @@ class AnalyticsService {
       bookmarksProcessed: totalProcessed,
       bookmarksCategorized: totalCategorized,
       errors: totalErrors,
-      avgDuration: periodSessions.length > 0 ? Math.round(totalDuration / periodSessions.length) : 0,
+      avgDuration:
+        periodSessions.length > 0 ? Math.round(totalDuration / periodSessions.length) : 0,
       successRate: this._calculateSuccessRate(totalCategorized, totalProcessed)
     };
   }
 
   /**
-     * Get API metrics for a time period
-     * @param {Array} apiCalls - All API calls
-     * @param {number} startTime - Period start timestamp
-     * @param {number} endTime - Period end timestamp
-     * @returns {Object} Period metrics
-     */
+   * Get API metrics for a time period
+   * @param {Array} apiCalls - All API calls
+   * @param {number} startTime - Period start timestamp
+   * @param {number} endTime - Period end timestamp
+   * @returns {Object} Period metrics
+   */
   _getApiMetrics(apiCalls, startTime, endTime) {
-    const periodCalls = apiCalls.filter(c =>
-      c.timestamp >= startTime && c.timestamp <= endTime
-    );
+    const periodCalls = apiCalls.filter((c) => c.timestamp >= startTime && c.timestamp <= endTime);
 
-    const successful = periodCalls.filter(c => c.success).length;
-    const failed = periodCalls.filter(c => !c.success).length;
+    const successful = periodCalls.filter((c) => c.success).length;
+    const failed = periodCalls.filter((c) => !c.success).length;
     const totalTokens = periodCalls.reduce((sum, c) => sum + c.tokensUsed, 0);
     const totalResponseTime = periodCalls.reduce((sum, c) => sum + c.responseTime, 0);
 
@@ -312,16 +312,17 @@ class AnalyticsService {
       failed,
       successRate: this._calculateSuccessRate(successful, periodCalls.length),
       totalTokens,
-      avgResponseTime: periodCalls.length > 0 ? Math.round(totalResponseTime / periodCalls.length) : 0
+      avgResponseTime:
+        periodCalls.length > 0 ? Math.round(totalResponseTime / periodCalls.length) : 0
     };
   }
 
   /**
-     * Get top categories by usage
-     * @param {Object} categoryUsage - Category usage map
-     * @param {number} limit - Number of top categories
-     * @returns {Array} Top categories
-     */
+   * Get top categories by usage
+   * @param {Object} categoryUsage - Category usage map
+   * @param {number} limit - Number of top categories
+   * @returns {Array} Top categories
+   */
   _getTopCategories(categoryUsage, limit) {
     return Object.entries(categoryUsage)
       .sort((a, b) => b[1] - a[1])
@@ -330,10 +331,10 @@ class AnalyticsService {
   }
 
   /**
-     * Calculate average response time for API calls
-     * @param {Array} apiCalls - API calls
-     * @returns {number} Average response time
-     */
+   * Calculate average response time for API calls
+   * @param {Array} apiCalls - API calls
+   * @returns {number} Average response time
+   */
   _calculateAvgResponseTime(apiCalls) {
     if (apiCalls.length === 0) return 0;
     const totalTime = apiCalls.reduce((sum, c) => sum + c.responseTime, 0);
@@ -341,10 +342,10 @@ class AnalyticsService {
   }
 
   /**
-     * Calculate average processing times for each operation
-     * @param {Object} processingTimes - Processing times by operation
-     * @returns {Object} Average times
-     */
+   * Calculate average processing times for each operation
+   * @param {Object} processingTimes - Processing times by operation
+   * @returns {Object} Average times
+   */
   _calculateAvgProcessingTimes(processingTimes) {
     const result = {};
 
@@ -359,10 +360,10 @@ class AnalyticsService {
   }
 
   /**
-     * Get recent processing times
-     * @param {Object} processingTimes - Processing times by operation
-     * @returns {Object} Recent times
-     */
+   * Get recent processing times
+   * @param {Object} processingTimes - Processing times by operation
+   * @returns {Object} Recent times
+   */
   _getRecentProcessingTimes(processingTimes) {
     const result = {};
 
@@ -374,9 +375,9 @@ class AnalyticsService {
   }
 
   /**
-     * Get performance insights and AI-generated recommendations
-     * @returns {Promise<Object>} Performance insights
-     */
+   * Get performance insights and AI-generated recommendations
+   * @returns {Promise<Object>} Performance insights
+   */
   async getPerformanceInsights() {
     const analytics = await this._getAnalytics();
     const insights = {
@@ -389,7 +390,8 @@ class AnalyticsService {
     // Calculate average categorization time per bookmark
     const recentSessions = analytics.sessions.slice(-20);
     if (recentSessions.length > 0) {
-      const avgTimePerBookmark = recentSessions.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / recentSessions.length;
+      const avgTimePerBookmark =
+        recentSessions.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / recentSessions.length;
       insights.performanceMetrics.avgCategorizationTime = Math.round(avgTimePerBookmark);
     }
 
@@ -407,10 +409,11 @@ class AnalyticsService {
     insights.performanceMetrics.providerComparison = providerPerformance;
 
     // Calculate batch processing efficiency
-    const batchCalls = analytics.apiCalls.filter(c => c.batchSize > 1);
+    const batchCalls = analytics.apiCalls.filter((c) => c.batchSize > 1);
     if (batchCalls.length > 0) {
       const avgBatchSize = batchCalls.reduce((sum, c) => sum + c.batchSize, 0) / batchCalls.length;
-      const avgBatchTime = batchCalls.reduce((sum, c) => sum + c.responseTime, 0) / batchCalls.length;
+      const avgBatchTime =
+        batchCalls.reduce((sum, c) => sum + c.responseTime, 0) / batchCalls.length;
       const avgTimePerItem = avgBatchSize > 0 ? avgBatchTime / avgBatchSize : 0;
 
       insights.performanceMetrics.batchEfficiency = {
@@ -445,8 +448,9 @@ class AnalyticsService {
     }
 
     // Recommendation: Provider selection
-    const sortedProviders = Object.entries(providerPerformance)
-      .sort((a, b) => a[1].avgResponseTime - b[1].avgResponseTime);
+    const sortedProviders = Object.entries(providerPerformance).sort(
+      (a, b) => a[1].avgResponseTime - b[1].avgResponseTime
+    );
 
     if (sortedProviders.length > 1) {
       const fastest = sortedProviders[0];
@@ -481,8 +485,10 @@ class AnalyticsService {
       const firstHalf = recentSessions.slice(0, Math.floor(recentSessions.length / 2));
       const secondHalf = recentSessions.slice(Math.floor(recentSessions.length / 2));
 
-      const avgFirst = firstHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / firstHalf.length;
-      const avgSecond = secondHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / secondHalf.length;
+      const avgFirst =
+        firstHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / firstHalf.length;
+      const avgSecond =
+        secondHalf.reduce((sum, s) => sum + s.avgTimePerBookmark, 0) / secondHalf.length;
 
       insights.trends.performanceChange = {
         direction: avgSecond < avgFirst ? 'improving' : 'declining',
@@ -510,12 +516,13 @@ class AnalyticsService {
 
     // Recommendation: Memory usage (if available)
     const recentApiCalls = analytics.apiCalls.slice(-50);
-    const memoryUsages = recentApiCalls.filter(c => c.memoryUsage).map(c => c.memoryUsage);
+    const memoryUsages = recentApiCalls.filter((c) => c.memoryUsage).map((c) => c.memoryUsage);
     if (memoryUsages.length > 0) {
       const avgMemory = memoryUsages.reduce((sum, m) => sum + m, 0) / memoryUsages.length;
       insights.performanceMetrics.avgMemoryUsage = Math.round(avgMemory / 1024 / 1024); // Convert to MB
 
-      if (avgMemory > 100 * 1024 * 1024) { // 100 MB
+      if (avgMemory > 100 * 1024 * 1024) {
+        // 100 MB
         insights.warnings.push({
           type: 'memory_usage',
           severity: 'medium',
@@ -530,20 +537,20 @@ class AnalyticsService {
   }
 
   /**
-     * Export analytics data
-     * @returns {Promise<Object>} Analytics data
-     */
+   * Export analytics data
+   * @returns {Promise<Object>} Analytics data
+   */
   async exportAnalytics() {
     return await this._getAnalytics();
   }
 
   /**
-     * Export analytics report in different formats
-     * @param {string} format - 'json', 'csv'
-     * @param {number} startDate - Start timestamp (optional)
-     * @param {number} endDate - End timestamp (optional)
-     * @returns {Promise<Object>} Export data
-     */
+   * Export analytics report in different formats
+   * @param {string} format - 'json', 'csv'
+   * @param {number} startDate - Start timestamp (optional)
+   * @param {number} endDate - End timestamp (optional)
+   * @returns {Promise<Object>} Export data
+   */
   async exportAnalyticsReport(format = 'json', startDate = null, endDate = null) {
     const analytics = await this._getAnalytics();
 
@@ -555,11 +562,11 @@ class AnalyticsService {
       const start = startDate || 0;
       const end = endDate || Date.now();
 
-      filteredSessions = analytics.sessions.filter(s =>
-        s.timestamp >= start && s.timestamp <= end
+      filteredSessions = analytics.sessions.filter(
+        (s) => s.timestamp >= start && s.timestamp <= end
       );
-      filteredApiCalls = analytics.apiCalls.filter(c =>
-        c.timestamp >= start && c.timestamp <= end
+      filteredApiCalls = analytics.apiCalls.filter(
+        (c) => c.timestamp >= start && c.timestamp <= end
       );
     }
 
@@ -598,13 +605,13 @@ class AnalyticsService {
   }
 
   /**
-     * Calculate provider statistics for filtered API calls
-     * @private
-     */
+   * Calculate provider statistics for filtered API calls
+   * @private
+   */
   _calculateProviderStats(apiCalls) {
     const stats = {};
 
-    apiCalls.forEach(call => {
+    apiCalls.forEach((call) => {
       if (!stats[call.provider]) {
         stats[call.provider] = {
           total: 0,
@@ -640,9 +647,9 @@ class AnalyticsService {
   }
 
   /**
-     * Convert report data to CSV format
-     * @private
-     */
+   * Convert report data to CSV format
+   * @private
+   */
   _convertToCSV(report) {
     const lines = [];
 
@@ -661,41 +668,49 @@ class AnalyticsService {
     lines.push('PROVIDER STATISTICS');
     lines.push('Provider,Total Calls,Successful,Failed,Avg Response Time (ms),Total Tokens');
     for (const [provider, stats] of Object.entries(report.providerStats)) {
-      lines.push(`${provider},${stats.total},${stats.successful},${stats.failed},${stats.avgResponseTime},${stats.totalTokens}`);
+      lines.push(
+        `${provider},${stats.total},${stats.successful},${stats.failed},${stats.avgResponseTime},${stats.totalTokens}`
+      );
     }
     lines.push('');
 
     // Sessions
     lines.push('CATEGORIZATION SESSIONS');
-    lines.push('Timestamp,Processed,Categorized,Errors,Duration (ms),Success Rate (%),Avg Time Per Bookmark (ms),Mode');
-    report.sessions.forEach(session => {
+    lines.push(
+      'Timestamp,Processed,Categorized,Errors,Duration (ms),Success Rate (%),Avg Time Per Bookmark (ms),Mode'
+    );
+    report.sessions.forEach((session) => {
       const date = new Date(session.timestamp).toISOString();
-      lines.push(`${date},${session.bookmarksProcessed},${session.bookmarksCategorized},${session.errors},${session.duration},${session.successRate},${session.avgTimePerBookmark},${session.mode}`);
+      lines.push(
+        `${date},${session.bookmarksProcessed},${session.bookmarksCategorized},${session.errors},${session.duration},${session.successRate},${session.avgTimePerBookmark},${session.mode}`
+      );
     });
     lines.push('');
 
     // API Calls
     lines.push('API CALLS');
     lines.push('Timestamp,Provider,Model,Tokens,Success,Response Time (ms),Batch Size,Error Type');
-    report.apiCalls.forEach(call => {
+    report.apiCalls.forEach((call) => {
       const date = new Date(call.timestamp).toISOString();
-      lines.push(`${date},${call.provider},${call.model},${call.tokensUsed},${call.success},${call.responseTime},${call.batchSize},${call.errorType || 'N/A'}`);
+      lines.push(
+        `${date},${call.provider},${call.model},${call.tokensUsed},${call.success},${call.responseTime},${call.batchSize},${call.errorType || 'N/A'}`
+      );
     });
 
     return lines.join('\n');
   }
 
   /**
-     * Clear all analytics data
-     */
+   * Clear all analytics data
+   */
   async clearAnalytics() {
     await this._resetAnalytics();
   }
 
   /**
-     * Get analytics from storage
-     * @private
-     */
+   * Get analytics from storage
+   * @private
+   */
   async _getAnalytics() {
     try {
       const result = await chrome.storage.local.get([this.storageKey]);
@@ -727,9 +742,9 @@ class AnalyticsService {
   }
 
   /**
-     * Save analytics to storage
-     * @private
-     */
+   * Save analytics to storage
+   * @private
+   */
   async _saveAnalytics(analytics) {
     try {
       analytics.lastUpdated = Date.now();
@@ -740,9 +755,9 @@ class AnalyticsService {
   }
 
   /**
-     * Reset analytics to default state
-     * @private
-     */
+   * Reset analytics to default state
+   * @private
+   */
   async _resetAnalytics() {
     const defaults = this._getDefaultAnalytics();
     defaults.firstUsed = Date.now();
@@ -750,9 +765,9 @@ class AnalyticsService {
   }
 
   /**
-     * Get default analytics structure
-     * @private
-     */
+   * Get default analytics structure
+   * @private
+   */
   _getDefaultAnalytics() {
     return {
       version: '1.0',

@@ -36,8 +36,7 @@ if (!scriptsLoaded) {
       SnapshotManager: typeof SnapshotManager !== 'undefined',
       AnalyticsService: typeof AnalyticsService !== 'undefined',
       PerformanceMonitor: typeof PerformanceMonitor !== 'undefined',
-      ModelComparisonService:
-                typeof ModelComparisonService !== 'undefined',
+      ModelComparisonService: typeof ModelComparisonService !== 'undefined',
       BenchmarkService: typeof BenchmarkService !== 'undefined'
     });
   } catch (_error) {
@@ -60,9 +59,7 @@ function logAIState(context) {
     isAICategorizing,
     aiCategorizedBookmarksCount: aiCategorizedBookmarks.size,
     startTime: aiCategorizationStartTime,
-    timeSinceStart: aiCategorizationStartTime
-      ? Date.now() - aiCategorizationStartTime
-      : null
+    timeSinceStart: aiCategorizationStartTime ? Date.now() - aiCategorizationStartTime : null
   });
 }
 
@@ -81,10 +78,7 @@ chrome.runtime.onStartup.addListener(async () => {
       }
     }
   } catch (_error) {
-    console.error(
-      '_error checking for interrupted categorization:',
-      _error
-    );
+    console.error('_error checking for interrupted categorization:', _error);
   }
 });
 
@@ -130,9 +124,7 @@ async function initializeExtension() {
     };
 
     // Check if settings already exist
-    const existing = await chrome.storage.sync.get([
-      'bookmarkMindSettings'
-    ]);
+    const existing = await chrome.storage.sync.get(['bookmarkMindSettings']);
 
     if (!existing.bookmarkMindSettings) {
       await chrome.storage.sync.set({
@@ -142,17 +134,10 @@ async function initializeExtension() {
     }
 
     // Migrate learning data from sync to local storage for backwards compatibility
-    const existingSyncLearning = await chrome.storage.sync.get([
-      'bookmarkMindLearning'
-    ]);
-    const existingLocalLearning = await chrome.storage.local.get([
-      'bookmarkMindLearning'
-    ]);
+    const existingSyncLearning = await chrome.storage.sync.get(['bookmarkMindLearning']);
+    const existingLocalLearning = await chrome.storage.local.get(['bookmarkMindLearning']);
 
-    if (
-      existingSyncLearning.bookmarkMindLearning &&
-            !existingLocalLearning.bookmarkMindLearning
-    ) {
+    if (existingSyncLearning.bookmarkMindLearning && !existingLocalLearning.bookmarkMindLearning) {
       // Migration: Copy sync data to local storage
       await chrome.storage.local.set({
         bookmarkMindLearning: existingSyncLearning.bookmarkMindLearning
@@ -177,263 +162,227 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Handle async operations properly
   (async () => {
     switch (message.action) {
-    case 'startCategorization':
-      await handleCategorization(message.data, sendResponse);
-      break;
+      case 'startCategorization':
+        await handleCategorization(message.data, sendResponse);
+        break;
 
-    case 'startBulkCategorization':
-      await handleBulkCategorization(message.data, sendResponse);
-      break;
+      case 'startBulkCategorization':
+        await handleBulkCategorization(message.data, sendResponse);
+        break;
 
-    case 'getStats':
-      await handleGetStats(sendResponse);
-      break;
+      case 'getStats':
+        await handleGetStats(sendResponse);
+        break;
 
-    case 'exportBookmarks':
-      await handleExportBookmarks(sendResponse);
-      break;
+      case 'exportBookmarks':
+        await handleExportBookmarks(sendResponse);
+        break;
 
-    case 'getAllBookmarks':
-      await handleGetAllBookmarks(sendResponse);
-      break;
+      case 'getAllBookmarks':
+        await handleGetAllBookmarks(sendResponse);
+        break;
 
-    case 'moveAllToBookmarkBar':
-      await handleMoveAllToBookmarkBar(sendResponse);
-      break;
+      case 'moveAllToBookmarkBar':
+        await handleMoveAllToBookmarkBar(sendResponse);
+        break;
 
-    case 'testApiKey':
-      await handleApiKeyTest(message.data, sendResponse);
-    case 'getAvailableCategories':
-      await handleGetAvailableCategories(sendResponse);
-      break;
+      case 'testApiKey':
+        await handleApiKeyTest(message.data, sendResponse);
+      case 'getAvailableCategories':
+        await handleGetAvailableCategories(sendResponse);
+        break;
 
-    case 'recategorizeBookmark':
-      await handleRecategorizeBookmark(message.data, sendResponse);
-      break;
+      case 'recategorizeBookmark':
+        await handleRecategorizeBookmark(message.data, sendResponse);
+        break;
 
-    case 'exportLearningData':
-      await handleExportLearningData(sendResponse);
-      break;
+      case 'exportLearningData':
+        await handleExportLearningData(sendResponse);
+        break;
 
-    case 'importLearningData':
-      await handleImportLearningData(message.data, sendResponse);
-      break;
+      case 'importLearningData':
+        await handleImportLearningData(message.data, sendResponse);
+        break;
 
-    case 'clearLearningData':
-      await handleClearLearningData(sendResponse);
-      break;
+      case 'clearLearningData':
+        await handleClearLearningData(sendResponse);
+        break;
 
-    case 'getLearningStatistics':
-      await handleGetLearningStatistics(sendResponse);
-      break;
+      case 'getLearningStatistics':
+        await handleGetLearningStatistics(sendResponse);
+        break;
 
-    case 'getSnapshots':
-      await handleGetSnapshots(sendResponse);
-      break;
+      case 'getSnapshots':
+        await handleGetSnapshots(sendResponse);
+        break;
 
-    case 'getPerformanceDashboard':
-      await handleGetPerformanceDashboard(sendResponse);
-      break;
+      case 'getPerformanceDashboard':
+        await handleGetPerformanceDashboard(sendResponse);
+        break;
 
-    case 'exportAnalyticsReport':
-      await handleExportAnalyticsReport(message.data, sendResponse);
-      break;
+      case 'exportAnalyticsReport':
+        await handleExportAnalyticsReport(message.data, sendResponse);
+        break;
 
-    case 'ping':
-      // Simple heartbeat check
-      sendResponse({
-        success: true,
-        message: 'Background script is running'
-      });
-      break;
+      case 'ping':
+        // Simple heartbeat check
+        sendResponse({
+          success: true,
+          message: 'Background script is running'
+        });
+        break;
 
-    case 'CATEGORIZATION_ERROR':
-      // Handle categorization errors from AI processor
-      await handleCategorizationError(message, sendResponse);
-      break;
+      case 'CATEGORIZATION_ERROR':
+        // Handle categorization errors from AI processor
+        await handleCategorizationError(message, sendResponse);
+        break;
 
-    case 'startAICategorization':
-      // Mark AI categorization as starting
-      isAICategorizing = true;
-      aiCategorizedBookmarks.clear();
-      aiCategorizationStartTime = Date.now();
-
-      // AGGRESSIVE: Completely disable bookmark move listener during AI categorization
-      try {
-        chrome.bookmarks.onMoved.removeListener(
-          bookmarkMoveListener
-        );
-        console.log(
-          '🤖 Bookmark move listener DISABLED during AI categorization'
-        );
-      } catch (_error) {
-        console.warn(
-          'Failed to disable bookmark move listener:',
-          _error
-        );
-      }
-
-      console.log(
-        '🤖 AI Categorization started - learning completely disabled'
-      );
-      logAIState('START');
-      sendResponse({ success: true });
-      break;
-
-    case 'endAICategorization':
-      // Mark AI categorization as ended
-      isAICategorizing = false;
-      console.log(
-        `🤖 AI Categorization ended - learning re-enabled. ${aiCategorizedBookmarks.size} bookmarks were moved by AI`
-      );
-      logAIState('END');
-
-      // AGGRESSIVE: Re-enable bookmark move listener after AI categorization with delay
-      setTimeout(() => {
-        try {
-          // Remove listener first (in case it's still there)
-          chrome.bookmarks.onMoved.removeListener(
-            bookmarkMoveListener
-          );
-          // Add it back
-          chrome.bookmarks.onMoved.addListener(
-            bookmarkMoveListener
-          );
-          console.log(
-            '🤖 Bookmark move listener RE-ENABLED after AI categorization'
-          );
-        } catch (_error) {
-          console.warn(
-            'Failed to re-enable bookmark move listener:',
-            _error
-          );
-        }
-
-        console.log(
-          '🤖 Clearing AI-moved bookmarks set after delay'
-        );
+      case 'startAICategorization':
+        // Mark AI categorization as starting
+        isAICategorizing = true;
         aiCategorizedBookmarks.clear();
-        aiCategorizationStartTime = null;
-        logAIState('CLEANUP');
-      }, 15000); // Increased delay to 15 seconds to ensure all AI moves are complete
+        aiCategorizationStartTime = Date.now();
 
-      sendResponse({ success: true });
-      break;
-
-    case 'markBookmarkAsAIMoved':
-      // Mark a specific bookmark as moved by AI
-      if (message.bookmarkId) {
-        aiCategorizedBookmarks.add(message.bookmarkId);
-        console.log(
-          `🤖 Marked bookmark ${message.bookmarkId} as AI-moved (total: ${aiCategorizedBookmarks.size})`
-        );
-        logAIState('MARK_BOOKMARK');
-      }
-      sendResponse({ success: true });
-      break;
-
-    case 'getSnapshots':
-      await handleGetSnapshots(sendResponse);
-      break;
-
-    case 'startSnapshotRestore':
-      // Disable bookmark move listener during restoration
-      isRestoringSnapshot = true;
-      try {
-        chrome.bookmarks.onMoved.removeListener(
-          bookmarkMoveListener
-        );
-        console.log(
-          '🔄 Bookmark move listener DISABLED during snapshot restore'
-        );
-      } catch (_error) {
-        console.warn(
-          'Failed to disable bookmark move listener:',
-          _error
-        );
-      }
-      sendResponse({ success: true });
-      break;
-
-    case 'endSnapshotRestore':
-      // Re-enable bookmark move listener after restoration
-      isRestoringSnapshot = false;
-      setTimeout(() => {
+        // AGGRESSIVE: Completely disable bookmark move listener during AI categorization
         try {
-          chrome.bookmarks.onMoved.removeListener(
-            bookmarkMoveListener
-          );
-          chrome.bookmarks.onMoved.addListener(
-            bookmarkMoveListener
-          );
-          console.log(
-            '🔄 Bookmark move listener RE-ENABLED after snapshot restore'
-          );
+          chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+          console.log('🤖 Bookmark move listener DISABLED during AI categorization');
         } catch (_error) {
-          console.warn(
-            'Failed to re-enable bookmark move listener:',
-            _error
-          );
+          console.warn('Failed to disable bookmark move listener:', _error);
         }
-      }, 5000);
-      sendResponse({ success: true });
-      break;
 
-    case 'restoreSnapshot':
-      await handleRestoreSnapshot(message.data, sendResponse);
-      break;
+        console.log('🤖 AI Categorization started - learning completely disabled');
+        logAIState('START');
+        sendResponse({ success: true });
+        break;
 
-    case 'deleteSnapshot':
-      await handleDeleteSnapshot(message.data, sendResponse);
-      break;
+      case 'endAICategorization':
+        // Mark AI categorization as ended
+        isAICategorizing = false;
+        console.log(
+          `🤖 AI Categorization ended - learning re-enabled. ${aiCategorizedBookmarks.size} bookmarks were moved by AI`
+        );
+        logAIState('END');
 
-    case 'getAnalytics':
-      await handleGetAnalytics(sendResponse);
-      break;
+        // AGGRESSIVE: Re-enable bookmark move listener after AI categorization with delay
+        setTimeout(() => {
+          try {
+            // Remove listener first (in case it's still there)
+            chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+            // Add it back
+            chrome.bookmarks.onMoved.addListener(bookmarkMoveListener);
+            console.log('🤖 Bookmark move listener RE-ENABLED after AI categorization');
+          } catch (_error) {
+            console.warn('Failed to re-enable bookmark move listener:', _error);
+          }
 
-    case 'clearAnalytics':
-      await handleClearAnalytics(sendResponse);
-      break;
+          console.log('🤖 Clearing AI-moved bookmarks set after delay');
+          aiCategorizedBookmarks.clear();
+          aiCategorizationStartTime = null;
+          logAIState('CLEANUP');
+        }, 15000); // Increased delay to 15 seconds to ensure all AI moves are complete
 
-    case 'runSnapshotDiagnostics':
-      await handleRunSnapshotDiagnostics(sendResponse);
-      break;
+        sendResponse({ success: true });
+        break;
 
-    case 'getModelComparison':
-      await handleGetModelComparison(sendResponse);
-      break;
+      case 'markBookmarkAsAIMoved':
+        // Mark a specific bookmark as moved by AI
+        if (message.bookmarkId) {
+          aiCategorizedBookmarks.add(message.bookmarkId);
+          console.log(
+            `🤖 Marked bookmark ${message.bookmarkId} as AI-moved (total: ${aiCategorizedBookmarks.size})`
+          );
+          logAIState('MARK_BOOKMARK');
+        }
+        sendResponse({ success: true });
+        break;
 
-    case 'startABTest':
-      await handleStartABTest(message.data, sendResponse);
-      break;
+      case 'getSnapshots':
+        await handleGetSnapshots(sendResponse);
+        break;
 
-    case 'recordModelPerformance':
-      await handleRecordModelPerformance(message.data, sendResponse);
-      break;
+      case 'startSnapshotRestore':
+        // Disable bookmark move listener during restoration
+        isRestoringSnapshot = true;
+        try {
+          chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+          console.log('🔄 Bookmark move listener DISABLED during snapshot restore');
+        } catch (_error) {
+          console.warn('Failed to disable bookmark move listener:', _error);
+        }
+        sendResponse({ success: true });
+        break;
 
-    case 'getCostReport':
-      await handleGetCostReport(message.data, sendResponse);
-      break;
+      case 'endSnapshotRestore':
+        // Re-enable bookmark move listener after restoration
+        isRestoringSnapshot = false;
+        setTimeout(() => {
+          try {
+            chrome.bookmarks.onMoved.removeListener(bookmarkMoveListener);
+            chrome.bookmarks.onMoved.addListener(bookmarkMoveListener);
+            console.log('🔄 Bookmark move listener RE-ENABLED after snapshot restore');
+          } catch (_error) {
+            console.warn('Failed to re-enable bookmark move listener:', _error);
+          }
+        }, 5000);
+        sendResponse({ success: true });
+        break;
 
-    case 'setBudgetAlert':
-      await handleSetBudgetAlert(message.data, sendResponse);
-      break;
+      case 'restoreSnapshot':
+        await handleRestoreSnapshot(message.data, sendResponse);
+        break;
 
-    case 'getModelRecommendation':
-      await handleGetModelRecommendation(message.data, sendResponse);
-      break;
+      case 'deleteSnapshot':
+        await handleDeleteSnapshot(message.data, sendResponse);
+        break;
 
-    case 'setCustomModelConfig':
-      await handleSetCustomModelConfig(message.data, sendResponse);
-      break;
+      case 'getAnalytics':
+        await handleGetAnalytics(sendResponse);
+        break;
 
-    case 'getCustomModelConfig':
-      await handleGetCustomModelConfig(sendResponse);
-      break;
+      case 'clearAnalytics':
+        await handleClearAnalytics(sendResponse);
+        break;
 
-    default:
-      console.warn('Unknown message action:', message.action);
-      sendResponse({ success: false, error: 'Unknown action' });
+      case 'runSnapshotDiagnostics':
+        await handleRunSnapshotDiagnostics(sendResponse);
+        break;
+
+      case 'getModelComparison':
+        await handleGetModelComparison(sendResponse);
+        break;
+
+      case 'startABTest':
+        await handleStartABTest(message.data, sendResponse);
+        break;
+
+      case 'recordModelPerformance':
+        await handleRecordModelPerformance(message.data, sendResponse);
+        break;
+
+      case 'getCostReport':
+        await handleGetCostReport(message.data, sendResponse);
+        break;
+
+      case 'setBudgetAlert':
+        await handleSetBudgetAlert(message.data, sendResponse);
+        break;
+
+      case 'getModelRecommendation':
+        await handleGetModelRecommendation(message.data, sendResponse);
+        break;
+
+      case 'setCustomModelConfig':
+        await handleSetCustomModelConfig(message.data, sendResponse);
+        break;
+
+      case 'getCustomModelConfig':
+        await handleGetCustomModelConfig(sendResponse);
+        break;
+
+      default:
+        console.warn('Unknown message action:', message.action);
+        sendResponse({ success: false, error: 'Unknown action' });
     }
   })();
 
@@ -451,9 +400,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const categorizer = new Categorizer(new AIProcessor(), {
       onMarkAsAIMoved: (bookmarkId) => {
         aiCategorizedBookmarks.add(bookmarkId);
-        console.log(
-          `🤖 Marked bookmark ${bookmarkId} as AI-moved (ALARM CALLBACK)`
-        );
+        console.log(`🤖 Marked bookmark ${bookmarkId} as AI-moved (ALARM CALLBACK)`);
       }
     });
     await categorizer.processNextBatch();
@@ -469,27 +416,19 @@ async function handleCategorization(data, sendResponse) {
 
     // Check if Categorizer class is available
     if (typeof Categorizer === 'undefined') {
-      throw new Error(
-        'Categorizer class not loaded. Please reload the extension.'
-      );
+      throw new Error('Categorizer class not loaded. Please reload the extension.');
     }
     console.log('✓ Categorizer class available');
 
     // Check if other required classes are available
     if (typeof BookmarkService === 'undefined') {
-      throw new Error(
-        'BookmarkService class not loaded. Please reload the extension.'
-      );
+      throw new Error('BookmarkService class not loaded. Please reload the extension.');
     }
     if (typeof AIProcessor === 'undefined') {
-      throw new Error(
-        'AIProcessor class not loaded. Please reload the extension.'
-      );
+      throw new Error('AIProcessor class not loaded. Please reload the extension.');
     }
     if (typeof FolderManager === 'undefined') {
-      throw new Error(
-        'FolderManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('FolderManager class not loaded. Please reload the extension.');
     }
     console.log('✓ All required classes available');
 
@@ -507,30 +446,22 @@ async function handleCategorization(data, sendResponse) {
     const categorizer = new Categorizer(new AIProcessor(), {
       onMarkAsAIMoved: (bookmarkId) => {
         aiCategorizedBookmarks.add(bookmarkId);
-        console.log(
-          `🤖 Marked bookmark ${bookmarkId} as AI-moved (HANDLER CALLBACK)`
-        );
+        console.log(`🤖 Marked bookmark ${bookmarkId} as AI-moved (HANDLER CALLBACK)`);
       }
     });
     console.log('✓ Categorizer instance created');
 
     // Get and validate settings
     console.log('Loading settings...');
-    const settings = await chrome.storage.sync.get([
-      'bookmarkMindSettings'
-    ]);
+    const settings = await chrome.storage.sync.get(['bookmarkMindSettings']);
     console.log('Settings loaded:', settings);
 
     if (!settings.bookmarkMindSettings) {
-      throw new Error(
-        'Extension settings not found. Please configure the extension first.'
-      );
+      throw new Error('Extension settings not found. Please configure the extension first.');
     }
 
     if (!settings.bookmarkMindSettings.apiKey) {
-      throw new Error(
-        'API key not configured. Please set up your Gemini API key in settings.'
-      );
+      throw new Error('API key not configured. Please set up your Gemini API key in settings.');
     }
     console.log('✓ Settings validated');
 
@@ -551,10 +482,7 @@ async function handleCategorization(data, sendResponse) {
             data: progress
           })
           .catch((_error) => {
-            console.log(
-              'Progress message failed (popup likely closed):',
-              _error.message
-            );
+            console.log('Progress message failed (popup likely closed):', _error.message);
           });
       } catch (_error) {
         console.log('Progress callback error:', _error.message);
@@ -592,46 +520,28 @@ async function handleBulkCategorization(data, sendResponse) {
     console.log('Starting bulk categorization process...', data);
 
     // Validate input data
-    if (
-      !data.bookmarks ||
-            !Array.isArray(data.bookmarks) ||
-            data.bookmarks.length === 0
-    ) {
+    if (!data.bookmarks || !Array.isArray(data.bookmarks) || data.bookmarks.length === 0) {
       throw new Error('No bookmarks provided for bulk categorization');
     }
 
-    if (
-      !data.selectedIds ||
-            !Array.isArray(data.selectedIds) ||
-            data.selectedIds.length === 0
-    ) {
+    if (!data.selectedIds || !Array.isArray(data.selectedIds) || data.selectedIds.length === 0) {
       throw new Error('No bookmark IDs provided for bulk categorization');
     }
 
-    console.log(
-      `Processing ${data.bookmarks.length} selected bookmarks...`
-    );
+    console.log(`Processing ${data.bookmarks.length} selected bookmarks...`);
 
     // Check if required classes are available
     if (typeof Categorizer === 'undefined') {
-      throw new Error(
-        'Categorizer class not loaded. Please reload the extension.'
-      );
+      throw new Error('Categorizer class not loaded. Please reload the extension.');
     }
     if (typeof BookmarkService === 'undefined') {
-      throw new Error(
-        'BookmarkService class not loaded. Please reload the extension.'
-      );
+      throw new Error('BookmarkService class not loaded. Please reload the extension.');
     }
     if (typeof AIProcessor === 'undefined') {
-      throw new Error(
-        'AIProcessor class not loaded. Please reload the extension.'
-      );
+      throw new Error('AIProcessor class not loaded. Please reload the extension.');
     }
     if (typeof FolderManager === 'undefined') {
-      throw new Error(
-        'FolderManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('FolderManager class not loaded. Please reload the extension.');
     }
     console.log('✓ All required classes available');
 
@@ -646,21 +556,15 @@ async function handleBulkCategorization(data, sendResponse) {
 
     // Get and validate settings
     console.log('Loading settings...');
-    const settings = await chrome.storage.sync.get([
-      'bookmarkMindSettings'
-    ]);
+    const settings = await chrome.storage.sync.get(['bookmarkMindSettings']);
     console.log('Settings loaded:', settings);
 
     if (!settings.bookmarkMindSettings) {
-      throw new Error(
-        'Extension settings not found. Please configure the extension first.'
-      );
+      throw new Error('Extension settings not found. Please configure the extension first.');
     }
 
     if (!settings.bookmarkMindSettings.apiKey) {
-      throw new Error(
-        'API key not configured. Please set up your Gemini API key in settings.'
-      );
+      throw new Error('API key not configured. Please set up your Gemini API key in settings.');
     }
     console.log('✓ Settings validated');
 
@@ -689,10 +593,7 @@ async function handleBulkCategorization(data, sendResponse) {
               data: progress
             })
             .catch((_error) => {
-              console.log(
-                'Progress message failed (popup likely closed):',
-                _error.message
-              );
+              console.log('Progress message failed (popup likely closed):', _error.message);
             });
         } catch (_error) {
           console.log('Progress callback error:', _error.message);
@@ -729,17 +630,11 @@ async function handleApiKeyTest(data, sendResponse) {
   try {
     // Check if AIProcessor class is available
     if (typeof AIProcessor === 'undefined') {
-      throw new Error(
-        'AIProcessor class not loaded. Please reload the extension.'
-      );
+      throw new Error('AIProcessor class not loaded. Please reload the extension.');
     }
 
     const aiProcessor = new AIProcessor();
-    aiProcessor.setApiKey(
-      data.apiKey,
-      data.cerebrasApiKey || null,
-      data.groqApiKey || null
-    );
+    aiProcessor.setApiKey(data.apiKey, data.cerebrasApiKey || null, data.groqApiKey || null);
 
     const isValid = await aiProcessor.testApiKey();
     sendResponse({ success: true, valid: isValid });
@@ -762,15 +657,9 @@ async function handleGetStats(sendResponse) {
     // Test direct bookmark access first
     try {
       const tree = await chrome.bookmarks.getTree();
-      console.log(
-        'Background: Direct bookmark access successful, tree length:',
-        tree.length
-      );
+      console.log('Background: Direct bookmark access successful, tree length:', tree.length);
     } catch (directError) {
-      console.error(
-        'Background: Direct bookmark access failed:',
-        directError
-      );
+      console.error('Background: Direct bookmark access failed:', directError);
       sendResponse({
         success: false,
         error: 'Cannot access bookmarks: ' + directError.message
@@ -780,9 +669,7 @@ async function handleGetStats(sendResponse) {
 
     // Check if Categorizer class is available
     if (typeof Categorizer === 'undefined') {
-      throw new Error(
-        'Categorizer class not loaded. Please reload the extension.'
-      );
+      throw new Error('Categorizer class not loaded. Please reload the extension.');
     }
 
     const categorizer = new Categorizer();
@@ -806,9 +693,7 @@ async function handleExportBookmarks(sendResponse) {
   try {
     // Check if FolderManager class is available
     if (typeof FolderManager === 'undefined') {
-      throw new Error(
-        'FolderManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('FolderManager class not loaded. Please reload the extension.');
     }
 
     const folderManager = new FolderManager();
@@ -844,8 +729,7 @@ async function handleGetSnapshots(sendResponse) {
     console.error('Get snapshots _error:', _error);
     sendResponse({
       success: false,
-      error:
-                _error.message || 'Failed to retrieve snapshots from storage'
+      error: _error.message || 'Failed to retrieve snapshots from storage'
     });
   }
 }
@@ -912,9 +796,7 @@ async function handleExportAnalyticsReport(data, sendResponse) {
 async function handleRestoreSnapshot(data, sendResponse) {
   try {
     if (typeof SnapshotManager === 'undefined') {
-      throw new Error(
-        'SnapshotManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
     }
 
     if (!data.snapshotId) {
@@ -923,21 +805,18 @@ async function handleRestoreSnapshot(data, sendResponse) {
 
     const snapshotManager = new SnapshotManager();
 
-    const results = await snapshotManager.restoreSnapshot(
-      data.snapshotId,
-      (progress) => {
-        try {
-          chrome.runtime
-            .sendMessage({
-              action: 'restoreProgress',
-              data: progress
-            })
-            .catch(() => {});
-        } catch (_error) {
-          console.log('Progress callback error:', _error.message);
-        }
+    const results = await snapshotManager.restoreSnapshot(data.snapshotId, (progress) => {
+      try {
+        chrome.runtime
+          .sendMessage({
+            action: 'restoreProgress',
+            data: progress
+          })
+          .catch(() => {});
+      } catch (_error) {
+        console.log('Progress callback error:', _error.message);
       }
-    );
+    });
 
     sendResponse({ success: true, data: results });
   } catch (_error) {
@@ -955,9 +834,7 @@ async function handleRestoreSnapshot(data, sendResponse) {
 async function handleDeleteSnapshot(data, sendResponse) {
   try {
     if (typeof SnapshotManager === 'undefined') {
-      throw new Error(
-        'SnapshotManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
     }
 
     if (!data.snapshotId) {
@@ -986,9 +863,7 @@ async function handleDeleteSnapshot(data, sendResponse) {
 async function handleGetAnalytics(sendResponse) {
   try {
     if (typeof AnalyticsService === 'undefined') {
-      throw new Error(
-        'AnalyticsService class not loaded. Please reload the extension.'
-      );
+      throw new Error('AnalyticsService class not loaded. Please reload the extension.');
     }
 
     const analyticsService = new AnalyticsService();
@@ -1010,9 +885,7 @@ async function handleGetAnalytics(sendResponse) {
 async function handleClearAnalytics(sendResponse) {
   try {
     if (typeof AnalyticsService === 'undefined') {
-      throw new Error(
-        'AnalyticsService class not loaded. Please reload the extension.'
-      );
+      throw new Error('AnalyticsService class not loaded. Please reload the extension.');
     }
 
     const analyticsService = new AnalyticsService();
@@ -1034,9 +907,7 @@ async function handleClearAnalytics(sendResponse) {
 async function handleRunSnapshotDiagnostics(sendResponse) {
   try {
     if (typeof SnapshotManager === 'undefined') {
-      throw new Error(
-        'SnapshotManager class not loaded. Please reload the extension.'
-      );
+      throw new Error('SnapshotManager class not loaded. Please reload the extension.');
     }
 
     const snapshotManager = new SnapshotManager();
@@ -1077,23 +948,13 @@ async function handleGetAvailableCategories(sendResponse) {
     // Extract folder paths recursively
     function extractFolders(node, path = '') {
       if (!node.url && node.id !== '0') {
-        const folderPath = path
-          ? `${path} > ${node.title}`
-          : node.title;
-        if (
-          ![
-            'Bookmarks Bar',
-            'Other Bookmarks',
-            'Mobile Bookmarks'
-          ].includes(node.title)
-        ) {
+        const folderPath = path ? `${path} > ${node.title}` : node.title;
+        if (!['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(node.title)) {
           categories.add(folderPath);
         }
 
         if (node.children) {
-          node.children.forEach((child) =>
-            extractFolders(child, folderPath)
-          );
+          node.children.forEach((child) => extractFolders(child, folderPath));
         }
       }
     }
@@ -1125,20 +986,12 @@ async function handleRecategorizeBookmark(data, sendResponse) {
 
     // Move bookmark to new category
     const bookmarkService = new BookmarkService();
-    const folderId = await bookmarkService.findOrCreateFolderByPath(
-      newCategory,
-      '1'
-    );
+    const folderId = await bookmarkService.findOrCreateFolderByPath(newCategory, '1');
     await bookmarkService.moveBookmark(bookmark.id, folderId);
 
     // Record correction for learning (MANUAL correction, not automatic)
     const learningService = new LearningService();
-    await learningService.recordCorrection(
-      bookmark,
-      oldCategory,
-      newCategory,
-      true
-    );
+    await learningService.recordCorrection(bookmark, oldCategory, newCategory, true);
 
     console.log(
       `✅ Manual recategorization: "${bookmark.title}" from "${oldCategory}" to "${newCategory}"`
@@ -1172,10 +1025,7 @@ async function handleImportLearningData(data, sendResponse) {
   try {
     const { learningData, merge } = data;
     const learningService = new LearningService();
-    const result = await learningService.importLearningData(
-      learningData,
-      merge
-    );
+    const result = await learningService.importLearningData(learningData, merge);
     sendResponse({ success: true, data: result });
   } catch (_error) {
     console.error('_error importing learning data:', _error);
@@ -1235,24 +1085,20 @@ async function handleCategorizationError(message, sendResponse) {
         error: errorDetails
       });
     } catch (forwardError) {
-      console.log(
-        'Could not forward error to popup (likely closed):',
-        forwardError.message
-      );
+      console.log('Could not forward error to popup (likely closed):', forwardError.message);
     }
 
     // Store error in storage for later retrieval
     try {
-      const errorLog = (await chrome.storage.local.get([
-        'categorizationErrors'
-      ])) || { categorizationErrors: [] };
+      const errorLog = (await chrome.storage.local.get(['categorizationErrors'])) || {
+        categorizationErrors: []
+      };
       errorLog.categorizationErrors = errorLog.categorizationErrors || [];
       errorLog.categorizationErrors.push(errorDetails);
 
       // Keep only last 10 errors
       if (errorLog.categorizationErrors.length > 10) {
-        errorLog.categorizationErrors =
-                    errorLog.categorizationErrors.slice(-10);
+        errorLog.categorizationErrors = errorLog.categorizationErrors.slice(-10);
       }
 
       await chrome.storage.local.set({
@@ -1320,10 +1166,7 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
     }
 
     // Layer 3: Skip learning if AI categorization happened recently (time-based protection)
-    if (
-      aiCategorizationStartTime &&
-            Date.now() - aiCategorizationStartTime < 30000
-    ) {
+    if (aiCategorizationStartTime && Date.now() - aiCategorizationStartTime < 30000) {
       console.log(
         `📚 ❌ BLOCKED (Layer 3): AI categorization happened recently (${
           Date.now() - aiCategorizationStartTime
@@ -1342,9 +1185,7 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     // Layer 5: Check for AI metadata marker in Chrome storage (persistent metadata check)
     try {
-      const metadata = await chrome.storage.local.get([
-        `ai_moved_${bookmarkId}`
-      ]);
+      const metadata = await chrome.storage.local.get([`ai_moved_${bookmarkId}`]);
       if (metadata[`ai_moved_${bookmarkId}`]) {
         const moveAge = Date.now() - metadata[`ai_moved_${bookmarkId}`];
         if (moveAge < 60000) {
@@ -1353,9 +1194,7 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
             `📚 ❌ BLOCKED (Layer 5): Bookmark ${bookmarkId} has AI metadata marker (${moveAge}ms old) - preventing learning`
           );
           // Clean up old metadata
-          await chrome.storage.local.remove([
-            `ai_moved_${bookmarkId}`
-          ]);
+          await chrome.storage.local.remove([`ai_moved_${bookmarkId}`]);
           return;
         }
         // Clean up expired metadata
@@ -1378,9 +1217,7 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
     const oldFolder = await getFolderPath(moveInfo.oldParentId);
     const newFolder = await getFolderPath(moveInfo.parentId);
 
-    console.log(
-      `📚 Move details: "${bookmarkData.title}" from "${oldFolder}" to "${newFolder}"`
-    );
+    console.log(`📚 Move details: "${bookmarkData.title}" from "${oldFolder}" to "${newFolder}"`);
 
     // Layer 6: Final safety check - if we got here during AI categorization, something is wrong
     if (isAICategorizing) {
@@ -1392,24 +1229,20 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     // Skip learning if moved to Bookmark Bar (user preparing for AI reorganization)
     if (moveInfo.parentId === '1') {
-      console.log(
-        '📚 Skipping: Moved to Bookmark Bar (likely for AI reorganization)'
-      );
+      console.log('📚 Skipping: Moved to Bookmark Bar (likely for AI reorganization)');
       return;
     }
 
     // Skip learning if moved from Bookmark Bar (AI categorization result)
     if (moveInfo.oldParentId === '1') {
-      console.log(
-        '📚 Skipping: Moved from Bookmark Bar (likely AI categorization result)'
-      );
+      console.log('📚 Skipping: Moved from Bookmark Bar (likely AI categorization result)');
       return;
     }
 
     // Skip if both folders are root folders (not meaningful categorization)
     if (
       ['1', '2', '3'].includes(moveInfo.oldParentId) &&
-            ['1', '2', '3'].includes(moveInfo.parentId)
+      ['1', '2', '3'].includes(moveInfo.parentId)
     ) {
       console.log('📚 Skipping: Move between root folders');
       return;
@@ -1417,9 +1250,7 @@ async function handleBookmarkMove(bookmarkId, moveInfo) {
 
     // Skip if new folder is a root folder (except Bookmark Bar which we already handled)
     if (['2', '3'].includes(moveInfo.parentId)) {
-      console.log(
-        '📚 Skipping: Moved to root folder (Other Bookmarks/Mobile)'
-      );
+      console.log('📚 Skipping: Moved to root folder (Other Bookmarks/Mobile)');
       return;
     }
 
@@ -1471,10 +1302,7 @@ async function getFolderPath(folderId) {
     const pathParts = [folderData.title];
     let currentParentId = folderData.parentId;
 
-    while (
-      currentParentId &&
-            !['0', '1', '2', '3'].includes(currentParentId)
-    ) {
+    while (currentParentId && !['0', '1', '2', '3'].includes(currentParentId)) {
       const parent = await chrome.bookmarks.get(currentParentId);
       if (parent && parent[0]) {
         pathParts.unshift(parent[0].title);
@@ -1526,29 +1354,15 @@ async function handleStartABTest(data, sendResponse) {
 
     // Initialize AI processor
     const aiProcessor = new AIProcessor();
-    aiProcessor.setApiKey(
-      settings.apiKey,
-      settings.cerebrasApiKey,
-      settings.groqApiKey
-    );
+    aiProcessor.setApiKey(settings.apiKey, settings.cerebrasApiKey, settings.groqApiKey);
 
     // Process with both models
     const startTimeA = Date.now();
-    const resultsA = await processWithSpecificModel(
-      modelA,
-      bookmarks,
-      aiProcessor,
-      settings
-    );
+    const resultsA = await processWithSpecificModel(modelA, bookmarks, aiProcessor, settings);
     resultsA.time = Date.now() - startTimeA;
 
     const startTimeB = Date.now();
-    const resultsB = await processWithSpecificModel(
-      modelB,
-      bookmarks,
-      aiProcessor,
-      settings
-    );
+    const resultsB = await processWithSpecificModel(modelB, bookmarks, aiProcessor, settings);
     resultsB.time = Date.now() - startTimeB;
 
     // Record comparison with full metrics
@@ -1584,17 +1398,13 @@ async function handleStartABTest(data, sendResponse) {
     // Record performance metrics for both models
     if (resultsA.metrics) {
       resultsA.metrics.responseTime = resultsA.time;
-      await modelComparisonService.recordModelPerformance(
-        resultsA.metrics
-      );
+      await modelComparisonService.recordModelPerformance(resultsA.metrics);
       await modelComparisonService.trackCost(resultsA.metrics);
     }
 
     if (resultsB.metrics) {
       resultsB.metrics.responseTime = resultsB.time;
-      await modelComparisonService.recordModelPerformance(
-        resultsB.metrics
-      );
+      await modelComparisonService.recordModelPerformance(resultsB.metrics);
       await modelComparisonService.trackCost(resultsB.metrics);
     }
 
@@ -1621,24 +1431,19 @@ async function handleStartABTest(data, sendResponse) {
  * @param {Object} settings - Settings object
  * @returns {Promise<Object>} Results with categories, success, and metrics
  */
-async function processWithSpecificModel(
-  modelName,
-  bookmarks,
-  aiProcessor,
-  settings
-) {
+async function processWithSpecificModel(modelName, bookmarks, aiProcessor, settings) {
   try {
     // Determine provider and process accordingly
     let provider = 'gemini';
     if (
       modelName.includes('llama') ||
-            modelName.includes('qwen') ||
-            modelName.includes('gpt-oss')
+      modelName.includes('qwen') ||
+      modelName.includes('gpt-oss')
     ) {
       if (
         settings.cerebrasApiKey &&
-                !modelName.includes('versatile') &&
-                !modelName.includes('instant')
+        !modelName.includes('versatile') &&
+        !modelName.includes('instant')
       ) {
         provider = 'cerebras';
       } else if (settings.groqApiKey) {
@@ -1654,30 +1459,15 @@ async function processWithSpecificModel(
     let outputTokens = 0;
 
     if (provider === 'gemini') {
-      result = await aiProcessor._processWithGemini(
-        bookmarks,
-        [],
-        {},
-        modelName
-      );
+      result = await aiProcessor._processWithGemini(bookmarks, [], {}, modelName);
     } else if (provider === 'cerebras') {
-      result = await aiProcessor._processWithCerebras(
-        prompt,
-        bookmarks,
-        modelName
-      );
+      result = await aiProcessor._processWithCerebras(prompt, bookmarks, modelName);
     } else if (provider === 'groq') {
-      result = await aiProcessor._processWithGroq(
-        prompt,
-        bookmarks,
-        modelName
-      );
+      result = await aiProcessor._processWithGroq(prompt, bookmarks, modelName);
     }
 
     // Extract categories from results
-    const categories = [
-      ...new Set(result.map((r) => r.category).filter(Boolean))
-    ];
+    const categories = [...new Set(result.map((r) => r.category).filter(Boolean))];
 
     // Estimate token counts (rough approximation)
     const promptText = JSON.stringify(bookmarks);
@@ -1741,9 +1531,7 @@ async function handleRecordModelPerformance(data, sendResponse) {
 async function handleGetCostReport(data, sendResponse) {
   try {
     const modelComparisonService = new ModelComparisonService();
-    const report = await modelComparisonService.getCostReport(
-      data.period || 'all'
-    );
+    const report = await modelComparisonService.getCostReport(data.period || 'all');
     sendResponse({ success: true, data: report });
   } catch (_error) {
     console.error('_error getting cost report:', _error);
@@ -1822,29 +1610,25 @@ async function handleMoveAllToBookmarkBar(sendResponse) {
   try {
     // Check if BookmarkService class is available
     if (typeof BookmarkService === 'undefined') {
-      throw new Error(
-        'BookmarkService class not loaded. Please reload the extension.'
-      );
+      throw new Error('BookmarkService class not loaded. Please reload the extension.');
     }
 
     const bookmarkService = new BookmarkService();
 
     // Execute move operation
-    const result = await bookmarkService.moveAllToBookmarkBar(
-      (progress) => {
-        // Send progress updates to popup
-        try {
-          chrome.runtime
-            .sendMessage({
-              action: 'categorizationProgress', // Reusing existing progress listener in popup
-              data: progress
-            })
-            .catch(() => {});
-        } catch (_error) {
-          console.log('Progress callback error:', _error.message);
-        }
+    const result = await bookmarkService.moveAllToBookmarkBar((progress) => {
+      // Send progress updates to popup
+      try {
+        chrome.runtime
+          .sendMessage({
+            action: 'categorizationProgress', // Reusing existing progress listener in popup
+            data: progress
+          })
+          .catch(() => {});
+      } catch (_error) {
+        console.log('Progress callback error:', _error.message);
       }
-    );
+    });
 
     sendResponse({ success: true, ...result });
   } catch (_error) {

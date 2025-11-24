@@ -9,9 +9,9 @@ class BookmarkService {
   }
 
   /**
-     * Get all bookmarks from Chrome
-     * @returns {Promise<Array>} Array of bookmark objects
-     */
+   * Get all bookmarks from Chrome
+   * @returns {Promise<Array>} Array of bookmark objects
+   */
   async getAllBookmarks() {
     try {
       // Check if Chrome APIs are available
@@ -35,15 +35,10 @@ class BookmarkService {
 
       console.log(`Found ${bookmarks.length} bookmarks`);
       console.log('Bookmark distribution by folder:', {
-        bookmarksBar: bookmarks.filter((b) => b.parentId === '1')
-          .length,
-        otherBookmarks: bookmarks.filter((b) => b.parentId === '2')
-          .length,
-        mobileBookmarks: bookmarks.filter((b) => b.parentId === '3')
-          .length,
-        other: bookmarks.filter(
-          (b) => !['1', '2', '3'].includes(b.parentId)
-        ).length
+        bookmarksBar: bookmarks.filter((b) => b.parentId === '1').length,
+        otherBookmarks: bookmarks.filter((b) => b.parentId === '2').length,
+        mobileBookmarks: bookmarks.filter((b) => b.parentId === '3').length,
+        other: bookmarks.filter((b) => !['1', '2', '3'].includes(b.parentId)).length
       });
 
       return bookmarks;
@@ -59,11 +54,11 @@ class BookmarkService {
   }
 
   /**
-     * Recursively extract bookmarks from tree structure
-     * @param {Object} node - Bookmark tree node
-     * @param {Array} bookmarks - Array to collect bookmarks
-     * @param {string} currentPath - Current folder path
-     */
+   * Recursively extract bookmarks from tree structure
+   * @param {Object} node - Bookmark tree node
+   * @param {Array} bookmarks - Array to collect bookmarks
+   * @param {string} currentPath - Current folder path
+   */
   _extractBookmarks(node, bookmarks, currentPath = '') {
     if (node.url) {
       // This is a bookmark (has URL)
@@ -81,9 +76,7 @@ class BookmarkService {
 
     // Recursively process children
     if (node.children) {
-      const nodePath = currentPath
-        ? `${currentPath}/${node.title}`
-        : node.title;
+      const nodePath = currentPath ? `${currentPath}/${node.title}` : node.title;
       node.children.forEach((child) => {
         this._extractBookmarks(child, bookmarks, nodePath);
       });
@@ -91,10 +84,10 @@ class BookmarkService {
   }
 
   /**
-     * Get folder name by ID
-     * @param {string} folderId - Folder ID
-     * @returns {string} Folder name
-     */
+   * Get folder name by ID
+   * @param {string} folderId - Folder ID
+   * @returns {string} Folder name
+   */
   _getFolderName(folderId) {
     const folderNames = {
       0: 'Root',
@@ -106,11 +99,11 @@ class BookmarkService {
   }
 
   /**
-     * Create a new folder
-     * @param {string} title - Folder name
-     * @param {string} parentId - Parent folder ID (optional)
-     * @returns {Promise<Object>} Created folder object
-     */
+   * Create a new folder
+   * @param {string} title - Folder name
+   * @param {string} parentId - Parent folder ID (optional)
+   * @returns {Promise<Object>} Created folder object
+   */
   async createFolder(title, parentId = '1') {
     try {
       const folder = await chrome.bookmarks.create({
@@ -126,12 +119,12 @@ class BookmarkService {
   }
 
   /**
-     * Move bookmark to a folder
-     * @param {string} bookmarkId - Bookmark ID
-     * @param {string} parentId - Target folder ID
-     * @param {number} index - Position in folder (optional)
-     * @returns {Promise<Object>} Moved bookmark object
-     */
+   * Move bookmark to a folder
+   * @param {string} bookmarkId - Bookmark ID
+   * @param {string} parentId - Target folder ID
+   * @param {number} index - Position in folder (optional)
+   * @returns {Promise<Object>} Moved bookmark object
+   */
   async moveBookmark(bookmarkId, parentId, index) {
     try {
       // Get bookmark details before moving
@@ -144,9 +137,7 @@ class BookmarkService {
 
       try {
         if (originalParentId) {
-          const originalParent = await chrome.bookmarks.get(
-            originalParentId
-          );
+          const originalParent = await chrome.bookmarks.get(originalParentId);
           originalFolderName = originalParent[0].title;
         }
       } catch (e) {
@@ -177,14 +168,9 @@ class BookmarkService {
         console.warn('Failed to set AI metadata:', metadataError);
       }
 
-      const bookmark = await chrome.bookmarks.move(
-        bookmarkId,
-        moveDetails
-      );
+      const bookmark = await chrome.bookmarks.move(bookmarkId, moveDetails);
 
-      console.log(
-        `✅ Move completed: "${bookmark.title}" is now in "${targetFolderName}"`
-      );
+      console.log(`✅ Move completed: "${bookmark.title}" is now in "${targetFolderName}"`);
 
       return bookmark;
     } catch (_error) {
@@ -194,20 +180,18 @@ class BookmarkService {
   }
 
   /**
-     * Find or create a folder by hierarchical path (e.g., "Work > Development > Frontend")
-     * @param {string} path - Folder path separated by " > " or "/"
-     * @param {string} rootParentId - Root parent ID (default: bookmarks bar)
-     * @returns {Promise<string>} Folder ID
-     */
+   * Find or create a folder by hierarchical path (e.g., "Work > Development > Frontend")
+   * @param {string} path - Folder path separated by " > " or "/"
+   * @param {string} rootParentId - Root parent ID (default: bookmarks bar)
+   * @returns {Promise<string>} Folder ID
+   */
   async findOrCreateFolderByPath(path, rootParentId = '1') {
     // Support both " > " (new format) and "/" (legacy format) separators
     const separator = path.includes(' > ') ? ' > ' : '/';
     const parts = path.split(separator).filter((part) => part.trim());
     let currentParentId = rootParentId;
 
-    console.log(
-      `Creating hierarchical folder path: ${path} (${parts.length} levels)`
-    );
+    console.log(`Creating hierarchical folder path: ${path} (${parts.length} levels)`);
     console.log(`Folder hierarchy: ${parts.join(' → ')}`);
 
     let currentPath = '';
@@ -215,49 +199,34 @@ class BookmarkService {
       const part = parts[i].trim();
       currentPath += (i === 0 ? '' : ' > ') + part;
 
-      const existingFolder = await this._findFolderByName(
-        part,
-        currentParentId
-      );
+      const existingFolder = await this._findFolderByName(part, currentParentId);
 
       if (existingFolder) {
-        console.log(
-          `✓ Found existing folder: ${part} (${existingFolder.id})`
-        );
+        console.log(`✓ Found existing folder: ${part} (${existingFolder.id})`);
         currentParentId = existingFolder.id;
       } else {
-        console.log(
-          `+ Creating new folder: ${part} in parent ${currentParentId}`
-        );
-        const newFolder = await this.createFolder(
-          part,
-          currentParentId
-        );
+        console.log(`+ Creating new folder: ${part} in parent ${currentParentId}`);
+        const newFolder = await this.createFolder(part, currentParentId);
         currentParentId = newFolder.id;
         console.log(`✓ Created folder: ${part} (${newFolder.id})`);
       }
     }
 
-    console.log(
-      `✅ Hierarchical path complete: ${path} → ${currentParentId}`
-    );
+    console.log(`✅ Hierarchical path complete: ${path} → ${currentParentId}`);
 
     return currentParentId;
   }
 
   /**
-     * Find folder by name within a parent
-     * @param {string} name - Folder name
-     * @param {string} parentId - Parent folder ID
-     * @returns {Promise<Object|null>} Folder object or null
-     */
+   * Find folder by name within a parent
+   * @param {string} name - Folder name
+   * @param {string} parentId - Parent folder ID
+   * @returns {Promise<Object|null>} Folder object or null
+   */
   async _findFolderByName(name, parentId) {
     try {
       const children = await chrome.bookmarks.getChildren(parentId);
-      return (
-        children.find((child) => !child.url && child.title === name) ||
-                null
-      );
+      return children.find((child) => !child.url && child.title === name) || null;
     } catch (_error) {
       console.error('_error finding folder:', _error);
       return null;
@@ -265,9 +234,9 @@ class BookmarkService {
   }
 
   /**
-     * Get bookmark statistics
-     * @returns {Promise<Object>} Statistics object
-     */
+   * Get bookmark statistics
+   * @returns {Promise<Object>} Statistics object
+   */
   async getBookmarkStats() {
     try {
       const bookmarks = await this.getAllBookmarks();
@@ -287,9 +256,7 @@ class BookmarkService {
           1: bookmarks.filter((b) => b.parentId === '1').length,
           2: bookmarks.filter((b) => b.parentId === '2').length,
           3: bookmarks.filter((b) => b.parentId === '3').length,
-          other: bookmarks.filter(
-            (b) => !['1', '2', '3'].includes(b.parentId)
-          ).length
+          other: bookmarks.filter((b) => !['1', '2', '3'].includes(b.parentId)).length
         }
       });
 
@@ -305,9 +272,9 @@ class BookmarkService {
   }
 
   /**
-     * Get all folders
-     * @returns {Promise<Array>} Array of folder objects
-     */
+   * Get all folders
+   * @returns {Promise<Array>} Array of folder objects
+   */
   async _getAllFolders() {
     try {
       const tree = await chrome.bookmarks.getTree();
@@ -321,10 +288,10 @@ class BookmarkService {
   }
 
   /**
-     * Recursively extract folders from tree
-     * @param {Object} node - Tree node
-     * @param {Array} folders - Array to collect folders
-     */
+   * Recursively extract folders from tree
+   * @param {Object} node - Tree node
+   * @param {Array} folders - Array to collect folders
+   */
   _extractFolders(node, folders) {
     if (!node.url && node.id !== '0') {
       // This is a folder (no URL and not root)
@@ -343,10 +310,10 @@ class BookmarkService {
   }
 
   /**
-     * Move all bookmarks to the Bookmark Bar root
-     * @param {Function} progressCallback - Callback for progress updates
-     * @returns {Promise<Object>} Result object
-     */
+   * Move all bookmarks to the Bookmark Bar root
+   * @param {Function} progressCallback - Callback for progress updates
+   * @returns {Promise<Object>} Result object
+   */
   async moveAllToBookmarkBar(progressCallback) {
     try {
       console.log('Starting move all to Bookmark Bar...');
@@ -356,9 +323,7 @@ class BookmarkService {
 
       // Filter out bookmarks that are already in the Bookmark Bar root (parentId '1')
       // and ensure we don't move folders, only actual bookmarks (url exists)
-      const bookmarksToMove = allBookmarks.filter(
-        (b) => b.parentId !== '1' && b.url
-      );
+      const bookmarksToMove = allBookmarks.filter((b) => b.parentId !== '1' && b.url);
 
       console.log(`Found ${bookmarksToMove.length} bookmarks to move`);
 
@@ -367,8 +332,7 @@ class BookmarkService {
           success: true,
           total: 0,
           moved: 0,
-          message:
-                        'No bookmarks to move. All are already in Bookmark Bar.'
+          message: 'No bookmarks to move. All are already in Bookmark Bar.'
         };
       }
 
@@ -383,9 +347,7 @@ class BookmarkService {
 
         // Update progress
         if (progressCallback) {
-          const percent = Math.round(
-            (i / bookmarksToMove.length) * 100
-          );
+          const percent = Math.round((i / bookmarksToMove.length) * 100);
           progressCallback({
             stage: 'moving',
             progress: percent,
@@ -403,10 +365,7 @@ class BookmarkService {
               });
               movedCount++;
             } catch (_error) {
-              console.error(
-                `Failed to move bookmark ${bookmark.id}:`,
-                error
-              );
+              console.error(`Failed to move bookmark ${bookmark.id}:`, error);
               errors.push({
                 id: bookmark.id,
                 title: bookmark.title,

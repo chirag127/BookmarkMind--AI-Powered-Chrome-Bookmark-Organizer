@@ -21,7 +21,7 @@ function initializeEventListeners() {
     window.location.href = 'popup.html';
   });
 
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 
@@ -33,8 +33,8 @@ function initializeEventListeners() {
 }
 
 function switchTab(tabName) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
 
   document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
   document.getElementById(`${tabName}Tab`).classList.add('active');
@@ -69,10 +69,10 @@ function extractFolders(node, folders, path) {
     });
 
     if (node.children) {
-      node.children.forEach(child => extractFolders(child, folders, folderPath));
+      node.children.forEach((child) => extractFolders(child, folders, folderPath));
     }
   } else if (node.children) {
-    node.children.forEach(child => extractFolders(child, folders, ''));
+    node.children.forEach((child) => extractFolders(child, folders, ''));
   }
 }
 
@@ -80,7 +80,7 @@ function populateFolderSelect() {
   const select = document.getElementById('folderSelect');
   select.innerHTML = '<option value="">Select a folder...</option>';
 
-  allFolders.forEach(folder => {
+  allFolders.forEach((folder) => {
     const option = document.createElement('option');
     option.value = folder.id;
     option.textContent = folder.path;
@@ -92,7 +92,7 @@ function populateFolderCheckboxes() {
   const container = document.getElementById('folderCheckboxes');
   container.innerHTML = '';
 
-  allFolders.forEach(folder => {
+  allFolders.forEach((folder) => {
     const item = document.createElement('div');
     item.className = 'folder-checkbox-item';
 
@@ -123,7 +123,7 @@ function handleFolderCheckboxChange(e) {
       alert('You can compare up to 3 folders at a time');
     }
   } else {
-    selectedFolders = selectedFolders.filter(id => id !== folderId);
+    selectedFolders = selectedFolders.filter((id) => id !== folderId);
   }
 
   document.getElementById('compareBtn').disabled = selectedFolders.length < 2;
@@ -168,7 +168,9 @@ function displayFolderStats(stats) {
   document.getElementById('subfolderCount').textContent = stats.subfolderCount;
   document.getElementById('folderDepth').textContent = stats.depth;
 
-  const lastModified = stats.lastModified ? new Date(stats.lastModified).toLocaleDateString() : 'Unknown';
+  const lastModified = stats.lastModified
+    ? new Date(stats.lastModified).toLocaleDateString()
+    : 'Unknown';
   document.getElementById('lastModified').textContent = lastModified;
 
   const confidence = Math.round(stats.averageConfidence * 100);
@@ -220,12 +222,13 @@ function displaySuggestions(suggestions) {
   const container = document.getElementById('suggestionsList');
 
   if (suggestions.length === 0) {
-    container.innerHTML = '<p class="no-suggestions">No suggestions at this time. Your folder looks good!</p>';
+    container.innerHTML =
+      '<p class="no-suggestions">No suggestions at this time. Your folder looks good!</p>';
     return;
   }
 
   container.innerHTML = '';
-  suggestions.forEach(suggestion => {
+  suggestions.forEach((suggestion) => {
     const item = document.createElement('div');
     item.className = `suggestion-item priority-${suggestion.priority}`;
 
@@ -243,7 +246,7 @@ function displaySuggestions(suggestions) {
     container.appendChild(item);
   });
 
-  document.querySelectorAll('.suggestion-action').forEach(btn => {
+  document.querySelectorAll('.suggestion-action').forEach((btn) => {
     btn.addEventListener('click', handleSuggestionAction);
   });
 }
@@ -257,7 +260,7 @@ function displayRecommendations(recommendations) {
   }
 
   list.innerHTML = '';
-  recommendations.forEach(rec => {
+  recommendations.forEach((rec) => {
     const li = document.createElement('li');
     li.textContent = rec;
     list.appendChild(li);
@@ -287,20 +290,20 @@ function handleSuggestionAction(e) {
   const folderId = e.target.dataset.folder;
 
   switch (action) {
-  case 'split':
-    alert(`Split folder functionality would be implemented here for folder ${folderId}`);
-    break;
-  case 'consolidate':
-    alert(`Consolidate folder functionality would be implemented here for folder ${folderId}`);
-    break;
-  case 'flatten':
-    alert(`Flatten folder functionality would be implemented here for folder ${folderId}`);
-    break;
-  case 'review':
-    window.location.href = 'popup.html';
-    break;
-  default:
-    console.log('Unknown action:', action);
+    case 'split':
+      alert(`Split folder functionality would be implemented here for folder ${folderId}`);
+      break;
+    case 'consolidate':
+      alert(`Consolidate folder functionality would be implemented here for folder ${folderId}`);
+      break;
+    case 'flatten':
+      alert(`Flatten folder functionality would be implemented here for folder ${folderId}`);
+      break;
+    case 'review':
+      window.location.href = 'popup.html';
+      break;
+    default:
+      console.log('Unknown action:', action);
   }
 }
 
@@ -342,11 +345,11 @@ function displayComparison(comparison) {
     { label: 'Subfolders', key: 'subfolderCount' },
     { label: 'Depth', key: 'depth' },
     { label: 'Health Score', key: 'health.totalScore' },
-    { label: 'AI Confidence', key: 'averageConfidence', format: v => `${Math.round(v * 100)}%` }
+    { label: 'AI Confidence', key: 'averageConfidence', format: (v) => `${Math.round(v * 100)}%` }
   ];
 
   table.innerHTML = '';
-  metrics.forEach(metric => {
+  metrics.forEach((metric) => {
     const row = document.createElement('tr');
 
     const labelCell = document.createElement('td');
@@ -354,7 +357,7 @@ function displayComparison(comparison) {
     labelCell.style.fontWeight = '600';
     row.appendChild(labelCell);
 
-    comparison.folders.forEach(folder => {
+    comparison.folders.forEach((folder) => {
       const cell = document.createElement('td');
       const value = getNestedValue(folder, metric.key);
       cell.textContent = metric.format ? metric.format(value) : value;
@@ -384,7 +387,7 @@ function displayComparison(comparison) {
   if (comparison.needsAttention.length === 0) {
     attentionContainer.textContent = 'All folders are in good shape!';
   } else {
-    comparison.needsAttention.forEach(folder => {
+    comparison.needsAttention.forEach((folder) => {
       const item = document.createElement('div');
       item.className = 'folder-list-item';
       item.innerHTML = `
@@ -420,7 +423,8 @@ function displayTreemap(data) {
   container.innerHTML = '';
 
   if (!data || !data.children || data.children.length === 0) {
-    container.innerHTML = '<p style="text-align: center; color: #5f6368; padding: 40px;">No subfolders to display</p>';
+    container.innerHTML =
+      '<p style="text-align: center; color: #5f6368; padding: 40px;">No subfolders to display</p>';
     return;
   }
 
@@ -436,7 +440,7 @@ function renderTreemapNode(container, nodes, x, y, width, height) {
   let currentX = x;
   let currentY = y;
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     const ratio = node.bookmarkCount / totalBookmarks;
     const nodeWidth = width > height ? width * ratio : width;
     const nodeHeight = width > height ? height : height * ratio;
@@ -499,7 +503,8 @@ async function displayFavorites(favoriteIds) {
   const container = document.getElementById('favoritesList');
 
   if (favoriteIds.length === 0) {
-    container.innerHTML = '<p class="no-favorites">No favorite folders yet. Add folders from the Overview tab.</p>';
+    container.innerHTML =
+      '<p class="no-favorites">No favorite folders yet. Add folders from the Overview tab.</p>';
     return;
   }
 
@@ -547,7 +552,7 @@ async function displayFavorites(favoriteIds) {
     }
   }
 
-  document.querySelectorAll('.favorite-remove').forEach(btn => {
+  document.querySelectorAll('.favorite-remove').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const folderId = e.target.dataset.folder;

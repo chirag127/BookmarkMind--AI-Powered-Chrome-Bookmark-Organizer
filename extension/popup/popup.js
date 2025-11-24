@@ -29,22 +29,16 @@ class PopupController {
   }
 
   /**
-     * Initialize DOM element references
-     */
+   * Initialize DOM element references
+   */
   initializeElements() {
     // Buttons
     this.sortBtn = document.getElementById('sortBtn');
     this.bulkCategorizeBtn = document.getElementById('bulkCategorizeBtn');
     this.viewSnapshotsBtn = document.getElementById('viewSnapshotsBtn');
-    this.deleteEmptyFoldersBtn = document.getElementById(
-      'deleteEmptyFoldersBtn'
-    );
-    this.removeDuplicatesBtn = document.getElementById(
-      'removeDuplicatesBtn'
-    );
-    this.moveToBookmarkBarBtn = document.getElementById(
-      'moveToBookmarkBarBtn'
-    );
+    this.deleteEmptyFoldersBtn = document.getElementById('deleteEmptyFoldersBtn');
+    this.removeDuplicatesBtn = document.getElementById('removeDuplicatesBtn');
+    this.moveToBookmarkBarBtn = document.getElementById('moveToBookmarkBarBtn');
     this.forceReorganizeBtn = document.getElementById('forceReorganizeBtn');
     this.exportBtn = document.getElementById('exportBtn');
     this.settingsBtn = document.getElementById('settingsBtn');
@@ -57,28 +51,16 @@ class PopupController {
     this.selectNoneBtn = document.getElementById('selectNoneBtn');
     this.cancelBulkBtn = document.getElementById('cancelBulkBtn');
     this.categorizeBulkBtn = document.getElementById('categorizeBulkBtn');
-    this.bookmarkSearchInput = document.getElementById(
-      'bookmarkSearchInput'
-    );
+    this.bookmarkSearchInput = document.getElementById('bookmarkSearchInput');
     this.bookmarkList = document.getElementById('bookmarkList');
     this.selectedCount = document.getElementById('selectedCount');
 
     // Recategorization elements
-    this.recategorizeSection = document.getElementById(
-      'recategorizeSection'
-    );
-    this.showRecategorizeBtn = document.getElementById(
-      'showRecategorizeBtn'
-    );
-    this.closeRecategorizeBtn = document.getElementById(
-      'closeRecategorizeBtn'
-    );
-    this.recategorizeSearchInput = document.getElementById(
-      'recategorizeSearchInput'
-    );
-    this.recategorizeBookmarkList = document.getElementById(
-      'recategorizeBookmarkList'
-    );
+    this.recategorizeSection = document.getElementById('recategorizeSection');
+    this.showRecategorizeBtn = document.getElementById('showRecategorizeBtn');
+    this.closeRecategorizeBtn = document.getElementById('closeRecategorizeBtn');
+    this.recategorizeSearchInput = document.getElementById('recategorizeSearchInput');
+    this.recategorizeBookmarkList = document.getElementById('recategorizeBookmarkList');
 
     // Status elements
     this.extensionStatus = document.getElementById('extensionStatus');
@@ -93,9 +75,7 @@ class PopupController {
     // Sections
     this.apiKeyWarning = document.getElementById('apiKeyWarning');
     this.actionSection = document.getElementById('actionSection');
-    this.bulkSelectionSection = document.getElementById(
-      'bulkSelectionSection'
-    );
+    this.bulkSelectionSection = document.getElementById('bulkSelectionSection');
     this.snapshotsSection = document.getElementById('snapshotsSection');
     this.progressSection = document.getElementById('progressSection');
     this.resultsSection = document.getElementById('resultsSection');
@@ -121,42 +101,22 @@ class PopupController {
   }
 
   /**
-     * Attach event listeners
-     */
+   * Attach event listeners
+   */
   attachEventListeners() {
-    this.sortBtn.addEventListener('click', () =>
-      this.startCategorization()
-    );
-    this.bulkCategorizeBtn.addEventListener('click', () =>
-      this.showBulkSelection()
-    );
-    this.viewSnapshotsBtn.addEventListener('click', () =>
-      this.showSnapshots()
-    );
-    this.closeSnapshotsBtn.addEventListener('click', () =>
-      this.hideSnapshots()
-    );
-    this.runDiagnosticsBtn.addEventListener('click', () =>
-      this.runSnapshotDiagnostics()
-    );
-    this.deleteEmptyFoldersBtn.addEventListener('click', () =>
-      this.deleteEmptyFolders()
-    );
-    this.removeDuplicatesBtn.addEventListener('click', () =>
-      this.removeDuplicateUrls()
-    );
-    this.moveToBookmarkBarBtn.addEventListener('click', () =>
-      this.moveAllToBookmarkBar()
-    );
-    this.forceReorganizeBtn.addEventListener('click', () =>
-      this.startCategorization(true)
-    );
+    this.sortBtn.addEventListener('click', () => this.startCategorization());
+    this.bulkCategorizeBtn.addEventListener('click', () => this.showBulkSelection());
+    this.viewSnapshotsBtn.addEventListener('click', () => this.showSnapshots());
+    this.closeSnapshotsBtn.addEventListener('click', () => this.hideSnapshots());
+    this.runDiagnosticsBtn.addEventListener('click', () => this.runSnapshotDiagnostics());
+    this.deleteEmptyFoldersBtn.addEventListener('click', () => this.deleteEmptyFolders());
+    this.removeDuplicatesBtn.addEventListener('click', () => this.removeDuplicateUrls());
+    this.moveToBookmarkBarBtn.addEventListener('click', () => this.moveAllToBookmarkBar());
+    this.forceReorganizeBtn.addEventListener('click', () => this.startCategorization(true));
     this.exportBtn.addEventListener('click', () => this.exportBookmarks());
     this.folderInsightsBtn = document.getElementById('folderInsightsBtn');
     if (this.folderInsightsBtn) {
-      this.folderInsightsBtn.addEventListener('click', () =>
-        this.openFolderInsights()
-      );
+      this.folderInsightsBtn.addEventListener('click', () => this.openFolderInsights());
     }
     this.settingsBtn.addEventListener('click', () => this.openSettings());
     this.helpLink.addEventListener('click', (e) => {
@@ -166,50 +126,30 @@ class PopupController {
     this.debugBtn.addEventListener('click', () => this.runDebugTest());
 
     // Bulk selection event listeners
-    this.selectAllBtn.addEventListener('click', () =>
-      this.selectAllBookmarks()
-    );
-    this.selectNoneBtn.addEventListener('click', () =>
-      this.selectNoneBookmarks()
-    );
-    this.cancelBulkBtn.addEventListener('click', () =>
-      this.hideBulkSelection()
-    );
-    this.categorizeBulkBtn.addEventListener('click', () =>
-      this.startBulkCategorization()
-    );
-    this.bookmarkSearchInput.addEventListener('input', (e) =>
-      this.filterBookmarks(e.target.value)
-    );
+    this.selectAllBtn.addEventListener('click', () => this.selectAllBookmarks());
+    this.selectNoneBtn.addEventListener('click', () => this.selectNoneBookmarks());
+    this.cancelBulkBtn.addEventListener('click', () => this.hideBulkSelection());
+    this.categorizeBulkBtn.addEventListener('click', () => this.startBulkCategorization());
+    this.bookmarkSearchInput.addEventListener('input', (e) => this.filterBookmarks(e.target.value));
 
     // Test categorization button
-    this.testCategorizationBtn = document.getElementById(
-      'testCategorizationBtn'
-    );
+    this.testCategorizationBtn = document.getElementById('testCategorizationBtn');
     if (this.testCategorizationBtn) {
-      this.testCategorizationBtn.addEventListener('click', () =>
-        this.testCategorization()
-      );
+      this.testCategorizationBtn.addEventListener('click', () => this.testCategorization());
     }
 
     // Test communication button
     this.testCommBtn = document.getElementById('testCommBtn');
     if (this.testCommBtn) {
-      this.testCommBtn.addEventListener('click', () =>
-        this.testCommunication()
-      );
+      this.testCommBtn.addEventListener('click', () => this.testCommunication());
     }
 
     // Recategorization event listeners
     if (this.showRecategorizeBtn) {
-      this.showRecategorizeBtn.addEventListener('click', () =>
-        this.showRecategorization()
-      );
+      this.showRecategorizeBtn.addEventListener('click', () => this.showRecategorization());
     }
     if (this.closeRecategorizeBtn) {
-      this.closeRecategorizeBtn.addEventListener('click', () =>
-        this.hideRecategorization()
-      );
+      this.closeRecategorizeBtn.addEventListener('click', () => this.hideRecategorization());
     }
     if (this.recategorizeSearchInput) {
       this.recategorizeSearchInput.addEventListener('input', (e) =>
@@ -230,8 +170,8 @@ class PopupController {
   }
 
   /**
-     * Load initial data when popup opens
-     */
+   * Load initial data when popup opens
+   */
   async loadInitialData() {
     try {
       await this.loadSettings();
@@ -251,8 +191,8 @@ class PopupController {
   }
 
   /**
-     * Test direct bookmark access as fallback
-     */
+   * Test direct bookmark access as fallback
+   */
   async testDirectBookmarkAccess() {
     try {
       console.log('Testing direct bookmark access...');
@@ -275,9 +215,7 @@ class PopupController {
 
       extractBookmarks(tree[0]);
 
-      const uncategorized = bookmarks.filter((b) =>
-        ['1', '2', '3'].includes(b.parentId)
-      ).length;
+      const uncategorized = bookmarks.filter((b) => ['1', '2', '3'].includes(b.parentId)).length;
 
       console.log('Direct bookmark access results:', {
         total: bookmarks.length,
@@ -296,13 +234,11 @@ class PopupController {
   }
 
   /**
-     * Load user settings
-     */
+   * Load user settings
+   */
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get([
-        'bookmarkMindSettings'
-      ]);
+      const result = await chrome.storage.sync.get(['bookmarkMindSettings']);
       this.settings = result.bookmarkMindSettings || {};
     } catch (_error) {
       console.error('_error loading settings:', _error);
@@ -311,8 +247,8 @@ class PopupController {
   }
 
   /**
-     * Load bookmark statistics
-     */
+   * Load bookmark statistics
+   */
   async loadStats() {
     try {
       console.log('Loading stats...');
@@ -326,10 +262,7 @@ class PopupController {
         this.stats = response.data;
         console.log('Stats loaded successfully:', this.stats);
       } else {
-        console.error(
-          'Failed to get stats:',
-          response?.error || 'No response'
-        );
+        console.error('Failed to get stats:', response?.error || 'No response');
         this.stats = {
           totalBookmarks: 0,
           uncategorized: 0,
@@ -347,8 +280,8 @@ class PopupController {
   }
 
   /**
-     * Update UI based on current state
-     */
+   * Update UI based on current state
+   */
   updateUI() {
     // Get stats first to avoid ReferenceError
     const uncategorizedCount = this.stats.uncategorized || 0;
@@ -444,17 +377,17 @@ class PopupController {
   }
 
   /**
-     * Delete empty folders that don't contain any bookmarks
-     */
+   * Delete empty folders that don't contain any bookmarks
+   */
   async deleteEmptyFolders() {
     if (this.isProcessing) return;
 
     // Show confirmation dialog
     const confirmed = confirm(
       'This will scan all bookmark folders and delete empty ones.\n\n' +
-                'Empty folders are those that contain no bookmarks or only other empty folders.\n\n' +
-                'This action cannot be undone automatically.\n\n' +
-                'Are you sure you want to continue?'
+        'Empty folders are those that contain no bookmarks or only other empty folders.\n\n' +
+        'This action cannot be undone automatically.\n\n' +
+        'Are you sure you want to continue?'
     );
 
     if (!confirmed) return;
@@ -495,10 +428,7 @@ class PopupController {
       collectFoldersFromTree(bookmarkTree);
 
       console.log(`Found ${allFolders.length} folders to analyze`);
-      this.updateProgress(
-        `Analyzing ${allFolders.length} folders...`,
-        10
-      );
+      this.updateProgress(`Analyzing ${allFolders.length} folders...`, 10);
 
       if (allFolders.length === 0) {
         this.showResults({
@@ -519,34 +449,23 @@ class PopupController {
         const progress = Math.round(10 + (i / allFolders.length) * 40);
 
         this.updateProgress(
-          `Checking "${folder.title}"... (${i + 1}/${
-            allFolders.length
-          })`,
+          `Checking "${folder.title}"... (${i + 1}/${allFolders.length})`,
           progress
         );
 
         try {
-          const children = await chrome.bookmarks.getChildren(
-            folder.id
-          );
+          const children = await chrome.bookmarks.getChildren(folder.id);
           folderContents.set(folder.id, children);
 
           // Count bookmarks (not folders) in this folder
-          const bookmarkCount = children.filter(
-            (child) => child.url
-          ).length;
-          const subfolderCount = children.filter(
-            (child) => !child.url
-          ).length;
+          const bookmarkCount = children.filter((child) => child.url).length;
+          const subfolderCount = children.filter((child) => !child.url).length;
 
           console.log(
             `Folder "${folder.title}": ${bookmarkCount} bookmarks, ${subfolderCount} subfolders`
           );
         } catch (_error) {
-          console.warn(
-            `Could not access folder "${folder.title}":`,
-            _error
-          );
+          console.warn(`Could not access folder "${folder.title}":`, _error);
           folderContents.set(folder.id, []);
         }
       }
@@ -567,9 +486,7 @@ class PopupController {
 
         // Check if all subfolders are empty
         const subfolders = children.filter((child) => !child.url);
-        return subfolders.every((subfolder) =>
-          isEmptyRecursively(subfolder.id, new Set(visited))
-        );
+        return subfolders.every((subfolder) => isEmptyRecursively(subfolder.id, new Set(visited)));
       };
 
       // Find all empty folders
@@ -585,8 +502,7 @@ class PopupController {
         this.showResults({
           processed: allFolders.length,
           deleted: 0,
-          message:
-                        'No empty folders found. All folders contain bookmarks or non-empty subfolders.'
+          message: 'No empty folders found. All folders contain bookmarks or non-empty subfolders.'
         });
         return;
       }
@@ -605,9 +521,7 @@ class PopupController {
 
       for (const folder of emptyFolders) {
         processedFolders++;
-        const progress = Math.round(
-          50 + (processedFolders / emptyFolders.length) * 40
-        );
+        const progress = Math.round(50 + (processedFolders / emptyFolders.length) * 40);
 
         this.updateProgress(
           `Deleting empty folder "${folder.title}"... (${processedFolders}/${emptyFolders.length})`,
@@ -616,29 +530,18 @@ class PopupController {
 
         try {
           // Double-check the folder is still empty before deleting
-          const currentChildren = await chrome.bookmarks.getChildren(
-            folder.id
-          );
-          const hasBookmarks = currentChildren.some(
-            (child) => child.url
-          );
+          const currentChildren = await chrome.bookmarks.getChildren(folder.id);
+          const hasBookmarks = currentChildren.some((child) => child.url);
 
           if (!hasBookmarks) {
             await chrome.bookmarks.removeTree(folder.id);
-            console.log(
-              `Deleted empty folder: "${folder.title}" from "${folder.parentTitle}"`
-            );
+            console.log(`Deleted empty folder: "${folder.title}" from "${folder.parentTitle}"`);
             deletedCount++;
           } else {
-            console.log(
-              `Skipped folder "${folder.title}" - no longer empty`
-            );
+            console.log(`Skipped folder "${folder.title}" - no longer empty`);
           }
         } catch (_error) {
-          console.error(
-            `Failed to delete folder "${folder.title}":`,
-            _error
-          );
+          console.error(`Failed to delete folder "${folder.title}":`, _error);
           errors.push(`${folder.title}: ${_error.message}`);
         }
 
@@ -650,9 +553,9 @@ class PopupController {
 
       // Show results
       const resultMessage =
-                errors.length > 0
-                  ? `Deleted ${deletedCount} empty folders. ${errors.length} failed to delete.`
-                  : `Successfully deleted ${deletedCount} empty folders.`;
+        errors.length > 0
+          ? `Deleted ${deletedCount} empty folders. ${errors.length} failed to delete.`
+          : `Successfully deleted ${deletedCount} empty folders.`;
 
       this.showResults({
         processed: allFolders.length,
@@ -660,11 +563,9 @@ class PopupController {
         errors: errors.length,
         message: resultMessage,
         details:
-                    errors.length > 0
-                      ? `Errors: ${errors.slice(0, 3).join(', ')}${
-                        errors.length > 3 ? '...' : ''
-                      }`
-                      : null
+          errors.length > 0
+            ? `Errors: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`
+            : null
       });
 
       // Refresh stats after deleting folders
@@ -678,20 +579,20 @@ class PopupController {
   }
 
   /**
-     * Remove duplicate URLs (same webpage with different fragments/anchors)
-     */
+   * Remove duplicate URLs (same webpage with different fragments/anchors)
+   */
   async removeDuplicateUrls() {
     if (this.isProcessing) return;
 
     // Show confirmation dialog
     const confirmed = confirm(
       'This will scan all bookmarks and remove duplicates that point to the same webpage.\n\n' +
-                'Examples of duplicates that will be removed:\n' +
-                '• https://example.com/page#section1\n' +
-                '• https://example.com/page#section2\n' +
-                '(Both point to the same page, one will be kept)\n\n' +
-                'This action cannot be undone automatically.\n\n' +
-                'Are you sure you want to continue?'
+        'Examples of duplicates that will be removed:\n' +
+        '• https://example.com/page#section1\n' +
+        '• https://example.com/page#section2\n' +
+        '(Both point to the same page, one will be kept)\n\n' +
+        'This action cannot be undone automatically.\n\n' +
+        'Are you sure you want to continue?'
     );
 
     if (!confirmed) return;
@@ -727,13 +628,8 @@ class PopupController {
 
       collectBookmarksFromTree(bookmarkTree);
 
-      console.log(
-        `Found ${allBookmarks.length} total bookmarks to analyze`
-      );
-      this.updateProgress(
-        `Analyzing ${allBookmarks.length} bookmarks for duplicates...`,
-        10
-      );
+      console.log(`Found ${allBookmarks.length} total bookmarks to analyze`);
+      this.updateProgress(`Analyzing ${allBookmarks.length} bookmarks for duplicates...`, 10);
 
       if (allBookmarks.length === 0) {
         this.showResults({
@@ -750,25 +646,20 @@ class PopupController {
 
       for (let i = 0; i < allBookmarks.length; i++) {
         const bookmark = allBookmarks[i];
-        const progress = Math.round(
-          10 + (i / allBookmarks.length) * 40
-        );
+        const progress = Math.round(10 + (i / allBookmarks.length) * 40);
 
         this.updateProgress(
-          `Analyzing "${bookmark.title}"... (${i + 1}/${
-            allBookmarks.length
-          })`,
+          `Analyzing "${bookmark.title}"... (${i + 1}/${allBookmarks.length})`,
           progress
         );
 
         try {
           // Normalize URL by removing fragments, query parameters, and trailing slashes
           const url = new URL(bookmark.url);
-          const normalizedUrl =
-                        `${url.protocol}//${url.hostname}${url.pathname}`.replace(
-                          /\/$/,
-                          ''
-                        );
+          const normalizedUrl = `${url.protocol}//${url.hostname}${url.pathname}`.replace(
+            /\/$/,
+            ''
+          );
 
           if (!urlGroups.has(normalizedUrl)) {
             urlGroups.set(normalizedUrl, []);
@@ -776,9 +667,7 @@ class PopupController {
 
           urlGroups.get(normalizedUrl).push(bookmark);
         } catch (_error) {
-          console.warn(
-            `Invalid URL for bookmark "${bookmark.title}": ${bookmark.url}`
-          );
+          console.warn(`Invalid URL for bookmark "${bookmark.title}": ${bookmark.url}`);
           // Keep invalid URLs as unique
           const invalidKey = `invalid_${bookmark.url}`;
           urlGroups.set(invalidKey, [bookmark]);
@@ -796,16 +685,13 @@ class PopupController {
         }
       }
 
-      console.log(
-        `Found ${duplicateGroups.length} groups with duplicates`
-      );
+      console.log(`Found ${duplicateGroups.length} groups with duplicates`);
 
       if (duplicateGroups.length === 0) {
         this.showResults({
           processed: allBookmarks.length,
           removed: 0,
-          message:
-                        'No duplicate URLs found. All bookmarks point to unique webpages.'
+          message: 'No duplicate URLs found. All bookmarks point to unique webpages.'
         });
         return;
       }
@@ -817,9 +703,7 @@ class PopupController {
 
       for (const group of duplicateGroups) {
         processedGroups++;
-        const progress = Math.round(
-          50 + (processedGroups / duplicateGroups.length) * 40
-        );
+        const progress = Math.round(50 + (processedGroups / duplicateGroups.length) * 40);
 
         this.updateProgress(
           `Removing duplicates for ${group.normalizedUrl}... (${processedGroups}/${duplicateGroups.length})`,
@@ -839,25 +723,16 @@ class PopupController {
         const keepBookmark = sortedBookmarks[0];
         const duplicatesToRemove = sortedBookmarks.slice(1);
 
-        console.log(
-          `Keeping: "${keepBookmark.title}" (${keepBookmark.url})`
-        );
-        console.log(
-          `Removing ${duplicatesToRemove.length} duplicates:`
-        );
+        console.log(`Keeping: "${keepBookmark.title}" (${keepBookmark.url})`);
+        console.log(`Removing ${duplicatesToRemove.length} duplicates:`);
 
         for (const duplicate of duplicatesToRemove) {
           try {
-            console.log(
-              `  - "${duplicate.title}" (${duplicate.url})`
-            );
+            console.log(`  - "${duplicate.title}" (${duplicate.url})`);
             await chrome.bookmarks.remove(duplicate.id);
             removedCount++;
           } catch (_error) {
-            console.error(
-              `Failed to remove duplicate "${duplicate.title}":`,
-              _error
-            );
+            console.error(`Failed to remove duplicate "${duplicate.title}":`, _error);
             errors.push(`${duplicate.title}: ${_error.message}`);
           }
         }
@@ -870,9 +745,9 @@ class PopupController {
 
       // Show results
       const resultMessage =
-                errors.length > 0
-                  ? `Removed ${removedCount} duplicate bookmarks. ${errors.length} failed to remove.`
-                  : `Successfully removed ${removedCount} duplicate bookmarks from ${duplicateGroups.length} groups.`;
+        errors.length > 0
+          ? `Removed ${removedCount} duplicate bookmarks. ${errors.length} failed to remove.`
+          : `Successfully removed ${removedCount} duplicate bookmarks from ${duplicateGroups.length} groups.`;
 
       this.showResults({
         processed: allBookmarks.length,
@@ -881,11 +756,9 @@ class PopupController {
         errors: errors.length,
         message: resultMessage,
         details:
-                    errors.length > 0
-                      ? `Errors: ${errors.slice(0, 3).join(', ')}${
-                        errors.length > 3 ? '...' : ''
-                      }`
-                      : `Found ${duplicateGroups.length} groups of duplicates. Kept the most descriptive bookmark from each group.`
+          errors.length > 0
+            ? `Errors: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`
+            : `Found ${duplicateGroups.length} groups of duplicates. Kept the most descriptive bookmark from each group.`
       });
 
       // Refresh stats after removing duplicates
@@ -899,21 +772,21 @@ class PopupController {
   }
 
   /**
-     * Move all bookmarks to Bookmark Bar for reprocessing
-     * Now runs in background - continues even if popup closes
-     */
+   * Move all bookmarks to Bookmark Bar for reprocessing
+   * Now runs in background - continues even if popup closes
+   */
   async moveAllToBookmarkBar() {
     if (this.isProcessing) return;
 
     // Show confirmation dialog
     const confirmed = confirm(
       'This will move ALL bookmarks from all folders back to the Bookmark Bar.\\n\\n' +
-                'This action will:\\n' +
-                '• Move all bookmarks to the root of Bookmark Bar\\n' +
-                '• Allow you to reprocess them with new categorization\\n' +
-                '• Continue running in background even if you close this popup\\n' +
-                '• Send a notification when complete\\n\\n' +
-                'Are you sure you want to continue?'
+        'This action will:\\n' +
+        '• Move all bookmarks to the root of Bookmark Bar\\n' +
+        '• Allow you to reprocess them with new categorization\\n' +
+        '• Continue running in background even if you close this popup\\n' +
+        '• Send a notification when complete\\n\\n' +
+        'Are you sure you want to continue?'
     );
 
     if (!confirmed) return;
@@ -943,9 +816,7 @@ class PopupController {
         // Refresh stats to show updated state
         await this.loadStats();
       } else {
-        this.showError(
-          response?.error || 'Failed to start move operation'
-        );
+        this.showError(response?.error || 'Failed to start move operation');
       }
     } catch (_error) {
       console.error('Popup: Move to bookmark bar _error:', _error);
@@ -956,8 +827,8 @@ class PopupController {
   }
 
   /**
-     * Show bulk selection interface
-     */
+   * Show bulk selection interface
+   */
   async showBulkSelection() {
     if (this.isProcessing) return;
 
@@ -976,8 +847,8 @@ class PopupController {
   }
 
   /**
-     * Hide bulk selection interface
-     */
+   * Hide bulk selection interface
+   */
   hideBulkSelection() {
     this.bulkSelectionSection.classList.add('hidden');
     this.actionSection.classList.remove('hidden');
@@ -987,8 +858,8 @@ class PopupController {
   }
 
   /**
-     * Load all bookmarks for bulk selection
-     */
+   * Load all bookmarks for bulk selection
+   */
   async loadBookmarksForSelection() {
     try {
       console.log('Loading bookmarks for bulk selection...');
@@ -1004,10 +875,8 @@ class PopupController {
             // Get folder name for display
             let folderName = 'Root';
             if (node.parentId === '1') folderName = 'Bookmarks Bar';
-            else if (node.parentId === '2')
-              folderName = 'Other Bookmarks';
-            else if (node.parentId === '3')
-              folderName = 'Mobile Bookmarks';
+            else if (node.parentId === '2') folderName = 'Other Bookmarks';
+            else if (node.parentId === '3') folderName = 'Mobile Bookmarks';
             else if (folderPath) folderName = folderPath;
 
             allBookmarks.push({
@@ -1019,9 +888,7 @@ class PopupController {
             });
           }
           if (node.children) {
-            const currentPath = folderPath
-              ? `${folderPath} > ${node.title}`
-              : node.title;
+            const currentPath = folderPath ? `${folderPath} > ${node.title}` : node.title;
             collectBookmarks(node.children, currentPath);
           }
         }
@@ -1046,8 +913,8 @@ class PopupController {
   }
 
   /**
-     * Render the bookmark list for selection
-     */
+   * Render the bookmark list for selection
+   */
   renderBookmarkList() {
     if (!this.bookmarkList || !this.filteredBookmarks) return;
 
@@ -1074,16 +941,10 @@ class PopupController {
       }
 
       item.innerHTML = `
-        <input type="checkbox" class="bookmark-checkbox" ${
-  isSelected ? 'checked' : ''
-}>
+        <input type="checkbox" class="bookmark-checkbox" ${isSelected ? 'checked' : ''}>
         <div class="bookmark-info">
-          <div class="bookmark-title" title="${bookmark.title}">${
-  bookmark.title
-}</div>
-          <div class="bookmark-url" title="${bookmark.url}">${
-  bookmark.url
-}</div>
+          <div class="bookmark-title" title="${bookmark.title}">${bookmark.title}</div>
+          <div class="bookmark-url" title="${bookmark.url}">${bookmark.url}</div>
         </div>
         <div class="bookmark-folder">${bookmark.folderName}</div>
       `;
@@ -1102,8 +963,8 @@ class PopupController {
   }
 
   /**
-     * Toggle bookmark selection
-     */
+   * Toggle bookmark selection
+   */
   toggleBookmarkSelection(bookmarkId, itemElement) {
     const checkbox = itemElement.querySelector('.bookmark-checkbox');
 
@@ -1119,16 +980,15 @@ class PopupController {
   }
 
   /**
-     * Select all visible bookmarks
-     */
+   * Select all visible bookmarks
+   */
   selectAllBookmarks() {
     this.filteredBookmarks.forEach((bookmark) => {
       this.selectedBookmarks.add(bookmark.id);
     });
 
     // Update UI
-    const checkboxes =
-            this.bookmarkList.querySelectorAll('.bookmark-checkbox');
+    const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
     const items = this.bookmarkList.querySelectorAll('.bookmark-item');
 
     checkboxes.forEach((checkbox) => (checkbox.checked = true));
@@ -1138,14 +998,13 @@ class PopupController {
   }
 
   /**
-     * Deselect all bookmarks
-     */
+   * Deselect all bookmarks
+   */
   selectNoneBookmarks() {
     this.selectedBookmarks.clear();
 
     // Update UI
-    const checkboxes =
-            this.bookmarkList.querySelectorAll('.bookmark-checkbox');
+    const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
     const items = this.bookmarkList.querySelectorAll('.bookmark-item');
 
     checkboxes.forEach((checkbox) => (checkbox.checked = false));
@@ -1155,8 +1014,8 @@ class PopupController {
   }
 
   /**
-     * Filter bookmarks based on search input
-     */
+   * Filter bookmarks based on search input
+   */
   filterBookmarks(searchTerm) {
     if (!this.allBookmarks) return;
 
@@ -1168,8 +1027,8 @@ class PopupController {
       this.filteredBookmarks = this.allBookmarks.filter(
         (bookmark) =>
           bookmark.title.toLowerCase().includes(term) ||
-                    bookmark.url.toLowerCase().includes(term) ||
-                    bookmark.folderName.toLowerCase().includes(term)
+          bookmark.url.toLowerCase().includes(term) ||
+          bookmark.folderName.toLowerCase().includes(term)
       );
     }
 
@@ -1177,8 +1036,8 @@ class PopupController {
   }
 
   /**
-     * Update selected count display
-     */
+   * Update selected count display
+   */
   updateSelectedCount() {
     if (this.selectedCount) {
       this.selectedCount.textContent = this.selectedBookmarks.size;
@@ -1191,8 +1050,8 @@ class PopupController {
   }
 
   /**
-     * Start bulk categorization of selected bookmarks
-     */
+   * Start bulk categorization of selected bookmarks
+   */
   async startBulkCategorization() {
     if (this.isProcessing || this.selectedBookmarks.size === 0) return;
 
@@ -1201,8 +1060,8 @@ class PopupController {
       `This will categorize ${selectedCount} selected bookmark${
         selectedCount > 1 ? 's' : ''
       } using AI.\n\n` +
-                'The AI will analyze each bookmark and move it to an appropriate folder.\n\n' +
-                'Are you sure you want to continue?'
+        'The AI will analyze each bookmark and move it to an appropriate folder.\n\n' +
+        'Are you sure you want to continue?'
     );
 
     if (!confirmed) return;
@@ -1214,9 +1073,7 @@ class PopupController {
       this.bulkSelectionSection.classList.add('hidden');
       this.showProgress();
 
-      console.log(
-        `Starting bulk categorization of ${selectedCount} bookmarks...`
-      );
+      console.log(`Starting bulk categorization of ${selectedCount} bookmarks...`);
 
       // Get selected bookmark details
       const selectedBookmarkIds = Array.from(this.selectedBookmarks);
@@ -1242,17 +1099,13 @@ class PopupController {
           categorized: response.data.categorized || selectedCount
         });
       } else {
-        const errorMsg =
-                    response?.error ||
-                    'Bulk categorization failed - no response';
+        const errorMsg = response?.error || 'Bulk categorization failed - no response';
         console.error('Bulk categorization failed:', errorMsg);
         this.showError(errorMsg);
       }
     } catch (_error) {
       console.error('Bulk categorization _error:', _error);
-      this.showError(
-        `Failed to categorize selected bookmarks: ${_error.message}`
-      );
+      this.showError(`Failed to categorize selected bookmarks: ${_error.message}`);
     } finally {
       this.isProcessing = false;
       // Reset bulk selection
@@ -1261,8 +1114,8 @@ class PopupController {
   }
 
   /**
-     * Start bookmark categorization process
-     */
+   * Start bookmark categorization process
+   */
   async startCategorization(forceReorganize = false) {
     if (this.isProcessing) return;
 
@@ -1284,8 +1137,7 @@ class PopupController {
       if (response && response.success) {
         this.showResults(response.data);
       } else {
-        const errorMsg =
-                    response?.error || 'Categorization failed - no response';
+        const errorMsg = response?.error || 'Categorization failed - no response';
         console.error('Popup: Categorization failed:', errorMsg);
         this.showError(errorMsg);
       }
@@ -1303,8 +1155,8 @@ class PopupController {
   }
 
   /**
-     * Export bookmarks organization
-     */
+   * Export bookmarks organization
+   */
   async exportBookmarks() {
     try {
       const response = await chrome.runtime.sendMessage({
@@ -1323,8 +1175,8 @@ class PopupController {
   }
 
   /**
-     * Download export data as JSON file
-     */
+   * Download export data as JSON file
+   */
   downloadExport(data) {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json'
@@ -1333,9 +1185,7 @@ class PopupController {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bookmarks-export-${
-      new Date().toISOString().split('T')[0]
-    }.json`;
+    a.download = `bookmarks-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1345,22 +1195,22 @@ class PopupController {
   }
 
   /**
-     * Open settings page
-     */
+   * Open settings page
+   */
   openSettings() {
     chrome.runtime.openOptionsPage();
   }
 
   /**
-     * Open folder insights page
-     */
+   * Open folder insights page
+   */
   openFolderInsights() {
     window.location.href = 'folder-insights.html';
   }
 
   /**
-     * Show help information
-     */
+   * Show help information
+   */
   showHelp() {
     const helpText = `BookmarkMind Help:
 
@@ -1376,8 +1226,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Test communication with background script
-     */
+   * Test communication with background script
+   */
   async testCommunication() {
     console.log('Testing communication with background script...');
 
@@ -1390,9 +1240,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       console.log('Ping response:', pingResponse);
 
       if (!pingResponse) {
-        alert(
-          '❌ Background script not responding. Please reload the extension.'
-        );
+        alert('❌ Background script not responding. Please reload the extension.');
         return;
       }
 
@@ -1404,13 +1252,9 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       console.log('Stats response:', statsResponse);
 
       if (statsResponse && statsResponse.success) {
-        alert(
-          '✅ Communication working! Background script is responding.'
-        );
+        alert('✅ Communication working! Background script is responding.');
       } else {
-        alert(
-          `❌ Stats failed: ${statsResponse?.error || 'No response'}`
-        );
+        alert(`❌ Stats failed: ${statsResponse?.error || 'No response'}`);
       }
     } catch (_error) {
       console.error('Communication test _error:', _error);
@@ -1419,8 +1263,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Test categorization process
-     */
+   * Test categorization process
+   */
   async testCategorization() {
     console.log('Testing categorization process...');
 
@@ -1445,8 +1289,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Run debug test for bookmark detection
-     */
+   * Run debug test for bookmark detection
+   */
   async runDebugTest() {
     const debugSection = document.getElementById('debugSection');
     debugSection.classList.remove('hidden');
@@ -1478,15 +1322,10 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       // Test 3: Calculate stats
       const stats = {
         total: bookmarks.length,
-        bookmarksBar: bookmarks.filter((b) => b.parentId === '1')
-          .length,
-        otherBookmarks: bookmarks.filter((b) => b.parentId === '2')
-          .length,
-        mobileBookmarks: bookmarks.filter((b) => b.parentId === '3')
-          .length,
-        uncategorized: bookmarks.filter((b) =>
-          ['1', '2', '3'].includes(b.parentId)
-        ).length
+        bookmarksBar: bookmarks.filter((b) => b.parentId === '1').length,
+        otherBookmarks: bookmarks.filter((b) => b.parentId === '2').length,
+        mobileBookmarks: bookmarks.filter((b) => b.parentId === '3').length,
+        uncategorized: bookmarks.filter((b) => ['1', '2', '3'].includes(b.parentId)).length
       };
 
       this.debugResults.innerHTML = `
@@ -1499,10 +1338,10 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
           <strong>Uncategorized: ${stats.uncategorized}</strong><br><br>
 
           ${
-  stats.uncategorized > 0
-    ? '<strong style="color: green;">✓ Should enable sort button</strong>'
-    : '<strong style="color: orange;">⚠ No uncategorized bookmarks found</strong>'
-}
+            stats.uncategorized > 0
+              ? '<strong style="color: green;">✓ Should enable sort button</strong>'
+              : '<strong style="color: orange;">⚠ No uncategorized bookmarks found</strong>'
+          }
         </div>
       `;
 
@@ -1530,8 +1369,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Show progress section
-     */
+   * Show progress section
+   */
   showProgress() {
     this.actionSection.classList.add('hidden');
     this.resultsSection.classList.add('hidden');
@@ -1541,8 +1380,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Update progress display
-     */
+   * Update progress display
+   */
   updateProgress(progressOrText, percent) {
     // Handle both object format and separate parameters
     if (typeof progressOrText === 'object') {
@@ -1557,11 +1396,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         complete: 'Organization complete!'
       };
 
-      this.progressText.textContent =
-                stageTexts[stage] || 'Processing...';
-      this.progressPercent.textContent = `${Math.round(
-        progressPercent
-      )}%`;
+      this.progressText.textContent = stageTexts[stage] || 'Processing...';
+      this.progressPercent.textContent = `${Math.round(progressPercent)}%`;
       this.progressFill.style.width = `${progressPercent}%`;
     } else {
       // Handle direct text and percent parameters
@@ -1572,8 +1408,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Show results section
-     */
+   * Show results section
+   */
   showResults(results) {
     this.progressSection.classList.add('hidden');
     this.resultsSection.classList.remove('hidden');
@@ -1647,41 +1483,24 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
     // Handle categorization results
     if (results.started) {
       this.resultsTitle.textContent = 'Categorization Started';
-      this.resultsMessage.textContent =
-                results.message || 'Categorization started in background';
-    } else if (
-      results.message &&
-            /already organized/i.test(results.message)
-    ) {
+      this.resultsMessage.textContent = results.message || 'Categorization started in background';
+    } else if (results.message && /already organized/i.test(results.message)) {
       this.resultsTitle.textContent = 'Already Organized!';
       this.resultsMessage.textContent = results.message;
     } else {
       this.resultsTitle.textContent = 'Bookmarks Organized!';
-      const categoryCount =
-                results.categories?.size ||
-                results.generatedCategories?.length ||
-                0;
+      const categoryCount = results.categories?.size || results.generatedCategories?.length || 0;
       this.resultsMessage.textContent = `Successfully organized ${results.categorized} bookmarks into ${categoryCount} AI-generated categories.`;
 
       // Show generated hierarchical categories if available
-      if (
-        results.generatedCategories &&
-                results.generatedCategories.length > 0
-      ) {
-        const hierarchicalCategories =
-                    results.generatedCategories.filter(
-                      (cat) => cat !== 'Other'
-                    );
+      if (results.generatedCategories && results.generatedCategories.length > 0) {
+        const hierarchicalCategories = results.generatedCategories.filter((cat) => cat !== 'Other');
         const topLevelCategories = [
-          ...new Set(
-            hierarchicalCategories.map((cat) => cat.split(' > ')[0])
-          )
+          ...new Set(hierarchicalCategories.map((cat) => cat.split(' > ')[0]))
         ];
 
         this.resultsMessage.textContent += `\n\nGenerated ${hierarchicalCategories.length} hierarchical categories across ${topLevelCategories.length} main areas:`;
-        this.resultsMessage.textContent += `\n${topLevelCategories.join(
-          ', '
-        )}`;
+        this.resultsMessage.textContent += `\n${topLevelCategories.join(', ')}`;
 
         // Show depth analysis
         const depthCounts = {};
@@ -1712,16 +1531,16 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Hide results and show main interface
-     */
+   * Hide results and show main interface
+   */
   hideResults() {
     this.resultsSection.classList.add('hidden');
     this.actionSection.classList.remove('hidden');
   }
 
   /**
-     * Show error message
-     */
+   * Show error message
+   */
   showError(message) {
     this.progressSection.classList.add('hidden');
     this.resultsSection.classList.remove('hidden');
@@ -1745,8 +1564,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
     setTimeout(() => {
       this.hideResults();
       // Reset result icon back to success state
-      const resultIcon =
-                this.resultsSection.querySelector('.result-icon');
+      const resultIcon = this.resultsSection.querySelector('.result-icon');
       resultIcon.classList.remove('error');
       resultIcon.classList.add('success');
       resultIcon.innerHTML = `
@@ -1758,8 +1576,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Update extension status indicator
-     */
+   * Update extension status indicator
+   */
   updateExtensionStatus() {
     if (!this.statusDot || !this.statusText) return;
 
@@ -1783,13 +1601,10 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Handle categorization error notifications
-     */
+   * Handle categorization error notifications
+   */
   handleCategorizationError(errorDetails) {
-    console.error(
-      '🚨 Categorization error received in popup:',
-      errorDetails
-    );
+    console.error('🚨 Categorization error received in popup:', errorDetails);
 
     // Show error message to user
     const errorMessage = `Categorization failed: ${errorDetails.message}`;
@@ -1806,8 +1621,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Show snapshots view
-     */
+   * Show snapshots view
+   */
   async showSnapshots() {
     try {
       this.actionSection.classList.add('hidden');
@@ -1818,9 +1633,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       });
 
       if (response && response.success) {
-        const snapshots = Array.isArray(response.data)
-          ? response.data
-          : [];
+        const snapshots = Array.isArray(response.data) ? response.data : [];
 
         const storageInfo = {
           snapshotCount: snapshots.length,
@@ -1829,22 +1642,14 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         };
 
         if (snapshots.length > 0) {
-          const snapshotsSize = new Blob([JSON.stringify(snapshots)])
-            .size;
-          storageInfo.totalSizeMB = (
-            snapshotsSize /
-                        (1024 * 1024)
-          ).toFixed(2);
+          const snapshotsSize = new Blob([JSON.stringify(snapshots)]).size;
+          storageInfo.totalSizeMB = (snapshotsSize / (1024 * 1024)).toFixed(2);
         }
 
         this.displaySnapshots(snapshots, storageInfo);
       } else {
         console.error('Failed to load snapshots:', response?._error);
-        this.showError(
-          `Failed to load snapshots: ${
-            response?.error || 'Unknown error'
-          }`
-        );
+        this.showError(`Failed to load snapshots: ${response?.error || 'Unknown error'}`);
       }
     } catch (_error) {
       console.error('_error loading snapshots:', _error);
@@ -1853,16 +1658,16 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Hide snapshots view
-     */
+   * Hide snapshots view
+   */
   hideSnapshots() {
     this.snapshotsSection.classList.add('hidden');
     this.actionSection.classList.remove('hidden');
   }
 
   /**
-     * Display snapshots list
-     */
+   * Display snapshots list
+   */
   displaySnapshots(snapshots, storageInfo) {
     this.snapshotCount.textContent = storageInfo.snapshotCount;
     this.maxSnapshots.textContent = storageInfo.maxSnapshots;
@@ -1891,24 +1696,20 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
             <div class="snapshot-meta">
               <span class="snapshot-time" title="${fullDate}">${timeAgo}</span>
               ${
-  snapshot.metadata.bookmarkCount
-    ? `<span class="snapshot-count">${snapshot.metadata.bookmarkCount} bookmarks</span>`
-    : ''
-}
+                snapshot.metadata.bookmarkCount
+                  ? `<span class="snapshot-count">${snapshot.metadata.bookmarkCount} bookmarks</span>`
+                  : ''
+              }
             </div>
           </div>
           <div class="snapshot-actions">
-            <button class="restore-snapshot-btn" data-snapshot-id="${
-  snapshot.id
-}">
+            <button class="restore-snapshot-btn" data-snapshot-id="${snapshot.id}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13C18 16.31 15.31 19 12 19C8.69 19 6 16.31 6 13H4C4 17.42 7.58 21 12 21C16.42 21 20 17.42 20 13C20 8.58 16.42 5 12 5Z" fill="currentColor" />
               </svg>
               Restore
             </button>
-            <button class="delete-snapshot-btn" data-snapshot-id="${
-  snapshot.id
-}">
+            <button class="delete-snapshot-btn" data-snapshot-id="${snapshot.id}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor" />
               </svg>
@@ -1935,14 +1736,14 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Restore a snapshot
-     */
+   * Restore a snapshot
+   */
   async restoreSnapshot(snapshotId) {
     const confirmed = confirm(
       'Are you sure you want to restore this snapshot?\n\n' +
-                'This will replace ALL current bookmarks with the bookmarks from the snapshot.\n\n' +
-                'Current bookmarks will be permanently deleted.\n\n' +
-                'This action cannot be undone automatically.'
+        'This will replace ALL current bookmarks with the bookmarks from the snapshot.\n\n' +
+        'Current bookmarks will be permanently deleted.\n\n' +
+        'This action cannot be undone automatically.'
     );
 
     if (!confirmed) return;
@@ -1961,8 +1762,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         const results = response.data;
 
         this.showResults({
-          processed:
-                        results.bookmarksRestored + results.bookmarksRemoved,
+          processed: results.bookmarksRestored + results.bookmarksRemoved,
           categorized: results.bookmarksRestored,
           message: `Snapshot restored successfully! ${results.bookmarksRestored} bookmarks restored, ${results.foldersCreated} folders created.`,
           title: 'Snapshot Restored'
@@ -1982,8 +1782,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Delete a snapshot
-     */
+   * Delete a snapshot
+   */
   async deleteSnapshot(snapshotId) {
     const confirmed = confirm(
       'Are you sure you want to delete this snapshot? This action cannot be undone.'
@@ -2009,8 +1809,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Run snapshot diagnostics
-     */
+   * Run snapshot diagnostics
+   */
   async runSnapshotDiagnostics() {
     try {
       console.log('🔍 Running snapshot diagnostics...');
@@ -2026,23 +1826,12 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
 
         let message = 'Diagnostics Report:\n\n';
         message += `Health Status: ${diagnostics.health}\n`;
-        message += `Snapshot Count: ${
-          diagnostics.storageInfo?.snapshotCount || 0
-        }\n`;
-        message += `Storage Usage: ${
-          diagnostics.storageState?.usagePercent || 0
-        }%\n`;
-        message += `Total Size: ${
-          diagnostics.storageState?.totalSizeMB || 0
-        }MB\n`;
-        message += `Quota Remaining: ${
-          diagnostics.storageState?.quotaRemainingMB || 0
-        }MB\n`;
+        message += `Snapshot Count: ${diagnostics.storageInfo?.snapshotCount || 0}\n`;
+        message += `Storage Usage: ${diagnostics.storageState?.usagePercent || 0}%\n`;
+        message += `Total Size: ${diagnostics.storageState?.totalSizeMB || 0}MB\n`;
+        message += `Quota Remaining: ${diagnostics.storageState?.quotaRemainingMB || 0}MB\n`;
 
-        if (
-          diagnostics.repairResult &&
-                    diagnostics.repairResult.repaired
-        ) {
+        if (diagnostics.repairResult && diagnostics.repairResult.repaired) {
           message += '\n⚠️ Repairs Made:\n';
           message += `Corrupted snapshots removed: ${diagnostics.repairResult.removed}\n`;
           if (diagnostics.repairResult.validRemaining !== undefined) {
@@ -2055,9 +1844,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         await this.showSnapshots();
       } else {
         console.error('Diagnostics failed:', response?._error);
-        this.showError(
-          `Diagnostics failed: ${response?.error || 'Unknown error'}`
-        );
+        this.showError(`Diagnostics failed: ${response?.error || 'Unknown error'}`);
       }
     } catch (_error) {
       console.error('_error running diagnostics:', _error);
@@ -2066,16 +1853,16 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Show notification message
-     */
+   * Show notification message
+   */
   showNotification(message) {
     // Simple notification - could be enhanced with a toast system
     console.log('Notification:', message);
   }
 
   /**
-     * Format relative time (e.g., "2 hours ago")
-     */
+   * Format relative time (e.g., "2 hours ago")
+   */
   formatRelativeTime(date) {
     const now = new Date();
     const diffMs = now - date;
@@ -2085,17 +1872,15 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
 
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24)
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7)
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
     return date.toLocaleDateString();
   }
 
   /**
-     * Show recategorization interface
-     */
+   * Show recategorization interface
+   */
   async showRecategorization() {
     try {
       this.recategorizeSection.classList.remove('hidden');
@@ -2110,8 +1895,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Hide recategorization interface
-     */
+   * Hide recategorization interface
+   */
   hideRecategorization() {
     this.recategorizeSection.classList.add('hidden');
     this.showRecategorizeBtn.classList.remove('hidden');
@@ -2119,8 +1904,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Load bookmarks for recategorization
-     */
+   * Load bookmarks for recategorization
+   */
   async loadRecategorizeBookmarks() {
     try {
       const response = await chrome.runtime.sendMessage({
@@ -2132,9 +1917,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       }
 
       this.allRecategorizeBookmarks = response.data;
-      await this.renderRecategorizeBookmarks(
-        this.allRecategorizeBookmarks
-      );
+      await this.renderRecategorizeBookmarks(this.allRecategorizeBookmarks);
     } catch (_error) {
       console.error('_error loading recategorize bookmarks:', _error);
       throw _error;
@@ -2142,14 +1925,14 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Render bookmarks for recategorization
-     */
+   * Render bookmarks for recategorization
+   */
   async renderRecategorizeBookmarks(bookmarks) {
     this.recategorizeBookmarkList.innerHTML = '';
 
     if (!bookmarks || bookmarks.length === 0) {
       this.recategorizeBookmarkList.innerHTML =
-                '<div class="no-bookmarks">No bookmarks found</div>';
+        '<div class="no-bookmarks">No bookmarks found</div>';
       return;
     }
 
@@ -2164,31 +1947,27 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       item.className = 'bookmark-item-recategorize';
       item.dataset.bookmarkId = bookmark.id;
 
-      const currentCategory =
-                bookmark.currentFolderName || 'Uncategorized';
+      const currentCategory = bookmark.currentFolderName || 'Uncategorized';
 
       item.innerHTML = `
         <div class="bookmark-header">
           <div class="bookmark-info">
             <div class="bookmark-title" title="${this.escapeHtml(
-    bookmark.title
-  )}">${this.escapeHtml(bookmark.title)}</div>
+              bookmark.title
+            )}">${this.escapeHtml(bookmark.title)}</div>
             <div class="bookmark-current-category">Current: ${this.escapeHtml(
-    currentCategory
-  )}</div>
+              currentCategory
+            )}</div>
           </div>
         </div>
         <div class="category-selector">
           <select>
             <option value="">Select new category...</option>
             ${categories
-    .map(
-      (cat) =>
-        `<option value="${this.escapeHtml(
-          cat
-        )}">${this.escapeHtml(cat)}</option>`
-    )
-    .join('')}
+              .map(
+                (cat) => `<option value="${this.escapeHtml(cat)}">${this.escapeHtml(cat)}</option>`
+              )
+              .join('')}
           </select>
           <button class="apply-btn" disabled>Apply</button>
         </div>
@@ -2202,11 +1981,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       });
 
       applyBtn.addEventListener('click', async () => {
-        await this.applyRecategorization(
-          bookmark,
-          select.value,
-          currentCategory
-        );
+        await this.applyRecategorization(bookmark, select.value, currentCategory);
       });
 
       this.recategorizeBookmarkList.appendChild(item);
@@ -2224,8 +1999,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Get available categories from bookmark folders
-     */
+   * Get available categories from bookmark folders
+   */
   async getAvailableCategories() {
     try {
       const response = await chrome.runtime.sendMessage({
@@ -2264,8 +2039,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Apply recategorization
-     */
+   * Apply recategorization
+   */
   async applyRecategorization(bookmark, newCategory, oldCategory) {
     try {
       const response = await chrome.runtime.sendMessage({
@@ -2278,9 +2053,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       });
 
       if (response && response.success) {
-        this.showNotification(
-          `Moved "${bookmark.title}" to "${newCategory}"`
-        );
+        this.showNotification(`Moved "${bookmark.title}" to "${newCategory}"`);
 
         // Reload bookmarks to show updated categories
         await this.loadRecategorizeBookmarks();
@@ -2294,8 +2067,8 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
   }
 
   /**
-     * Filter recategorize bookmarks by search term
-     */
+   * Filter recategorize bookmarks by search term
+   */
   filterRecategorizeBookmarks(searchTerm) {
     if (!this.allRecategorizeBookmarks) return;
 
@@ -2305,19 +2078,15 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       const folder = (bookmark.currentFolderName || '').toLowerCase();
       const term = searchTerm.toLowerCase();
 
-      return (
-        title.includes(term) ||
-                url.includes(term) ||
-                folder.includes(term)
-      );
+      return title.includes(term) || url.includes(term) || folder.includes(term);
     });
 
     this.renderRecategorizeBookmarks(filtered);
   }
 
   /**
-     * Escape HTML to prevent XSS
-     */
+   * Escape HTML to prevent XSS
+   */
   escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

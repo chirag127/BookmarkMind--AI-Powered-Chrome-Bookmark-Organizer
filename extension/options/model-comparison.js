@@ -100,7 +100,7 @@ class ModelComparisonController {
    */
   attachEventListeners() {
     // Tab navigation
-    this.tabBtns.forEach(btn => {
+    this.tabBtns.forEach((btn) => {
       btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
     });
 
@@ -148,7 +148,7 @@ class ModelComparisonController {
     this.currentTab = tabName;
 
     // Update tab buttons
-    this.tabBtns.forEach(btn => {
+    this.tabBtns.forEach((btn) => {
       if (btn.dataset.tab === tabName) {
         btn.classList.add('active');
       } else {
@@ -157,7 +157,7 @@ class ModelComparisonController {
     });
 
     // Update tab contents
-    this.tabContents.forEach(content => {
+    this.tabContents.forEach((content) => {
       if (content.id === `${tabName}-tab`) {
         content.classList.add('active');
       } else {
@@ -235,15 +235,17 @@ class ModelComparisonController {
 
     if (this.dashboard.modelComparison.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = '<td colspan="7" class="loading">No performance data available yet. Run some categorizations to collect data.</td>';
+      row.innerHTML =
+        '<td colspan="7" class="loading">No performance data available yet. Run some categorizations to collect data.</td>';
       this.performanceTableBody.appendChild(row);
       return;
     }
 
-    this.dashboard.modelComparison.forEach(model => {
+    this.dashboard.modelComparison.forEach((model) => {
       const row = document.createElement('tr');
 
-      const successRateClass = model.successRate >= 90 ? 'high' : model.successRate >= 70 ? 'medium' : 'low';
+      const successRateClass =
+        model.successRate >= 90 ? 'high' : model.successRate >= 70 ? 'medium' : 'low';
 
       row.innerHTML = `
         <td><strong>${model.model}</strong></td>
@@ -329,7 +331,11 @@ class ModelComparisonController {
    * Update budget status
    */
   updateBudgetStatus() {
-    if (!this.costReport || !this.costReport.budgetStatus || !this.costReport.budgetStatus.enabled) {
+    if (
+      !this.costReport ||
+      !this.costReport.budgetStatus ||
+      !this.costReport.budgetStatus.enabled
+    ) {
       this.budgetStatusContent.innerHTML = '<p>Configure budget alerts above to track usage.</p>';
       return;
     }
@@ -339,7 +345,8 @@ class ModelComparisonController {
 
     // Daily
     if (status.daily) {
-      const fillClass = status.daily.percentage >= 100 ? 'danger' : status.daily.percentage >= 80 ? 'warning' : '';
+      const fillClass =
+        status.daily.percentage >= 100 ? 'danger' : status.daily.percentage >= 80 ? 'warning' : '';
       html += `
         <div class="budget-period">
           <h4>Daily Budget</h4>
@@ -356,7 +363,12 @@ class ModelComparisonController {
 
     // Weekly
     if (status.weekly) {
-      const fillClass = status.weekly.percentage >= 100 ? 'danger' : status.weekly.percentage >= 80 ? 'warning' : '';
+      const fillClass =
+        status.weekly.percentage >= 100
+          ? 'danger'
+          : status.weekly.percentage >= 80
+            ? 'warning'
+            : '';
       html += `
         <div class="budget-period">
           <h4>Weekly Budget</h4>
@@ -373,7 +385,12 @@ class ModelComparisonController {
 
     // Monthly
     if (status.monthly) {
-      const fillClass = status.monthly.percentage >= 100 ? 'danger' : status.monthly.percentage >= 80 ? 'warning' : '';
+      const fillClass =
+        status.monthly.percentage >= 100
+          ? 'danger'
+          : status.monthly.percentage >= 80
+            ? 'warning'
+            : '';
       html += `
         <div class="budget-period">
           <h4>Monthly Budget</h4>
@@ -398,10 +415,10 @@ class ModelComparisonController {
     try {
       const budget = {
         enabled: this.budgetAlertEnabled.checked,
-        dailyLimit: this.dailyBudget.value ? parseFloat(this.dailyBudget.value) : null,
-        weeklyLimit: this.weeklyBudget.value ? parseFloat(this.weeklyBudget.value) : null,
-        monthlyLimit: this.monthlyBudget.value ? parseFloat(this.monthlyBudget.value) : null,
-        alertThreshold: parseInt(this.alertThreshold.value) / 100
+        dailyLimit: this.dailyBudget.value ? Number.parseFloat(this.dailyBudget.value) : null,
+        weeklyLimit: this.weeklyBudget.value ? Number.parseFloat(this.weeklyBudget.value) : null,
+        monthlyLimit: this.monthlyBudget.value ? Number.parseFloat(this.monthlyBudget.value) : null,
+        alertThreshold: Number.parseInt(this.alertThreshold.value) / 100
       };
 
       const response = await chrome.runtime.sendMessage({
@@ -426,7 +443,7 @@ class ModelComparisonController {
     try {
       const modelA = this.modelASelect.value;
       const modelB = this.modelBSelect.value;
-      const sampleSize = parseInt(this.abtestSampleSize.value);
+      const sampleSize = Number.parseInt(this.abtestSampleSize.value);
 
       if (modelA === modelB) {
         this.showError('Please select different models for comparison');
@@ -507,9 +524,8 @@ class ModelComparisonController {
     const resultsB = data.resultsB;
 
     // Model A metrics
-    const successRateA = resultsA.success && resultsA.metrics
-      ? Math.round(resultsA.metrics.successRate * 100)
-      : 0;
+    const successRateA =
+      resultsA.success && resultsA.metrics ? Math.round(resultsA.metrics.successRate * 100) : 0;
     document.getElementById('modelASuccessRate').textContent = `${successRateA}%`;
     document.getElementById('modelASpeed').textContent = `${resultsA.time}ms`;
 
@@ -518,9 +534,8 @@ class ModelComparisonController {
     document.getElementById('modelACost').textContent = `$${costA.toFixed(6)}`;
 
     // Model B metrics
-    const successRateB = resultsB.success && resultsB.metrics
-      ? Math.round(resultsB.metrics.successRate * 100)
-      : 0;
+    const successRateB =
+      resultsB.success && resultsB.metrics ? Math.round(resultsB.metrics.successRate * 100) : 0;
     document.getElementById('modelBSuccessRate').textContent = `${successRateB}%`;
     document.getElementById('modelBSpeed').textContent = `${resultsB.time}ms`;
 
@@ -540,28 +555,33 @@ class ModelComparisonController {
     if (!metrics) return 0;
 
     const pricing = {
-      'gemini-2.5-pro': { input: 1.25, output: 5.00 },
-      'gemini-2.5-flash': { input: 0.075, output: 0.30 },
-      'gemini-2.5-flash-preview-09-2025': { input: 0.075, output: 0.30 },
-      'llama-3.3-70b': { input: 0.60, output: 0.60 },
-      'llama-3.3-70b-versatile': { input: 0.00, output: 0.00 },
-      'qwen-3-32b': { input: 0.10, output: 0.10 },
-      'llama3.1-8b': { input: 0.10, output: 0.10 }
+      'gemini-2.5-pro': { input: 1.25, output: 5.0 },
+      'gemini-2.5-flash': { input: 0.075, output: 0.3 },
+      'gemini-2.5-flash-preview-09-2025': { input: 0.075, output: 0.3 },
+      'llama-3.3-70b': { input: 0.6, output: 0.6 },
+      'llama-3.3-70b-versatile': { input: 0.0, output: 0.0 },
+      'qwen-3-32b': { input: 0.1, output: 0.1 },
+      'llama3.1-8b': { input: 0.1, output: 0.1 }
     };
 
-    const modelPricing = pricing[model] || { input: 0.10, output: 0.30 };
+    const modelPricing = pricing[model] || { input: 0.1, output: 0.3 };
     const inputTokens = metrics.inputTokens || 0;
     const outputTokens = metrics.outputTokens || 0;
 
-    return ((inputTokens / 1000000) * modelPricing.input) +
-           ((outputTokens / 1000000) * modelPricing.output);
+    return (
+      (inputTokens / 1000000) * modelPricing.input + (outputTokens / 1000000) * modelPricing.output
+    );
   }
 
   /**
    * Update previous A/B tests list
    */
   updatePreviousABTests() {
-    if (!this.dashboard || !this.dashboard.abTestSummary || this.dashboard.abTestSummary.totalTests === 0) {
+    if (
+      !this.dashboard ||
+      !this.dashboard.abTestSummary ||
+      this.dashboard.abTestSummary.totalTests === 0
+    ) {
       this.previousTestsList.innerHTML = '<p>No A/B tests run yet.</p>';
       return;
     }
@@ -622,11 +642,12 @@ class ModelComparisonController {
   async saveModelConfig() {
     try {
       const config = {
-        temperature: parseFloat(this.temperature.value),
-        top_p: parseFloat(this.topP.value),
-        max_tokens: parseInt(this.maxTokens.value),
+        temperature: Number.parseFloat(this.temperature.value),
+        top_p: Number.parseFloat(this.topP.value),
+        max_tokens: Number.parseInt(this.maxTokens.value),
         batchSizeMode: this.batchSizeMode.value,
-        customBatchSize: this.batchSizeMode.value === 'custom' ? parseInt(this.customBatchSize.value) : null
+        customBatchSize:
+          this.batchSizeMode.value === 'custom' ? Number.parseInt(this.customBatchSize.value) : null
       };
 
       const response = await chrome.runtime.sendMessage({
@@ -665,11 +686,13 @@ class ModelComparisonController {
     /* global BenchmarkService */
     try {
       // Get selected options
-      const selectedCategories = Array.from(document.querySelectorAll('.benchmark-category:checked'))
-        .map(cb => cb.value);
-      const selectedProviders = Array.from(document.querySelectorAll('.benchmark-provider:checked'))
-        .map(cb => cb.value);
-      const batchSize = parseInt(document.getElementById('benchmarkBatchSize').value);
+      const selectedCategories = Array.from(
+        document.querySelectorAll('.benchmark-category:checked')
+      ).map((cb) => cb.value);
+      const selectedProviders = Array.from(
+        document.querySelectorAll('.benchmark-provider:checked')
+      ).map((cb) => cb.value);
+      const batchSize = Number.parseInt(document.getElementById('benchmarkBatchSize').value);
 
       if (selectedCategories.length === 0) {
         this.showError('Please select at least one test category');
@@ -711,7 +734,6 @@ class ModelComparisonController {
       setTimeout(() => {
         this.benchmarkProgress.classList.add('hidden');
       }, 2000);
-
     } catch (_error) {
       console.error('_error running benchmark:', _error);
       this.showError('Failed to run benchmark: ' + _error.message);
@@ -739,16 +761,19 @@ class ModelComparisonController {
     // Best model
     if (report.bestModel) {
       this.bestBenchmarkModel.textContent = `${report.bestModel.provider} / ${report.bestModel.model}`;
-      this.bestBenchmarkMetrics.textContent =
-        `${report.bestModel.successRate.toFixed(1)}% accuracy, ${report.bestModel.averageSpeed.toFixed(0)}ms avg, $${report.bestModel.totalCost.toFixed(4)} cost`;
+      this.bestBenchmarkMetrics.textContent = `${report.bestModel.successRate.toFixed(1)}% accuracy, ${report.bestModel.averageSpeed.toFixed(0)}ms avg, $${report.bestModel.totalCost.toFixed(4)} cost`;
     }
 
     // Comparison table
     this.benchmarkTableBody.innerHTML = '';
-    report.comparison.forEach(model => {
+    report.comparison.forEach((model) => {
       const row = document.createElement('tr');
-      const successClass = parseFloat(model.successRate) >= 90 ? 'high' :
-        parseFloat(model.successRate) >= 70 ? 'medium' : 'low';
+      const successClass =
+        Number.parseFloat(model.successRate) >= 90
+          ? 'high'
+          : Number.parseFloat(model.successRate) >= 70
+            ? 'medium'
+            : 'low';
 
       row.innerHTML = `
         <td>${model.provider}</td>
@@ -764,14 +789,20 @@ class ModelComparisonController {
 
     // Recommendations
     this.benchmarkRecommendationsList.innerHTML = '';
-    report.recommendations.forEach(rec => {
+    report.recommendations.forEach((rec) => {
       const recDiv = document.createElement('div');
       recDiv.className = 'recommendation-item';
 
-      const icon = rec.type === 'best_overall' ? '🏆' :
-        rec.type === 'fastest' ? '⚡' :
-          rec.type === 'cheapest' ? '💰' :
-            rec.type === 'accurate' ? '🎯' : '📊';
+      const icon =
+        rec.type === 'best_overall'
+          ? '🏆'
+          : rec.type === 'fastest'
+            ? '⚡'
+            : rec.type === 'cheapest'
+              ? '💰'
+              : rec.type === 'accurate'
+                ? '🎯'
+                : '📊';
 
       recDiv.innerHTML = `
         <div class="rec-icon">${icon}</div>
@@ -792,11 +823,12 @@ class ModelComparisonController {
    */
   async loadBenchmarkHistory() {
     try {
-      const limit = parseInt(this.benchmarkHistoryLimit.value);
+      const limit = Number.parseInt(this.benchmarkHistoryLimit.value);
       const history = await this.benchmarkService.getHistory(limit);
 
       if (history.length === 0) {
-        this.benchmarkHistoryList.innerHTML = '<p>No benchmark history available. Run a benchmark to get started.</p>';
+        this.benchmarkHistoryList.innerHTML =
+          '<p>No benchmark history available. Run a benchmark to get started.</p>';
         return;
       }
 

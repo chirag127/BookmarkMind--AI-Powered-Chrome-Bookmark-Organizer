@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function setupEventListeners() {
   // Tab navigation
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       const tabName = tab.dataset.tab;
       switchTab(tabName);
@@ -25,10 +25,10 @@ function setupEventListeners() {
   });
 
   // Period selector
-  document.querySelectorAll('.period-btn').forEach(btn => {
+  document.querySelectorAll('.period-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       currentPeriod = btn.dataset.period;
-      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.period-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       updatePeriodStats();
     });
@@ -41,8 +41,8 @@ function setupEventListeners() {
 }
 
 function switchTab(tabName) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach((tc) => tc.classList.remove('active'));
 
   document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
   document.getElementById(tabName).classList.add('active');
@@ -107,7 +107,8 @@ function updateCategorization() {
   const { overview, categoryStats, sessions } = analyticsData;
 
   // Update stats
-  document.getElementById('catProcessed').textContent = overview.totalCategorizations + overview.totalErrors;
+  document.getElementById('catProcessed').textContent =
+    overview.totalCategorizations + overview.totalErrors;
   document.getElementById('catSuccess').textContent = overview.totalCategorizations;
   document.getElementById('catErrors').textContent = overview.totalErrors;
   document.getElementById('catSuccessRate').textContent = `${overview.overallSuccessRate}%`;
@@ -115,12 +116,16 @@ function updateCategorization() {
   // Update top categories
   const topCategoriesEl = document.getElementById('topCategories');
   if (categoryStats.topCategories.length > 0) {
-    topCategoriesEl.innerHTML = categoryStats.topCategories.map(cat => `
+    topCategoriesEl.innerHTML = categoryStats.topCategories
+      .map(
+        (cat) => `
             <div class="category-item">
                 <div class="category-name">${escapeHtml(cat.category)}</div>
                 <div class="category-count">Used ${cat.count} times</div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     topCategoriesEl.innerHTML = '<p class="empty-state">No category data available</p>';
   }
@@ -128,7 +133,11 @@ function updateCategorization() {
   // Update recent sessions
   const sessionsEl = document.getElementById('recentSessions');
   if (sessions.length > 0) {
-    sessionsEl.innerHTML = sessions.slice().reverse().map(session => `
+    sessionsEl.innerHTML = sessions
+      .slice()
+      .reverse()
+      .map(
+        (session) => `
             <div class="session-item">
                 <div class="session-title">${session.mode.charAt(0).toUpperCase() + session.mode.slice(1)} Categorization</div>
                 <div class="session-details">
@@ -142,7 +151,9 @@ function updateCategorization() {
                     <span>Duration: ${formatDuration(session.duration)}</span>
                 </div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     sessionsEl.innerHTML = '<p class="empty-state">No sessions recorded</p>';
   }
@@ -161,7 +172,8 @@ function updateApiStats() {
   const recent24h = apiStats.recentCalls.last24h;
   document.getElementById('apiRecent24hTotal').textContent = recent24h.total;
   document.getElementById('apiRecent24hSuccess').textContent = `${recent24h.successRate}%`;
-  document.getElementById('apiRecent24hTokens').textContent = recent24h.totalTokens.toLocaleString();
+  document.getElementById('apiRecent24hTokens').textContent =
+    recent24h.totalTokens.toLocaleString();
   document.getElementById('apiRecent24hAvgResponse').textContent = `${recent24h.avgResponseTime}ms`;
 
   // Update providers
@@ -169,7 +181,9 @@ function updateApiStats() {
   const providers = Object.entries(apiStats.byProvider);
 
   if (providers.length > 0) {
-    providersEl.innerHTML = providers.map(([provider, stats]) => `
+    providersEl.innerHTML = providers
+      .map(
+        ([provider, stats]) => `
             <div class="provider-item">
                 <div class="provider-name">${provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
                 <div class="provider-details">
@@ -179,7 +193,9 @@ function updateApiStats() {
                     Tokens: ${stats.totalTokens.toLocaleString()}
                 </div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     providersEl.innerHTML = '<p class="empty-state">No API usage data available</p>';
   }
@@ -193,12 +209,16 @@ function updatePerformance() {
   const operations = Object.entries(performance.avgProcessingTimes);
 
   if (operations.length > 0) {
-    processingTimesEl.innerHTML = operations.map(([operation, avgTime]) => `
+    processingTimesEl.innerHTML = operations
+      .map(
+        ([operation, avgTime]) => `
             <div class="processing-item">
                 <div class="processing-name">${formatOperationName(operation)}</div>
                 <div class="processing-time">Average: ${formatDuration(avgTime)}</div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     processingTimesEl.innerHTML = '<p class="empty-state">No processing time data available</p>';
   }
@@ -208,12 +228,16 @@ function updatePerformance() {
   const insights = generatePerformanceInsights();
 
   if (insights.length > 0) {
-    insightsEl.innerHTML = insights.map(insight => `
+    insightsEl.innerHTML = insights
+      .map(
+        (insight) => `
             <div class="insight-item ${insight.type}">
                 <div class="category-name">${insight.icon} ${insight.title}</div>
                 <div class="category-count">${insight.message}</div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     insightsEl.innerHTML = '<p class="empty-state">No performance insights available</p>';
   }
@@ -227,12 +251,16 @@ function updateConsolidation() {
   document.getElementById('consolFolders').textContent = consolidation.totalFoldersRemoved;
   document.getElementById('consolBookmarks').textContent = consolidation.totalBookmarksMoved;
   document.getElementById('consolSpaceSaved').textContent =
-        consolidation.totalFoldersRemoved > 0 ? 'Yes' : 'N/A';
+    consolidation.totalFoldersRemoved > 0 ? 'Yes' : 'N/A';
 
   // Update recent consolidations
   const recentEl = document.getElementById('recentConsolidations');
   if (consolidation.recent.length > 0) {
-    recentEl.innerHTML = consolidation.recent.slice().reverse().map(consol => `
+    recentEl.innerHTML = consolidation.recent
+      .slice()
+      .reverse()
+      .map(
+        (consol) => `
             <div class="consolidation-item">
                 <div class="consolidation-title">Consolidation</div>
                 <div class="consolidation-details">
@@ -244,7 +272,9 @@ function updateConsolidation() {
                     <span>${formatDate(consol.timestamp)}</span>
                 </div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     recentEl.innerHTML = '<p class="empty-state">No consolidation history available</p>';
   }
@@ -304,9 +334,10 @@ function generatePerformanceInsights() {
   }
 
   // API efficiency insight
-  const apiSuccessRate = overview.totalApiCalls > 0
-    ? Math.round((overview.successfulApiCalls / overview.totalApiCalls) * 100)
-    : 0;
+  const apiSuccessRate =
+    overview.totalApiCalls > 0
+      ? Math.round((overview.successfulApiCalls / overview.totalApiCalls) * 100)
+      : 0;
 
   if (apiSuccessRate >= 95) {
     insights.push({
@@ -394,7 +425,7 @@ function formatDate(timestamp) {
 function formatOperationName(operation) {
   return operation
     .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
+    .replace(/^./, (str) => str.toUpperCase())
     .trim();
 }
 
@@ -422,11 +453,12 @@ async function updateRateLimits() {
     const providersEl = document.getElementById('rateLimitProviders');
 
     if (providers.length > 0) {
-      providersEl.innerHTML = providers.map(([provider, data]) => {
-        const statusClass = data.status;
-        const statusIcon = getStatusIcon(data.status);
+      providersEl.innerHTML = providers
+        .map(([provider, data]) => {
+          const statusClass = data.status;
+          const statusIcon = getStatusIcon(data.status);
 
-        return `
+          return `
                     <div class="ratelimit-provider ${statusClass}">
                         <div class="provider-header">
                             <h3>${provider.charAt(0).toUpperCase() + provider.slice(1)}</h3>
@@ -456,7 +488,8 @@ async function updateRateLimits() {
                         </div>
                     </div>
                 `;
-      }).join('');
+        })
+        .join('');
 
       updateRpmChart(rateLimitDashboard);
       updateQueueDepth(rateLimitDashboard);
@@ -468,7 +501,6 @@ async function updateRateLimits() {
 
     const history = await performanceMonitor.getRateLimitHistory();
     updateRateLimitEvents(history);
-
   } catch (_error) {
     console.error('_error updating rate limits:', _error);
   }
@@ -503,8 +535,8 @@ function updateRpmChart(rateLimitDashboard) {
 }
 
 function drawRpmChart(ctx, canvas, allHistory) {
-  const width = canvas.width = canvas.offsetWidth;
-  const height = canvas.height = 300;
+  const width = (canvas.width = canvas.offsetWidth);
+  const height = (canvas.height = 300);
 
   ctx.clearRect(0, 0, width, height);
 
@@ -512,10 +544,10 @@ function drawRpmChart(ctx, canvas, allHistory) {
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  const maxDataPoints = Math.max(...allHistory.map(h => h.history.length));
+  const maxDataPoints = Math.max(...allHistory.map((h) => h.history.length));
   if (maxDataPoints === 0) return;
 
-  const maxRpm = Math.max(...allHistory.map(h => Math.max(...h.history.map(p => p.rpm))));
+  const maxRpm = Math.max(...allHistory.map((h) => Math.max(...h.history.map((p) => p.rpm))));
   const yScale = chartHeight / (maxRpm || 1);
   const xScale = chartWidth / (maxDataPoints - 1 || 1);
 
@@ -523,7 +555,7 @@ function drawRpmChart(ctx, canvas, allHistory) {
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 5]);
   for (let i = 0; i <= 5; i++) {
-    const y = padding + chartHeight - (i * chartHeight / 5);
+    const y = padding + chartHeight - (i * chartHeight) / 5;
     ctx.beginPath();
     ctx.moveTo(padding, y);
     ctx.lineTo(width - padding, y);
@@ -548,7 +580,7 @@ function drawRpmChart(ctx, canvas, allHistory) {
 
     history.forEach((point, i) => {
       const x = padding + i * xScale;
-      const y = padding + chartHeight - (point.rpm * yScale);
+      const y = padding + chartHeight - point.rpm * yScale;
 
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -562,7 +594,7 @@ function drawRpmChart(ctx, canvas, allHistory) {
     ctx.fillStyle = colors[idx % colors.length];
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(providerData.provider, padding + 10, padding + 15 + (idx * 15));
+    ctx.fillText(providerData.provider, padding + 10, padding + 15 + idx * 15);
   });
 
   ctx.fillStyle = '#333';
@@ -576,7 +608,9 @@ function updateQueueDepth(rateLimitDashboard) {
   const providers = Object.entries(rateLimitDashboard);
 
   if (providers.some(([_, data]) => data.queueDepth > 0)) {
-    container.innerHTML = providers.map(([provider, data]) => `
+    container.innerHTML = providers
+      .map(
+        ([provider, data]) => `
             <div class="queue-item">
                 <div class="queue-provider">${provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
                 <div class="queue-bar-container">
@@ -584,7 +618,9 @@ function updateQueueDepth(rateLimitDashboard) {
                 </div>
                 <div class="queue-count">${data.queueDepth} requests</div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     container.innerHTML = '<p class="empty-state">No queued requests</p>';
   }
@@ -603,9 +639,9 @@ function updateThrottledRejectedStats(rateLimitDashboard) {
   let lastHourThrottled = 0;
   let lastHourRejected = 0;
 
-  providers.forEach(provider => {
+  providers.forEach((provider) => {
     const recentAlerts = provider.recentAlerts || [];
-    recentAlerts.forEach(alert => {
+    recentAlerts.forEach((alert) => {
       if (alert.timestamp >= oneHourAgo) {
         if (alert.type === 'throttled') lastHourThrottled++;
         if (alert.type === 'rejected') lastHourRejected++;
@@ -621,7 +657,10 @@ function updateRateLimitEvents(history) {
   const eventsEl = document.getElementById('rateLimitEvents');
 
   if (history.length > 0) {
-    eventsEl.innerHTML = history.slice(0, 20).map(event => `
+    eventsEl.innerHTML = history
+      .slice(0, 20)
+      .map(
+        (event) => `
             <div class="ratelimit-event ${event.type}">
                 <div class="event-icon">${event.type === 'throttled' ? '⏳' : '🚫'}</div>
                 <div class="event-details">
@@ -630,7 +669,9 @@ function updateRateLimitEvents(history) {
                     <div class="event-time">${formatDate(event.timestamp)}</div>
                 </div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     eventsEl.innerHTML = '<p class="empty-state">No rate limit events recorded</p>';
   }
@@ -642,7 +683,7 @@ function updateRateLimitAlerts(rateLimitDashboard) {
 
   Object.entries(rateLimitDashboard).forEach(([provider, data]) => {
     if (data.recentAlerts && data.recentAlerts.length > 0) {
-      data.recentAlerts.forEach(alert => {
+      data.recentAlerts.forEach((alert) => {
         allAlerts.push({ ...alert, provider });
       });
     }
@@ -651,7 +692,10 @@ function updateRateLimitAlerts(rateLimitDashboard) {
   allAlerts.sort((a, b) => b.timestamp - a.timestamp);
 
   if (allAlerts.length > 0) {
-    alertsEl.innerHTML = allAlerts.slice(0, 10).map(alert => `
+    alertsEl.innerHTML = allAlerts
+      .slice(0, 10)
+      .map(
+        (alert) => `
             <div class="alert-item warning">
                 <div class="alert-icon">⚠️</div>
                 <div class="alert-content">
@@ -662,7 +706,9 @@ function updateRateLimitAlerts(rateLimitDashboard) {
                     <div class="alert-time">${formatDate(alert.timestamp)}</div>
                 </div>
             </div>
-        `).join('');
+        `
+      )
+      .join('');
   } else {
     alertsEl.innerHTML = '<p class="empty-state">No alerts</p>';
   }

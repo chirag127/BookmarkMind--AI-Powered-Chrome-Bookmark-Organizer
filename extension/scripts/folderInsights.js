@@ -63,7 +63,7 @@ class FolderInsights {
     };
 
     const totalScore = Object.keys(scores).reduce((sum, key) => {
-      return sum + (scores[key] * weights[key]);
+      return sum + scores[key] * weights[key];
     }, 0);
 
     return {
@@ -89,7 +89,10 @@ class FolderInsights {
       }
     }
 
-    if (folderStats.directBookmarkCount < this.IDEAL_BOOKMARKS_MIN && folderStats.subfolderCount > 0) {
+    if (
+      folderStats.directBookmarkCount < this.IDEAL_BOOKMARKS_MIN &&
+      folderStats.subfolderCount > 0
+    ) {
       suggestions.push({
         type: 'consolidate',
         priority: 'medium',
@@ -189,7 +192,7 @@ class FolderInsights {
    */
   async removeFavoriteFolder(folderId) {
     const favorites = await this.getFavoriteFolders();
-    const filtered = favorites.filter(id => id !== folderId);
+    const filtered = favorites.filter((id) => id !== folderId);
     await chrome.storage.local.set({ favoriteFolders: filtered });
   }
 
@@ -316,7 +319,7 @@ class FolderInsights {
       return Math.max(50, (count / this.IDEAL_BOOKMARKS_MIN) * 100);
     } else {
       const excess = count - this.IDEAL_BOOKMARKS_MAX;
-      return Math.max(30, 100 - (excess * 2));
+      return Math.max(30, 100 - excess * 2);
     }
   }
 
@@ -330,7 +333,7 @@ class FolderInsights {
       return 100;
     } else {
       const excess = depth - this.MAX_DEPTH;
-      return Math.max(20, 100 - (excess * 20));
+      return Math.max(20, 100 - excess * 20);
     }
   }
 
@@ -350,9 +353,10 @@ class FolderInsights {
       score -= 20;
     }
 
-    const ratio = folderStats.subfolderCount > 0
-      ? folderStats.directBookmarkCount / folderStats.subfolderCount
-      : folderStats.directBookmarkCount;
+    const ratio =
+      folderStats.subfolderCount > 0
+        ? folderStats.directBookmarkCount / folderStats.subfolderCount
+        : folderStats.directBookmarkCount;
 
     if (ratio >= 2 && ratio <= 10) {
       score += 15;
@@ -425,7 +429,7 @@ class FolderInsights {
         description: `This folder has ${folderStats.directBookmarkCount} bookmarks. Consider splitting into ${groups.length} groups.`,
         action: 'split',
         folderId: folderStats.id,
-        suggestedGroups: groups.map(g => ({
+        suggestedGroups: groups.map((g) => ({
           name: g.name,
           count: g.bookmarks.length
         }))
@@ -456,7 +460,7 @@ class FolderInsights {
       groups.get(category).bookmarks.push(bookmark);
     }
 
-    return Array.from(groups.values()).filter(g => g.bookmarks.length >= 3);
+    return Array.from(groups.values()).filter((g) => g.bookmarks.length >= 3);
   }
 
   /**
@@ -479,16 +483,24 @@ class FolderInsights {
     const text = `${title} ${url}`.toLowerCase();
 
     const categories = {
-      'Development': ['github', 'stackoverflow', 'code', 'dev', 'programming', 'api', 'documentation'],
-      'Social': ['facebook', 'twitter', 'linkedin', 'instagram', 'reddit', 'social'],
-      'Shopping': ['amazon', 'ebay', 'shop', 'store', 'buy', 'cart'],
-      'News': ['news', 'article', 'blog', 'medium', 'press'],
-      'Entertainment': ['youtube', 'netflix', 'video', 'music', 'game', 'stream'],
-      'Productivity': ['notion', 'trello', 'asana', 'docs', 'sheet', 'calendar']
+      Development: [
+        'github',
+        'stackoverflow',
+        'code',
+        'dev',
+        'programming',
+        'api',
+        'documentation'
+      ],
+      Social: ['facebook', 'twitter', 'linkedin', 'instagram', 'reddit', 'social'],
+      Shopping: ['amazon', 'ebay', 'shop', 'store', 'buy', 'cart'],
+      News: ['news', 'article', 'blog', 'medium', 'press'],
+      Entertainment: ['youtube', 'netflix', 'video', 'music', 'game', 'stream'],
+      Productivity: ['notion', 'trello', 'asana', 'docs', 'sheet', 'calendar']
     };
 
     for (const [category, keywords] of Object.entries(categories)) {
-      if (keywords.some(keyword => text.includes(keyword))) {
+      if (keywords.some((keyword) => text.includes(keyword))) {
         return category;
       }
     }
@@ -516,7 +528,7 @@ class FolderInsights {
    */
   _findNeedsAttention(comparisons) {
     return comparisons
-      .filter(f => f.health.totalScore < this.MIN_HEALTH_SCORE)
+      .filter((f) => f.health.totalScore < this.MIN_HEALTH_SCORE)
       .sort((a, b) => a.health.totalScore - b.health.totalScore);
   }
 

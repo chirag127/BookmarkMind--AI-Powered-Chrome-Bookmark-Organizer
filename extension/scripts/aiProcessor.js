@@ -83,9 +83,9 @@ class RequestQueue {
     this.metrics.requestsPerMinute.set('overall', overallCount);
 
     for (const provider of ['gemini', 'cerebras', 'groq']) {
-      const providerCount = Array.from(
-        this.requestHistory.entries()
-      ).filter(([ts, p]) => ts >= oneMinuteAgo && p === provider).length;
+      const providerCount = Array.from(this.requestHistory.entries()).filter(
+        ([ts, p]) => ts >= oneMinuteAgo && p === provider
+      ).length;
       this.metrics.requestsPerMinute.set(provider, providerCount);
     }
   }
@@ -100,9 +100,7 @@ class RequestQueue {
       this.metrics.throttledRequests++;
       const providerMetrics = this.metrics.providerMetrics.get(provider);
       providerMetrics.throttled++;
-      throw new Error(
-        `Queue full for provider ${provider} (max: ${limits.maxQueueSize})`
-      );
+      throw new Error(`Queue full for provider ${provider} (max: ${limits.maxQueueSize})`);
     }
 
     const queueItem = {
@@ -155,19 +153,13 @@ class RequestQueue {
 
         const waitTime = item.startedAt - item.enqueuedAt;
         this.metrics.averageWaitTime =
-                    (this.metrics.averageWaitTime *
-                        (this.metrics.totalRequests - 1) +
-                        waitTime) /
-                    this.metrics.totalRequests;
+          (this.metrics.averageWaitTime * (this.metrics.totalRequests - 1) + waitTime) /
+          this.metrics.totalRequests;
 
         this._executeRequest(item);
       } else {
         const delay = this._calculateThrottleDelay(provider, limits);
-        console.log(
-          `⏳ Rate limit reached for ${provider}, waiting ${Math.round(
-            delay
-          )}ms...`
-        );
+        console.log(`⏳ Rate limit reached for ${provider}, waiting ${Math.round(delay)}ms...`);
         await this._delay(delay);
       }
     }
@@ -212,9 +204,7 @@ class RequestQueue {
 
     try {
       console.log(
-        `🚀 Executing ${item.provider} request (${
-          item.priorityName
-        }, attempt ${item.retries + 1}/${
+        `🚀 Executing ${item.provider} request (${item.priorityName}, attempt ${item.retries + 1}/${
           this.retryConfig.maxRetries + 1
         })`
       );
@@ -224,10 +214,8 @@ class RequestQueue {
       const latency = Date.now() - startTime;
       providerMetrics.successful++;
       providerMetrics.averageLatency =
-                (providerMetrics.averageLatency *
-                    (providerMetrics.successful - 1) +
-                    latency) /
-                providerMetrics.successful;
+        (providerMetrics.averageLatency * (providerMetrics.successful - 1) + latency) /
+        providerMetrics.successful;
       providerMetrics.lastRequestTime = Date.now();
 
       this.requestHistory.set(Date.now(), item.provider);
@@ -240,9 +228,7 @@ class RequestQueue {
       item.resolve(result);
     } catch (_error) {
       console.error(
-        `❌ ${item.provider} request failed (attempt ${
-          item.retries + 1
-        }):`,
+        `❌ ${item.provider} request failed (attempt ${item.retries + 1}):`,
         _error.message
       );
 
@@ -254,9 +240,7 @@ class RequestQueue {
         console.log(
           `🔄 Retrying ${item.provider} request in ${Math.round(
             delay
-          )}ms (attempt ${item.retries + 1}/${
-            this.retryConfig.maxRetries + 1
-          })`
+          )}ms (attempt ${item.retries + 1}/${this.retryConfig.maxRetries + 1})`
         );
 
         await this._delay(delay);
@@ -292,9 +276,7 @@ class RequestQueue {
     ];
 
     const errorMessage = _error.message?.toLowerCase() || '';
-    return retryableErrors.some((pattern) =>
-      errorMessage.includes(pattern)
-    );
+    return retryableErrors.some((pattern) => errorMessage.includes(pattern));
   }
 
   _calculateRetryDelay(retryCount) {
@@ -303,10 +285,7 @@ class RequestQueue {
       this.retryConfig.maxDelay
     );
 
-    const jitter =
-            exponentialDelay *
-            this.retryConfig.jitterFactor *
-            (Math.random() * 2 - 1);
+    const jitter = exponentialDelay * this.retryConfig.jitterFactor * (Math.random() * 2 - 1);
 
     return Math.max(0, exponentialDelay + jitter);
   }
@@ -326,24 +305,18 @@ class RequestQueue {
       retriedRequests: this.metrics.retriedRequests,
       throttledRequests: this.metrics.throttledRequests,
       averageWaitTime: Math.round(this.metrics.averageWaitTime),
-      requestsPerMinute: Object.fromEntries(
-        this.metrics.requestsPerMinute
-      ),
+      requestsPerMinute: Object.fromEntries(this.metrics.requestsPerMinute),
       providers: Object.fromEntries(
-        Array.from(this.metrics.providerMetrics.entries()).map(
-          ([provider, metrics]) => [
-            provider,
-            {
-              ...metrics,
-              averageLatency: Math.round(metrics.averageLatency),
-              rpm:
-                                this.metrics.requestsPerMinute.get(provider) ||
-                                0,
-              rpmLimit: this.rateLimits[provider].rpm,
-              queueLimit: this.rateLimits[provider].maxQueueSize
-            }
-          ]
-        )
+        Array.from(this.metrics.providerMetrics.entries()).map(([provider, metrics]) => [
+          provider,
+          {
+            ...metrics,
+            averageLatency: Math.round(metrics.averageLatency),
+            rpm: this.metrics.requestsPerMinute.get(provider) || 0,
+            rpmLimit: this.rateLimits[provider].rpm,
+            queueLimit: this.rateLimits[provider].maxQueueSize
+          }
+        ])
       )
     };
   }
@@ -351,13 +324,9 @@ class RequestQueue {
   getDetailedMetrics() {
     const metrics = this.getMetrics();
 
-    console.log(
-      '\n📊 ═══════════════════════════════════════════════════════'
-    );
+    console.log('\n📊 ═══════════════════════════════════════════════════════');
     console.log('📊 REQUEST QUEUE METRICS');
-    console.log(
-      '📊 ═══════════════════════════════════════════════════════'
-    );
+    console.log('📊 ═══════════════════════════════════════════════════════');
     console.log(`📦 Queue Depth: ${metrics.queueDepth}`);
     console.log(`📈 Total Requests: ${metrics.totalRequests}`);
     console.log(`✅ Successful: ${metrics.successfulRequests}`);
@@ -365,9 +334,7 @@ class RequestQueue {
     console.log(`🔄 Retried: ${metrics.retriedRequests}`);
     console.log(`⏸️  Throttled: ${metrics.throttledRequests}`);
     console.log(`⏱️  Average Wait: ${metrics.averageWaitTime}ms`);
-    console.log(
-      `🕐 Overall RPM: ${metrics.requestsPerMinute.overall || 0}`
-    );
+    console.log(`🕐 Overall RPM: ${metrics.requestsPerMinute.overall || 0}`);
     console.log('');
     console.log('📊 PROVIDER METRICS:');
 
@@ -382,9 +349,7 @@ class RequestQueue {
       console.log(`     Queue Limit: ${stats.queueLimit}`);
     }
 
-    console.log(
-      '📊 ═══════════════════════════════════════════════════════\n'
-    );
+    console.log('📊 ═══════════════════════════════════════════════════════\n');
 
     return metrics;
   }
@@ -408,18 +373,11 @@ class AIProcessor {
     this.cerebrasApiKey = null;
     this.groqApiKey = null;
     this.bookmarkService = null;
-    this.analyticsService =
-            typeof AnalyticsService !== 'undefined'
-              ? new AnalyticsService()
-              : null;
+    this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
     this.modelComparisonService =
-            typeof ModelComparisonService !== 'undefined'
-              ? new ModelComparisonService()
-              : null;
+      typeof ModelComparisonService !== 'undefined' ? new ModelComparisonService() : null;
     this.performanceMonitor =
-            typeof PerformanceMonitor !== 'undefined'
-              ? new PerformanceMonitor()
-              : null;
+      typeof PerformanceMonitor !== 'undefined' ? new PerformanceMonitor() : null;
 
     this.requestQueue = new RequestQueue();
 
@@ -477,7 +435,7 @@ class AIProcessor {
     ];
     this.currentModelIndex = 0;
     this.baseUrlTemplate =
-            'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
 
     // Cerebras model fallback sequence - OpenAI-compatible API
     this.cerebrasModels = [
@@ -562,28 +520,28 @@ class AIProcessor {
   }
 
   /**
-     * Get the current Gemini model URL
-     * @returns {string} Current model URL
-     */
+   * Get the current Gemini model URL
+   * @returns {string} Current model URL
+   */
   getCurrentModelUrl() {
     const currentModel = this.geminiModels[this.currentModelIndex].name;
     return this.baseUrlTemplate.replace('{model}', currentModel);
   }
 
   /**
-     * Get the current Gemini model name
-     * @returns {string} Current model name
-     */
+   * Get the current Gemini model name
+   * @returns {string} Current model name
+   */
   getCurrentModelName() {
     return this.geminiModels[this.currentModelIndex].name;
   }
 
   /**
-     * Normalize folder name with proper capitalization and formatting
-     * Only changes folders that clearly need improvement
-     * @param {string} folderName - Original folder name
-     * @returns {string} Normalized folder name
-     */
+   * Normalize folder name with proper capitalization and formatting
+   * Only changes folders that clearly need improvement
+   * @param {string} folderName - Original folder name
+   * @returns {string} Normalized folder name
+   */
   normalizeFolderName(folderName) {
     if (!folderName || typeof folderName !== 'string') {
       return folderName;
@@ -610,9 +568,7 @@ class AIProcessor {
 
     // Only return the normalized version if it's significantly better
     if (this._isSignificantImprovement(original, normalized)) {
-      console.log(
-        `📁 Normalized folder: "${original}" → "${normalized}"`
-      );
+      console.log(`📁 Normalized folder: "${original}" → "${normalized}"`);
       return normalized;
     }
 
@@ -620,10 +576,10 @@ class AIProcessor {
   }
 
   /**
-     * Check if a folder name is already well-formatted
-     * @param {string} name - Folder name to check
-     * @returns {boolean} True if well-formatted
-     */
+   * Check if a folder name is already well-formatted
+   * @param {string} name - Folder name to check
+   * @returns {boolean} True if well-formatted
+   */
   _isWellFormatted(name) {
     // Skip very short names
     if (name.length <= 2) return true;
@@ -662,10 +618,10 @@ class AIProcessor {
   }
 
   /**
-     * Fix capitalization issues
-     * @param {string} name - Folder name
-     * @returns {string} Fixed name
-     */
+   * Fix capitalization issues
+   * @param {string} name - Folder name
+   * @returns {string} Fixed name
+   */
   _fixCapitalization(name) {
     // Handle all lowercase
     if (name === name.toLowerCase() && name.length > 2) {
@@ -686,10 +642,10 @@ class AIProcessor {
   }
 
   /**
-     * Clean up spacing and punctuation
-     * @param {string} name - Folder name
-     * @returns {string} Cleaned name
-     */
+   * Clean up spacing and punctuation
+   * @param {string} name - Folder name
+   * @returns {string} Cleaned name
+   */
   _cleanupSpacing(name) {
     return name
       .replace(/\s+/g, ' ') // Multiple spaces to single space
@@ -702,10 +658,10 @@ class AIProcessor {
   }
 
   /**
-     * Fix common technical terms and abbreviations
-     * @param {string} name - Folder name
-     * @returns {string} Fixed name
-     */
+   * Fix common technical terms and abbreviations
+   * @param {string} name - Folder name
+   * @returns {string} Fixed name
+   */
   _fixCommonTerms(name) {
     const fixes = {
       // Technical terms
@@ -782,10 +738,10 @@ class AIProcessor {
   }
 
   /**
-     * Convert to title case
-     * @param {string} str - String to convert
-     * @returns {string} Title case string
-     */
+   * Convert to title case
+   * @param {string} str - String to convert
+   * @returns {string} Title case string
+   */
   _toTitleCase(str) {
     const smallWords = [
       'a',
@@ -829,10 +785,10 @@ class AIProcessor {
   }
 
   /**
-     * Check if string has intentional mixed case
-     * @param {string} str - String to check
-     * @returns {boolean} True if has intentional mixed case
-     */
+   * Check if string has intentional mixed case
+   * @param {string} str - String to check
+   * @returns {boolean} True if has intentional mixed case
+   */
   _hasIntentionalMixedCase(str) {
     const intentionalPatterns = [
       /^[A-Z][a-z]+[A-Z]/, // PascalCase like "JavaScript"
@@ -845,19 +801,19 @@ class AIProcessor {
   }
 
   /**
-     * Check if string is camelCase
-     * @param {string} str - String to check
-     * @returns {boolean} True if camelCase
-     */
+   * Check if string is camelCase
+   * @param {string} str - String to check
+   * @returns {boolean} True if camelCase
+   */
   _isCamelCase(str) {
     return /^[a-z]+[A-Z]/.test(str) && !str.includes(' ');
   }
 
   /**
-     * Convert camelCase to Title Case
-     * @param {string} str - camelCase string
-     * @returns {string} Title Case string
-     */
+   * Convert camelCase to Title Case
+   * @param {string} str - camelCase string
+   * @returns {string} Title Case string
+   */
   _camelToTitleCase(str) {
     return str
       .replace(/([A-Z])/g, ' $1')
@@ -866,10 +822,10 @@ class AIProcessor {
   }
 
   /**
-     * Check if string is a proper noun that shouldn't be changed
-     * @param {string} str - String to check
-     * @returns {boolean} True if proper noun
-     */
+   * Check if string is a proper noun that shouldn't be changed
+   * @param {string} str - String to check
+   * @returns {boolean} True if proper noun
+   */
   _isProperNoun(str) {
     const properNouns = [
       'Google',
@@ -908,11 +864,11 @@ class AIProcessor {
   }
 
   /**
-     * Check if normalized version is a significant improvement
-     * @param {string} original - Original name
-     * @param {string} normalized - Normalized name
-     * @returns {boolean} True if significant improvement
-     */
+   * Check if normalized version is a significant improvement
+   * @param {string} original - Original name
+   * @param {string} normalized - Normalized name
+   * @returns {boolean} True if significant improvement
+   */
   _isSignificantImprovement(original, normalized) {
     // Don't change if they're the same
     if (original === normalized) return false;
@@ -920,7 +876,7 @@ class AIProcessor {
     // Don't change if only minor differences
     if (
       original.toLowerCase() === normalized.toLowerCase() &&
-            Math.abs(original.length - normalized.length) <= 2
+      Math.abs(original.length - normalized.length) <= 2
     ) {
       return false;
     }
@@ -938,48 +894,40 @@ class AIProcessor {
       // Fixed spacing issues
       /\s{2,}/.test(original) || /^\s|\s$/.test(original),
       // Fixed common terms
-      /\bjavascript\b/i.test(original) ||
-                /\bgithub\b/i.test(original) ||
-                /\bapi\b/i.test(original)
+      /\bjavascript\b/i.test(original) || /\bgithub\b/i.test(original) || /\bapi\b/i.test(original)
     ];
 
     return improvements.some(Boolean);
   }
 
   /**
-     * Try next Gemini model in the fallback sequence
-     * @returns {boolean} True if there's a next model, false if exhausted
-     */
+   * Try next Gemini model in the fallback sequence
+   * @returns {boolean} True if there's a next model, false if exhausted
+   */
   tryNextGeminiModel() {
     if (this.currentModelIndex < this.geminiModels.length - 1) {
       this.currentModelIndex++;
-      console.log(
-        `🔄 Switching to next Gemini model: ${this.getCurrentModelName()}`
-      );
+      console.log(`🔄 Switching to next Gemini model: ${this.getCurrentModelName()}`);
       return true;
     }
-    console.log(
-      '⚠️ All Gemini models exhausted, no more fallbacks available'
-    );
+    console.log('⚠️ All Gemini models exhausted, no more fallbacks available');
     return false;
   }
 
   /**
-     * Reset to first Gemini model (for new categorization sessions)
-     */
+   * Reset to first Gemini model (for new categorization sessions)
+   */
   resetToFirstModel() {
     this.currentModelIndex = 0;
-    console.log(
-      `🔄 Reset to first Gemini model: ${this.getCurrentModelName()}`
-    );
+    console.log(`🔄 Reset to first Gemini model: ${this.getCurrentModelName()}`);
   }
 
   /**
-     * Initialize with API key
-     * @param {string} apiKey - Gemini API key
-     * @param {string} cerebrasKey - Cerebras API key (optional)
-     * @param {string} groqKey - Groq API key (optional)
-     */
+   * Initialize with API key
+   * @param {string} apiKey - Gemini API key
+   * @param {string} cerebrasKey - Cerebras API key (optional)
+   * @param {string} groqKey - Groq API key (optional)
+   */
   setApiKey(apiKey, cerebrasKey = null, groqKey = null) {
     this.apiKey = apiKey;
     this.cerebrasApiKey = cerebrasKey;
@@ -994,42 +942,42 @@ class AIProcessor {
   }
 
   /**
-     * Set custom model configuration
-     * @param {Object} config - Custom model configuration {temperature, top_p, max_tokens}
-     */
+   * Set custom model configuration
+   * @param {Object} config - Custom model configuration {temperature, top_p, max_tokens}
+   */
   setCustomModelConfig(config) {
     this.customModelConfig = config;
     console.log('🔧 Custom model configuration set:', config);
   }
 
   /**
-     * Get request queue metrics
-     * @returns {Object} Queue metrics
-     */
+   * Get request queue metrics
+   * @returns {Object} Queue metrics
+   */
   getQueueMetrics() {
     return this.requestQueue.getMetrics();
   }
 
   /**
-     * Display detailed queue metrics
-     */
+   * Display detailed queue metrics
+   */
   displayQueueMetrics() {
     return this.requestQueue.getDetailedMetrics();
   }
 
   /**
-     * Clear request queue metrics
-     */
+   * Clear request queue metrics
+   */
   clearQueueMetrics() {
     this.requestQueue.clearMetrics();
   }
 
   /**
-     * Get optimal batch size based on bookmark count and rate limits
-     * @param {number} bookmarkCount - Number of bookmarks to process
-     * @param {string} provider - AI provider ('gemini', 'cerebras', 'groq')
-     * @returns {number} Optimal batch size
-     */
+   * Get optimal batch size based on bookmark count and rate limits
+   * @param {number} bookmarkCount - Number of bookmarks to process
+   * @param {string} provider - AI provider ('gemini', 'cerebras', 'groq')
+   * @returns {number} Optimal batch size
+   */
   getOptimalBatchSize(bookmarkCount, provider = 'gemini') {
     const rateLimits = {
       gemini: { maxBatchSize: 100, rpmLimit: 15 },
@@ -1046,22 +994,19 @@ class AIProcessor {
     if (bookmarkCount <= 100) return limits.maxBatchSize;
 
     // For large sets, balance between throughput and rate limits
-    const optimalSize = Math.min(
-      limits.maxBatchSize,
-      Math.ceil(bookmarkCount / limits.rpmLimit)
-    );
+    const optimalSize = Math.min(limits.maxBatchSize, Math.ceil(bookmarkCount / limits.rpmLimit));
 
     return Math.max(25, optimalSize);
   }
 
   /**
-     * Categorize bookmarks using Gemini API with dynamic category generation
-     * @param {Array} bookmarks - Array of bookmark objects
-     * @param {Array} suggestedCategories - Suggested categories (optional)
-     * @param {Object} learningData - Previous user corrections
-     * @param {Function} progressCallback - Optional callback for batch progress (batchNum, totalBatches) => void
-     * @returns {Promise<Object>} Object with categories and categorization results
-     */
+   * Categorize bookmarks using Gemini API with dynamic category generation
+   * @param {Array} bookmarks - Array of bookmark objects
+   * @param {Array} suggestedCategories - Suggested categories (optional)
+   * @param {Object} learningData - Previous user corrections
+   * @param {Function} progressCallback - Optional callback for batch progress (batchNum, totalBatches) => void
+   * @returns {Promise<Object>} Object with categories and categorization results
+   */
   async categorizeBookmarks(
     bookmarks,
     suggestedCategories = [],
@@ -1086,10 +1031,7 @@ class AIProcessor {
       });
       console.log('🤖 Notified background: AI categorization started');
     } catch (_error) {
-      console.warn(
-        'Failed to notify background of AI categorization start:',
-        error
-      );
+      console.warn('Failed to notify background of AI categorization start:', error);
     }
 
     try {
@@ -1106,16 +1048,12 @@ class AIProcessor {
       console.log('Generated categories:', dynamicCategories);
 
       // Don't create folder structure upfront - create folders only when bookmarks are actually moved to them
-      console.log(
-        '🏗️  Folder structure will be created on-demand as bookmarks are categorized...'
-      );
+      console.log('🏗️  Folder structure will be created on-demand as bookmarks are categorized...');
 
       // Get batch size from user settings first
       const settings = await this._getSettings();
       const batchSize = settings.batchSize || 50; // Default to 50 if not set
-      console.log(
-        `📦 Using batch size: ${batchSize} bookmarks per API call`
-      );
+      console.log(`📦 Using batch size: ${batchSize} bookmarks per API call`);
 
       const results = [];
 
@@ -1135,10 +1073,7 @@ class AIProcessor {
       );
 
       // Initialize BookmarkService if not already done
-      if (
-        !this.bookmarkService &&
-                typeof BookmarkService !== 'undefined'
-      ) {
+      if (!this.bookmarkService && typeof BookmarkService !== 'undefined') {
         this.bookmarkService = new BookmarkService();
       }
 
@@ -1157,9 +1092,7 @@ class AIProcessor {
         console.log('📋 Batch bookmarks:');
         batch.forEach((bookmark, idx) => {
           console.log(
-            `   ${i + idx + 1}. "${
-              bookmark.title
-            }" - ${bookmark.url?.substring(0, 50)}...`
+            `   ${i + idx + 1}. "${bookmark.title}" - ${bookmark.url?.substring(0, 50)}...`
           );
         });
 
@@ -1174,41 +1107,24 @@ class AIProcessor {
 
         try {
           // Process entire batch with AI (50 bookmarks at once)
-          console.log(
-            `🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`
-          );
+          console.log(`🤖 Sending batch of ${batch.length} bookmarks to Gemini AI...`);
 
           // Enrich batch with live titles from URLs
-          console.log(
-            `🌐 Fetching live titles for batch ${batchNumber}...`
-          );
+          console.log(`🌐 Fetching live titles for batch ${batchNumber}...`);
           await this._enrichBatchWithTitles(batch);
 
-          const batchPromise = this.processBatch(
-            batch,
-            dynamicCategories,
-            learningData
-          );
+          const batchPromise = this.processBatch(batch, dynamicCategories, learningData);
           // Dynamic timeout based on batch size (6 seconds per bookmark, minimum 2 minutes)
           const timeoutMs = Math.max(120000, batch.length * 6000);
           const timeoutPromise = new Promise((_, reject) => {
             setTimeout(
               () =>
-                reject(
-                  new Error(
-                    `Batch timeout after ${Math.round(
-                      timeoutMs / 1000
-                    )} seconds`
-                  )
-                ),
+                reject(new Error(`Batch timeout after ${Math.round(timeoutMs / 1000)} seconds`)),
               timeoutMs
             );
           });
 
-          const batchResults = await Promise.race([
-            batchPromise,
-            timeoutPromise
-          ]);
+          const batchResults = await Promise.race([batchPromise, timeoutPromise]);
 
           if (batchResults && batchResults.length > 0) {
             console.log(
@@ -1226,9 +1142,7 @@ class AIProcessor {
             });
 
             // IMMEDIATELY MOVE each bookmark in the batch after categorization
-            console.log(
-              `🚚 IMMEDIATE BATCH MOVEMENT: Moving ${batchResults.length} bookmarks...`
-            );
+            console.log(`🚚 IMMEDIATE BATCH MOVEMENT: Moving ${batchResults.length} bookmarks...`);
 
             for (let j = 0; j < batchResults.length; j++) {
               const result = batchResults[j];
@@ -1236,10 +1150,7 @@ class AIProcessor {
               const globalBookmarkNumber = i + j + 1;
 
               try {
-                if (
-                  typeof this._moveBookmarkImmediately ===
-                                    'function'
-                ) {
+                if (typeof this._moveBookmarkImmediately === 'function') {
                   await this._moveBookmarkImmediately(
                     bookmark,
                     result.category,
@@ -1252,11 +1163,7 @@ class AIProcessor {
                   console.log(
                     `🚚 INLINE MOVEMENT: Moving bookmark ${globalBookmarkNumber}/${bookmarks.length}...`
                   );
-                  const folderId =
-                                        await this._createFolderDirect(
-                                          result.category,
-                                          '1'
-                                        );
+                  const folderId = await this._createFolderDirect(result.category, '1');
 
                   // Mark this bookmark as moved by AI BEFORE moving it to prevent learning
                   try {
@@ -1277,16 +1184,11 @@ class AIProcessor {
                       `🤖 Stored AI metadata in Chrome storage for bookmark ${bookmark.id}`
                     );
                   } catch (_error) {
-                    console.warn(
-                      'Failed to mark bookmark as AI-moved:',
-                      error
-                    );
+                    console.warn('Failed to mark bookmark as AI-moved:', error);
                   }
 
                   // Small delay to ensure the message is processed
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, 100)
-                  );
+                  await new Promise((resolve) => setTimeout(resolve, 100));
 
                   await chrome.bookmarks.update(bookmark.id, {
                     title: result.title,
@@ -1312,9 +1214,7 @@ class AIProcessor {
               }
             }
           } else {
-            throw new Error(
-              'No results returned from AI batch processing'
-            );
+            throw new Error('No results returned from AI batch processing');
           }
         } catch (_error) {
           console.error(
@@ -1334,16 +1234,11 @@ class AIProcessor {
               totalBatches: totalBatches
             });
           } catch (notificationError) {
-            console.error(
-              'Failed to send error notification:',
-              notificationError
-            );
+            console.error('Failed to send error notification:', notificationError);
           }
 
           // Stop processing and throw error instead of continuing with fallback
-          throw new Error(
-            `Categorization failed for batch ${batchNumber}: ${_error.message}`
-          );
+          throw new Error(`Categorization failed for batch ${batchNumber}: ${_error.message}`);
         }
 
         // Delay between batches to avoid rate limiting
@@ -1355,9 +1250,7 @@ class AIProcessor {
 
       console.log('\n🎯 === BATCH PROCESSING COMPLETE ===');
       console.log(`📊 Total bookmarks processed: ${results.length}`);
-      console.log(
-        `✅ Successfully moved (AI): ${successfulMoves} bookmarks`
-      );
+      console.log(`✅ Successfully moved (AI): ${successfulMoves} bookmarks`);
       console.log(`⚠️ Fallback moved: ${failedMoves} bookmarks`);
       console.log(`📁 Categories available: ${dynamicCategories.length}`);
       console.log(`📋 Categories: ${dynamicCategories.join(', ')}`);
@@ -1368,8 +1261,7 @@ class AIProcessor {
       // Show category distribution
       const categoryCount = {};
       results.forEach((result) => {
-        categoryCount[result.category] =
-                    (categoryCount[result.category] || 0) + 1;
+        categoryCount[result.category] = (categoryCount[result.category] || 0) + 1;
       });
 
       console.log('📈 Category distribution:');
@@ -1384,10 +1276,7 @@ class AIProcessor {
         });
         console.log('🤖 Notified background: AI categorization ended');
       } catch (_error) {
-        console.warn(
-          'Failed to notify background of AI categorization end:',
-          error
-        );
+        console.warn('Failed to notify background of AI categorization end:', error);
       }
 
       return {
@@ -1400,9 +1289,7 @@ class AIProcessor {
         await chrome.runtime.sendMessage({
           action: 'endAICategorization'
         });
-        console.log(
-          '🤖 Notified background: AI categorization ended (due to error)'
-        );
+        console.log('🤖 Notified background: AI categorization ended (due to error)');
       } catch (notifyError) {
         console.warn(
           'Failed to notify background of AI categorization end after error:',
@@ -1416,14 +1303,14 @@ class AIProcessor {
   }
 
   /**
-     * Move bookmark immediately after categorization and update title
-     * @param {Object} bookmark - Bookmark object
-     * @param {string} category - Category to move to
-     * @param {string} newTitle - New AI-generated title
-     * @param {number} bookmarkNumber - Current bookmark number
-     * @param {number} totalBookmarks - Total bookmarks being processed
-     * @param {Function} onMarkAsAIMoved - Optional callback
-     */
+   * Move bookmark immediately after categorization and update title
+   * @param {Object} bookmark - Bookmark object
+   * @param {string} category - Category to move to
+   * @param {string} newTitle - New AI-generated title
+   * @param {number} bookmarkNumber - Current bookmark number
+   * @param {number} totalBookmarks - Total bookmarks being processed
+   * @param {Function} onMarkAsAIMoved - Optional callback
+   */
   async _moveBookmarkImmediately(
     bookmark,
     category,
@@ -1432,17 +1319,13 @@ class AIProcessor {
     totalBookmarks,
     onMarkAsAIMoved = null
   ) {
-    console.log(
-      `🚚 IMMEDIATE MOVEMENT: Moving bookmark ${bookmarkNumber}/${totalBookmarks}...`
-    );
+    console.log(`🚚 IMMEDIATE MOVEMENT: Moving bookmark ${bookmarkNumber}/${totalBookmarks}...`);
 
     // Get current folder name before moving
     let currentFolderName = 'Unknown';
     try {
       if (bookmark.parentId) {
-        const currentParent = await chrome.bookmarks.get(
-          bookmark.parentId
-        );
+        const currentParent = await chrome.bookmarks.get(bookmark.parentId);
         currentFolderName = currentParent[0].title;
       }
     } catch (_error) {
@@ -1465,9 +1348,7 @@ class AIProcessor {
     console.log('📋 MOVING & UPDATING BOOKMARK:');
     console.log(`   📖 Original Title: "${bookmark.title}"`);
     console.log(`   ✨ New AI Title: "${newTitle}"`);
-    console.log(
-      `   � FROM: "d${currentFolderName}" (ID: ${bookmark.parentId})`
-    );
+    console.log(`   � FROM: "d${currentFolderName}" (ID: ${bookmark.parentId})`);
     console.log(`   📁 TO: "${destinationFolderName}" (ID: ${folderId})`);
     console.log(`   🎯 Category: "${category}"`);
 
@@ -1476,26 +1357,20 @@ class AIProcessor {
       if (onMarkAsAIMoved) {
         // Use direct callback if available (more reliable in background script)
         onMarkAsAIMoved(bookmark.id);
-        console.log(
-          `🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via DIRECT CALLBACK`
-        );
+        console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via DIRECT CALLBACK`);
       } else {
         // Fallback to message passing
         await chrome.runtime.sendMessage({
           action: 'markBookmarkAsAIMoved',
           bookmarkId: bookmark.id
         });
-        console.log(
-          `🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via MESSAGE`
-        );
+        console.log(`🤖 Pre-marked bookmark ${bookmark.id} as AI-moved via MESSAGE`);
       }
 
       // ALSO store persistent metadata in Chrome storage for additional protection
       const metadataKey = `ai_moved_${bookmark.id}`;
       await chrome.storage.local.set({ [metadataKey]: Date.now() });
-      console.log(
-        `🤖 Stored AI metadata in Chrome storage for bookmark ${bookmark.id}`
-      );
+      console.log(`🤖 Stored AI metadata in Chrome storage for bookmark ${bookmark.id}`);
     } catch (_error) {
       console.warn('Failed to mark bookmark as AI-moved:', error);
     }
@@ -1517,17 +1392,15 @@ class AIProcessor {
   }
 
   /**
-     * Create folder directly only when needed (prevents empty folder creation)
-     * @param {string} categoryPath - Category path (e.g., "Work/Projects")
-     * @param {string} rootFolderId - Root folder ID
-     * @returns {Promise<string>} Folder ID
-     */
+   * Create folder directly only when needed (prevents empty folder creation)
+   * @param {string} categoryPath - Category path (e.g., "Work/Projects")
+   * @param {string} rootFolderId - Root folder ID
+   * @returns {Promise<string>} Folder ID
+   */
   async _createFolderDirect(categoryPath, rootFolderId) {
     // All bookmarks must be categorized into specific functional categories
     if (!categoryPath || categoryPath.trim() === '') {
-      throw new Error(
-        'Category path cannot be empty - all bookmarks must be properly categorized'
-      );
+      throw new Error('Category path cannot be empty - all bookmarks must be properly categorized');
     }
 
     const parts = categoryPath.split(' > ').map((part) => part.trim());
@@ -1540,13 +1413,9 @@ class AIProcessor {
       const normalizedPart = this.normalizeFolderName(part);
 
       // Check if folder already exists (check both original and normalized names)
-      const children = await chrome.bookmarks.getChildren(
-        currentParentId
-      );
+      const children = await chrome.bookmarks.getChildren(currentParentId);
       let existingFolder = children.find(
-        (child) =>
-          !child.url &&
-                    (child.title === part || child.title === normalizedPart)
+        (child) => !child.url && (child.title === part || child.title === normalizedPart)
       );
 
       if (!existingFolder) {
@@ -1555,24 +1424,17 @@ class AIProcessor {
           parentId: currentParentId,
           title: normalizedPart
         });
-        console.log(
-          `📁 Created folder: "${normalizedPart}" in parent ${currentParentId}`
-        );
+        console.log(`📁 Created folder: "${normalizedPart}" in parent ${currentParentId}`);
       } else {
         // If existing folder has poor formatting, update it to normalized version
         if (
           existingFolder.title !== normalizedPart &&
-                    this._isSignificantImprovement(
-                      existingFolder.title,
-                      normalizedPart
-                    )
+          this._isSignificantImprovement(existingFolder.title, normalizedPart)
         ) {
           await chrome.bookmarks.update(existingFolder.id, {
             title: normalizedPart
           });
-          console.log(
-            `📁 Updated folder name: "${existingFolder.title}" → "${normalizedPart}"`
-          );
+          console.log(`📁 Updated folder name: "${existingFolder.title}" → "${normalizedPart}"`);
         } else {
           console.log(
             `📁 Using existing folder: "${existingFolder.title}" (ID: ${existingFolder.id})`
@@ -1587,11 +1449,11 @@ class AIProcessor {
   }
 
   /**
-     * Extract keywords from URL and title for better categorization
-     * @param {string} url - Bookmark URL
-     * @param {string} title - Bookmark title
-     * @returns {Array} Array of relevant keywords
-     */
+   * Extract keywords from URL and title for better categorization
+   * @param {string} url - Bookmark URL
+   * @param {string} title - Bookmark title
+   * @returns {Array} Array of relevant keywords
+   */
   _extractUrlKeywords(url, title) {
     const keywords = [];
 
@@ -1607,9 +1469,7 @@ class AIProcessor {
         keywords.push(...domainParts.filter((part) => part.length > 2));
 
         // Extract path keywords
-        const pathParts = path
-          .split('/')
-          .filter((part) => part.length > 2);
+        const pathParts = path.split('/').filter((part) => part.length > 2);
         keywords.push(...pathParts);
 
         // Extract search parameters
@@ -1620,8 +1480,7 @@ class AIProcessor {
       }
 
       if (title) {
-        const titleWords =
-                    title.toLowerCase().match(/[a-zA-Z]{3,}/g) || [];
+        const titleWords = title.toLowerCase().match(/[a-zA-Z]{3,}/g) || [];
         keywords.push(...titleWords);
       }
     } catch (_error) {
@@ -1670,51 +1529,35 @@ class AIProcessor {
       'use'
     ];
 
-    return [...new Set(keywords)]
-      .filter((keyword) => !commonWords.includes(keyword))
-      .slice(0, 10); // Limit to top 10 keywords
+    return [...new Set(keywords)].filter((keyword) => !commonWords.includes(keyword)).slice(0, 10); // Limit to top 10 keywords
   }
 
   /**
-     * Detect content type from URL and title
-     * @param {string} url - Bookmark URL
-     * @param {string} title - Bookmark title
-     * @returns {string} Detected content type
-     */
+   * Detect content type from URL and title
+   * @param {string} url - Bookmark URL
+   * @param {string} title - Bookmark title
+   * @returns {string} Detected content type
+   */
   _detectContentType(url, title) {
     const combined = `${url} ${title}`.toLowerCase();
 
     // Video content
-    if (
-      /youtube|vimeo|twitch|netflix|video|stream|movie|tv|series/.test(
-        combined
-      )
-    ) {
+    if (/youtube|vimeo|twitch|netflix|video|stream|movie|tv|series/.test(combined)) {
       return 'Video/Streaming';
     }
 
     // Social media
-    if (
-      /facebook|twitter|instagram|linkedin|reddit|discord|telegram|whatsapp/.test(
-        combined
-      )
-    ) {
+    if (/facebook|twitter|instagram|linkedin|reddit|discord|telegram|whatsapp/.test(combined)) {
       return 'Social Media';
     }
 
     // Development/Tech
-    if (
-      /github|gitlab|stackoverflow|dev|code|programming|api|documentation|docs/.test(
-        combined
-      )
-    ) {
+    if (/github|gitlab|stackoverflow|dev|code|programming|api|documentation|docs/.test(combined)) {
       return 'Development/Tech';
     }
 
     // Shopping/E-commerce
-    if (
-      /amazon|shop|buy|cart|store|price|product|deal|sale/.test(combined)
-    ) {
+    if (/amazon|shop|buy|cart|store|price|product|deal|sale/.test(combined)) {
       return 'Shopping/E-commerce';
     }
 
@@ -1724,29 +1567,17 @@ class AIProcessor {
     }
 
     // Education/Learning
-    if (
-      /course|tutorial|learn|education|university|school|training|study/.test(
-        combined
-      )
-    ) {
+    if (/course|tutorial|learn|education|university|school|training|study/.test(combined)) {
       return 'Education/Learning';
     }
 
     // Finance
-    if (
-      /bank|finance|money|investment|crypto|trading|stock|payment/.test(
-        combined
-      )
-    ) {
+    if (/bank|finance|money|investment|crypto|trading|stock|payment/.test(combined)) {
       return 'Finance';
     }
 
     // Tools/Utilities
-    if (
-      /tool|utility|app|software|service|platform|dashboard/.test(
-        combined
-      )
-    ) {
+    if (/tool|utility|app|software|service|platform|dashboard/.test(combined)) {
       return 'Tools/Utilities';
     }
 
@@ -1754,30 +1585,22 @@ class AIProcessor {
   }
 
   /**
-     * Detect risk flags that might indicate inappropriate categorization
-     * @param {string} url - Bookmark URL
-     * @param {string} title - Bookmark title
-     * @returns {Array} Array of risk flags
-     */
+   * Detect risk flags that might indicate inappropriate categorization
+   * @param {string} url - Bookmark URL
+   * @param {string} title - Bookmark title
+   * @returns {Array} Array of risk flags
+   */
   _detectRiskFlags(url, title) {
     const flags = [];
     const combined = `${url} ${title}`.toLowerCase();
 
     // Torrent/P2P related
-    if (
-      /torrent|magnet|pirate|p2p|bittorrent|utorrent|tracker|seed|leech/.test(
-        combined
-      )
-    ) {
+    if (/torrent|magnet|pirate|p2p|bittorrent|utorrent|tracker|seed|leech/.test(combined)) {
       flags.push('TORRENT/P2P');
     }
 
     // Paywall bypass related
-    if (
-      /bypass|paywall|free|crack|hack|unlock|premium|subscription/.test(
-        combined
-      )
-    ) {
+    if (/bypass|paywall|free|crack|hack|unlock|premium|subscription/.test(combined)) {
       flags.push('PAYWALL_BYPASS');
     }
 
@@ -1800,9 +1623,9 @@ class AIProcessor {
   }
 
   /**
-     * Normalize existing folder names for better presentation
-     * Only updates folders that clearly need improvement
-     */
+   * Normalize existing folder names for better presentation
+   * Only updates folders that clearly need improvement
+   */
   async _normalizeExistingFolders() {
     try {
       console.log('📁 Checking existing folders for normalization...');
@@ -1812,19 +1635,13 @@ class AIProcessor {
       let normalizedCount = 0;
 
       for (const rootId of foldersToCheck) {
-        normalizedCount += await this._normalizeFoldersRecursively(
-          rootId
-        );
+        normalizedCount += await this._normalizeFoldersRecursively(rootId);
       }
 
       if (normalizedCount > 0) {
-        console.log(
-          `📁 Normalized ${normalizedCount} folder names for better presentation`
-        );
+        console.log(`📁 Normalized ${normalizedCount} folder names for better presentation`);
       } else {
-        console.log(
-          '📁 All existing folders are already well-formatted'
-        );
+        console.log('📁 All existing folders are already well-formatted');
       }
     } catch (_error) {
       console.error('_error normalizing existing folders:', _error);
@@ -1833,10 +1650,10 @@ class AIProcessor {
   }
 
   /**
-     * Recursively normalize folders in a tree
-     * @param {string} parentId - Parent folder ID
-     * @returns {Promise<number>} Number of folders normalized
-     */
+   * Recursively normalize folders in a tree
+   * @param {string} parentId - Parent folder ID
+   * @returns {Promise<number>} Number of folders normalized
+   */
   async _normalizeFoldersRecursively(parentId) {
     let normalizedCount = 0;
 
@@ -1846,48 +1663,36 @@ class AIProcessor {
       for (const child of children) {
         if (!child.url) {
           // It's a folder
-          const normalizedName = this.normalizeFolderName(
-            child.title
-          );
+          const normalizedName = this.normalizeFolderName(child.title);
 
           // Update if it's a significant improvement
           if (
             child.title !== normalizedName &&
-                        this._isSignificantImprovement(
-                          child.title,
-                          normalizedName
-                        )
+            this._isSignificantImprovement(child.title, normalizedName)
           ) {
             await chrome.bookmarks.update(child.id, {
               title: normalizedName
             });
-            console.log(
-              `📁 Normalized: "${child.title}" → "${normalizedName}"`
-            );
+            console.log(`📁 Normalized: "${child.title}" → "${normalizedName}"`);
             normalizedCount++;
           }
 
           // Recursively check subfolders
-          normalizedCount += await this._normalizeFoldersRecursively(
-            child.id
-          );
+          normalizedCount += await this._normalizeFoldersRecursively(child.id);
         }
       }
     } catch (_error) {
-      console.error(
-        `Error normalizing folders in parent ${parentId}:`,
-        error
-      );
+      console.error(`Error normalizing folders in parent ${parentId}:`, error);
     }
 
     return normalizedCount;
   }
 
   /**
-     * Generate a fallback title when AI fails
-     * @param {Object} bookmark - Bookmark object
-     * @returns {string} Generated fallback title
-     */
+   * Generate a fallback title when AI fails
+   * @param {Object} bookmark - Bookmark object
+   * @returns {string} Generated fallback title
+   */
   _generateFallbackTitle(bookmark) {
     const originalTitle = bookmark.title || 'Untitled';
 
@@ -1899,9 +1704,9 @@ class AIProcessor {
         // If title is generic or just domain, enhance it
         if (
           originalTitle === domain ||
-                    originalTitle.toLowerCase() === 'home' ||
-                    originalTitle.toLowerCase() === 'dashboard' ||
-                    originalTitle.length < 10
+          originalTitle.toLowerCase() === 'home' ||
+          originalTitle.toLowerCase() === 'dashboard' ||
+          originalTitle.length < 10
         ) {
           // Create a better title based on domain
           const domainParts = domain.split('.');
@@ -1927,9 +1732,7 @@ class AIProcessor {
 
           return (
             siteEnhancements[siteName.toLowerCase()] ||
-                        `${
-                          siteName.charAt(0).toUpperCase() + siteName.slice(1)
-                        } - ${domain}`
+            `${siteName.charAt(0).toUpperCase() + siteName.slice(1)} - ${domain}`
           );
         }
       }
@@ -1942,9 +1745,9 @@ class AIProcessor {
   }
 
   /**
-     * Get existing folder structure to avoid creating duplicates
-     * @returns {Promise<Array>} Array of existing folder paths
-     */
+   * Get existing folder structure to avoid creating duplicates
+   * @returns {Promise<Array>} Array of existing folder paths
+   */
   async _getExistingFolderStructure() {
     try {
       const existingFolders = [];
@@ -1959,17 +1762,14 @@ class AIProcessor {
       const filteredFolders = existingFolders.filter(
         (folder) =>
           folder &&
-                    folder !== 'Bookmarks Bar' &&
-                    folder !== 'Other Bookmarks' &&
-                    folder !== 'Mobile Bookmarks' &&
-                    !folder.includes('Recently Added') &&
-                    folder.length > 0
+          folder !== 'Bookmarks Bar' &&
+          folder !== 'Other Bookmarks' &&
+          folder !== 'Mobile Bookmarks' &&
+          !folder.includes('Recently Added') &&
+          folder.length > 0
       );
 
-      console.log(
-        `📁 Found ${filteredFolders.length} existing folders:`,
-        filteredFolders
-      );
+      console.log(`📁 Found ${filteredFolders.length} existing folders:`, filteredFolders);
       return filteredFolders;
     } catch (_error) {
       console.error('_error getting existing folder structure:', _error);
@@ -1978,11 +1778,11 @@ class AIProcessor {
   }
 
   /**
-     * Recursively collect folder paths
-     * @param {string} parentId - Parent folder ID
-     * @param {string} currentPath - Current path being built
-     * @param {Array} folderPaths - Array to collect paths
-     */
+   * Recursively collect folder paths
+   * @param {string} parentId - Parent folder ID
+   * @param {string} currentPath - Current path being built
+   * @param {Array} folderPaths - Array to collect paths
+   */
   async _collectFolderPaths(parentId, currentPath, folderPaths) {
     try {
       const children = await chrome.bookmarks.getChildren(parentId);
@@ -1990,44 +1790,28 @@ class AIProcessor {
       for (const child of children) {
         if (!child.url) {
           // It's a folder
-          const folderPath = currentPath
-            ? `${currentPath} > ${child.title}`
-            : child.title;
+          const folderPath = currentPath ? `${currentPath} > ${child.title}` : child.title;
           folderPaths.push(folderPath);
 
           // Recursively collect subfolders
-          await this._collectFolderPaths(
-            child.id,
-            folderPath,
-            folderPaths
-          );
+          await this._collectFolderPaths(child.id, folderPath, folderPaths);
         }
       }
     } catch (_error) {
-      console.error(
-        `Error collecting folder paths for parent ${parentId}:`,
-        error
-      );
+      console.error(`Error collecting folder paths for parent ${parentId}:`, error);
     }
   }
 
   /**
-     * Generate dynamic functional categories based on bookmark analysis (FMHY-style)
-     * @param {Array} bookmarks - All bookmarks to analyze
-     * @param {Array} suggestedCategories - Optional suggested categories
-     * @param {Object} learningData - Learning data
-     * @returns {Promise<Array>} Generated functional categories
-     */
-  async _generateDynamicCategories(
-    bookmarks,
-    suggestedCategories = [],
-    learningData = {}
-  ) {
+   * Generate dynamic functional categories based on bookmark analysis (FMHY-style)
+   * @param {Array} bookmarks - All bookmarks to analyze
+   * @param {Array} suggestedCategories - Optional suggested categories
+   * @param {Object} learningData - Learning data
+   * @returns {Promise<Array>} Generated functional categories
+   */
+  async _generateDynamicCategories(bookmarks, suggestedCategories = [], learningData = {}) {
     // Take a sample of bookmarks for category generation (max 150 for better analysis)
-    const sampleBookmarks = bookmarks.slice(
-      0,
-      Math.min(150, bookmarks.length)
-    );
+    const sampleBookmarks = bookmarks.slice(0, Math.min(150, bookmarks.length));
 
     // Get existing folder structure to avoid duplicates
     const existingFolders = await this._getExistingFolderStructure();
@@ -2129,14 +1913,10 @@ ${
         domain = 'invalid-url';
       }
 
-      prompt += `\n${
-        index + 1
-      }. "${title}" (${domain}) - Currently in: ${currentFolder}`;
+      prompt += `\n${index + 1}. "${title}" (${domain}) - Currently in: ${currentFolder}`;
     });
 
-    prompt += `\n\n**Suggested Categories (optional reference):** ${suggestedCategories.join(
-      ', '
-    )}
+    prompt += `\n\n**Suggested Categories (optional reference):** ${suggestedCategories.join(', ')}
 
 **Learning Data:** Based on user preferences:`;
 
@@ -2296,8 +2076,7 @@ Return only the JSON array with properly formatted category names, no additional
       };
 
       // Use model fallback for category generation too
-      const responseText =
-                await this._generateCategoriesWithModelFallback(requestBody);
+      const responseText = await this._generateCategoriesWithModelFallback(requestBody);
 
       // Parse the generated categories
       const cleanText = responseText
@@ -2324,24 +2103,17 @@ Return only the JSON array with properly formatted category names, no additional
           ];
 
           essentialCategories.forEach((essential) => {
-            if (
-              !filteredCategories.some((cat) => cat === essential)
-            ) {
+            if (!filteredCategories.some((cat) => cat === essential)) {
               filteredCategories.push(essential);
             }
           });
 
-          console.log(
-            'Successfully generated dynamic categories:',
-            filteredCategories
-          );
+          console.log('Successfully generated dynamic categories:', filteredCategories);
           return filteredCategories;
         }
       }
 
-      throw new Error(
-        'Failed to parse generated categories from Gemini AI response'
-      );
+      throw new Error('Failed to parse generated categories from Gemini AI response');
     } catch (_error) {
       console.error('_error generating categories:', _error);
       throw new Error(`Failed to generate categories: ${_error.message}`);
@@ -2349,10 +2121,10 @@ Return only the JSON array with properly formatted category names, no additional
   }
 
   /**
-     * Generate categories with Gemini model fallback sequence
-     * @param {Object} requestBody - Request body for Gemini API
-     * @returns {Promise<string>} Response text from successful model
-     */
+   * Generate categories with Gemini model fallback sequence
+   * @param {Object} requestBody - Request body for Gemini API
+   * @returns {Promise<string>} Response text from successful model
+   */
   async _generateCategoriesWithModelFallback(requestBody) {
     let lastError = null;
     const originalModelIndex = this.currentModelIndex;
@@ -2386,20 +2158,15 @@ Return only the JSON array with properly formatted category names, no additional
 
         if (response.ok) {
           const data = await response.json();
-          const responseText =
-                        data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
           if (responseText) {
-            console.log(
-              `✅ Category generation SUCCESS with ${currentModel}`
-            );
+            console.log(`✅ Category generation SUCCESS with ${currentModel}`);
             // Reset to original model for next operations
             this.currentModelIndex = originalModelIndex;
             return responseText;
           } else {
-            throw new Error(
-              'Invalid category generation response format'
-            );
+            throw new Error('Invalid category generation response format');
           }
         } else {
           const errorText = await response.text();
@@ -2411,11 +2178,11 @@ Return only the JSON array with properly formatted category names, no additional
 
           // Check if this is a retryable error
           const isRetryableError =
-                        response.status === 429 || // Rate limit
-                        response.status === 503 || // Service unavailable
-                        response.status === 500 || // Server error
-                        response.status === 502 || // Bad gateway
-                        response.status === 504; // Gateway timeout
+            response.status === 429 || // Rate limit
+            response.status === 503 || // Service unavailable
+            response.status === 500 || // Server error
+            response.status === 502 || // Bad gateway
+            response.status === 504; // Gateway timeout
 
           if (!isRetryableError) {
             // Non-retryable errors - don't try other models
@@ -2428,32 +2195,23 @@ Return only the JSON array with properly formatted category names, no additional
                 'API access denied for category generation. Check your API key permissions.'
               );
             } else if (response.status === 400) {
-              throw new Error(
-                'Bad request for category generation. Check your API key format.'
-              );
+              throw new Error('Bad request for category generation. Check your API key format.');
             } else {
-              throw new Error(
-                `Category generation failed: ${response.status} - ${errorText}`
-              );
+              throw new Error(`Category generation failed: ${response.status} - ${errorText}`);
             }
           }
 
-          lastError = new Error(
-            `${currentModel}: ${response.status} - ${errorText}`
-          );
+          lastError = new Error(`${currentModel}: ${response.status} - ${errorText}`);
         }
       } catch (_error) {
-        console.error(
-          `❌ Category generation error with ${currentModel}:`,
-          _error.message
-        );
+        console.error(`❌ Category generation error with ${currentModel}:`, _error.message);
         lastError = error;
 
         // If it's a non-retryable error, don't try other models
         if (
           _error.message.includes('Invalid API key') ||
-                    _error.message.includes('API access denied') ||
-                    _error.message.includes('Bad request')
+          _error.message.includes('API access denied') ||
+          _error.message.includes('Bad request')
         ) {
           throw _error;
         }
@@ -2479,19 +2237,14 @@ Return only the JSON array with properly formatted category names, no additional
   }
 
   /**
-     * Process a batch of bookmarks
-     * @param {Array} batch - Batch of bookmarks
-     * @param {Array} dynamicCategories - Available categories
-     * @param {Object} learningData - Learning data
-     * @param {Function} onMarkAsAIMoved - Optional callback to mark bookmark as AI-moved
-     * @returns {Promise<Array>} Categorization results
-     */
-  async processBatch(
-    batch,
-    dynamicCategories,
-    learningData,
-    onMarkAsAIMoved = null
-  ) {
+   * Process a batch of bookmarks
+   * @param {Array} batch - Batch of bookmarks
+   * @param {Array} dynamicCategories - Available categories
+   * @param {Object} learningData - Learning data
+   * @param {Function} onMarkAsAIMoved - Optional callback to mark bookmark as AI-moved
+   * @returns {Promise<Array>} Categorization results
+   */
+  async processBatch(batch, dynamicCategories, learningData, onMarkAsAIMoved = null) {
     return await this._processBatchWithProviderFallback(
       batch,
       dynamicCategories,
@@ -2501,22 +2254,15 @@ Return only the JSON array with properly formatted category names, no additional
   }
 
   /**
-     * Process batch with provider fallback (cross-provider model size ordering)
-     * @param {Array} batch - Batch of bookmarks
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @param {Function} onMarkAsAIMoved - Optional callback
-     * @returns {Promise<Array>} Batch results
-     */
-  async _processBatchWithProviderFallback(
-    batch,
-    categories,
-    learningData,
-    onMarkAsAIMoved = null
-  ) {
-    console.log(
-      '\n🔄 === PROVIDER FALLBACK ORCHESTRATOR (Size-Based Model Ordering) ==='
-    );
+   * Process batch with provider fallback (cross-provider model size ordering)
+   * @param {Array} batch - Batch of bookmarks
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @param {Function} onMarkAsAIMoved - Optional callback
+   * @returns {Promise<Array>} Batch results
+   */
+  async _processBatchWithProviderFallback(batch, categories, learningData, onMarkAsAIMoved = null) {
+    console.log('\n🔄 === PROVIDER FALLBACK ORCHESTRATOR (Size-Based Model Ordering) ===');
     console.log(`📦 Processing batch of ${batch.length} bookmarks`);
     console.log(
       `🔑 Available providers: Gemini=${!!this.apiKey}, Cerebras=${!!this
@@ -2528,9 +2274,7 @@ Return only the JSON array with properly formatted category names, no additional
 
     // Add Gemini models (always available with apiKey)
     if (this.apiKey) {
-      this.geminiModels.forEach((model) =>
-        allModels.push({ ...model, provider: 'gemini' })
-      );
+      this.geminiModels.forEach((model) => allModels.push({ ...model, provider: 'gemini' }));
     }
 
     // Add Cerebras models if key available
@@ -2553,14 +2297,8 @@ Return only the JSON array with properly formatted category names, no additional
 
     console.log('\n📊 Sorted model sequence (largest to smallest):');
     allModels.forEach((model, idx) => {
-      const size = model.paramCount
-        ? `${model.paramCount}B`
-        : model.sizeCategory;
-      console.log(
-        `   ${idx + 1}. ${model.provider.toUpperCase()}: ${
-          model.name
-        } (${size})`
-      );
+      const size = model.paramCount ? `${model.paramCount}B` : model.sizeCategory;
+      console.log(`   ${idx + 1}. ${model.provider.toUpperCase()}: ${model.name} (${size})`);
     });
 
     // Try models in order
@@ -2576,54 +2314,27 @@ Return only the JSON array with properly formatted category names, no additional
       try {
         let result;
         if (model.provider === 'gemini') {
-          result = await this._processWithGemini(
-            batch,
-            categories,
-            learningData,
-            model.name
-          );
+          result = await this._processWithGemini(batch, categories, learningData, model.name);
         } else if (model.provider === 'cerebras') {
-          const prompt = await this._buildPrompt(
-            batch,
-            categories,
-            learningData
-          );
-          result = await this._processWithCerebras(
-            prompt,
-            batch,
-            model.name
-          );
+          const prompt = await this._buildPrompt(batch, categories, learningData);
+          result = await this._processWithCerebras(prompt, batch, model.name);
         } else if (model.provider === 'groq') {
-          const prompt = await this._buildPrompt(
-            batch,
-            categories,
-            learningData
-          );
-          result = await this._processWithGroq(
-            prompt,
-            batch,
-            model.name
-          );
+          const prompt = await this._buildPrompt(batch, categories, learningData);
+          result = await this._processWithGroq(prompt, batch, model.name);
         }
 
         if (result) {
           console.log(
-            `✅ SUCCESS: Batch processed with ${model.provider.toUpperCase()} - ${
-              model.name
-            }`
+            `✅ SUCCESS: Batch processed with ${model.provider.toUpperCase()} - ${model.name}`
           );
 
           // IMMEDIATELY MOVE each bookmark in the batch after categorization
-          console.log(
-            `🚚 IMMEDIATE BATCH MOVEMENT: Moving ${result.length} bookmarks...`
-          );
+          console.log(`🚚 IMMEDIATE BATCH MOVEMENT: Moving ${result.length} bookmarks...`);
 
           for (let j = 0; j < result.length; j++) {
             const item = result[j];
             // Find original bookmark from batch
-            const bookmark =
-                            batch.find((b) => b.id === item.bookmarkId) ||
-                            batch[j];
+            const bookmark = batch.find((b) => b.id === item.bookmarkId) || batch[j];
 
             if (bookmark) {
               try {
@@ -2636,10 +2347,7 @@ Return only the JSON array with properly formatted category names, no additional
                   onMarkAsAIMoved
                 );
               } catch (moveError) {
-                console.error(
-                  `❌ Failed to move bookmark ${bookmark.id}:`,
-                  moveError
-                );
+                console.error(`❌ Failed to move bookmark ${bookmark.id}:`, moveError);
               }
             }
           }
@@ -2647,31 +2355,20 @@ Return only the JSON array with properly formatted category names, no additional
           return result;
         }
       } catch (_error) {
-        console.log(
-          `❌ ${model.provider.toUpperCase()} - ${
-            model.name
-          } failed: ${_error.message}`
-        );
+        console.log(`❌ ${model.provider.toUpperCase()} - ${model.name} failed: ${_error.message}`);
         lastError = error;
 
         // Check for truncation error and retry with smaller batches
         if (error.isTruncation && batch.length > 1) {
-          console.warn(
-            '⚠️ JSON truncation detected! Retrying with split batches...'
-          );
-          return await this._retryWithSmallerBatches(
-            batch,
-            categories,
-            learningData,
-            model
-          );
+          console.warn('⚠️ JSON truncation detected! Retrying with split batches...');
+          return await this._retryWithSmallerBatches(batch, categories, learningData, model);
         }
 
         // Stop trying if it's a non-retryable error
         if (
           _error.message.includes('Invalid API key') ||
-                    _error.message.includes('API access denied') ||
-                    _error.message.includes('Unauthorized')
+          _error.message.includes('API access denied') ||
+          _error.message.includes('Unauthorized')
         ) {
           console.log(
             `⚠️ Non-retryable error detected, stopping model fallback for ${model.provider}`
@@ -2687,18 +2384,16 @@ Return only the JSON array with properly formatted category names, no additional
 
     // All models failed
     console.error('❌ All models across all providers failed');
-    throw new Error(
-      `All AI providers exhausted. Last error: ${lastError?.message}`
-    );
+    throw new Error(`All AI providers exhausted. Last error: ${lastError?.message}`);
   }
 
   /**
-     * Process batch with Gemini model fallback sequence
-     * @param {Array} batch - Batch of bookmarks
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @returns {Promise<Array>} Batch results
-     */
+   * Process batch with Gemini model fallback sequence
+   * @param {Array} batch - Batch of bookmarks
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @returns {Promise<Array>} Batch results
+   */
   async _processBatchWithGeminiModels(batch, categories, learningData) {
     const prompt = await this._buildPrompt(batch, categories, learningData);
     const requestBody = {
@@ -2748,13 +2443,8 @@ Return only the JSON array with properly formatted category names, no additional
         if (response.ok) {
           const data = await response.json();
 
-          if (
-            data.candidates &&
-                        data.candidates[0] &&
-                        data.candidates[0].content
-          ) {
-            const responseText =
-                            data.candidates[0].content.parts[0].text;
+          if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            const responseText = data.candidates[0].content.parts[0].text;
             console.log(`✅ SUCCESS with ${currentModel}`);
 
             // Record API usage analytics
@@ -2765,19 +2455,13 @@ Return only the JSON array with properly formatted category names, no additional
                 success: true,
                 responseTime,
                 batchSize: batch.length,
-                tokensUsed:
-                                    data.usageMetadata?.totalTokenCount || 0
+                tokensUsed: data.usageMetadata?.totalTokenCount || 0
               });
             }
 
             // Record rate limit tracking
             if (this.performanceMonitor) {
-              await this.performanceMonitor.recordApiRequest(
-                'gemini',
-                true,
-                false,
-                false
-              );
+              await this.performanceMonitor.recordApiRequest('gemini', true, false, false);
             }
 
             return this._parseResponse(responseText, batch);
@@ -2786,11 +2470,7 @@ Return only the JSON array with properly formatted category names, no additional
           }
         } else {
           const errorText = await response.text();
-          console.error(
-            `❌ ${currentModel} failed:`,
-            response.status,
-            errorText
-          );
+          console.error(`❌ ${currentModel} failed:`, response.status, errorText);
 
           // Record API failure analytics
           if (this.analyticsService) {
@@ -2806,22 +2486,17 @@ Return only the JSON array with properly formatted category names, no additional
 
           // Check if this is a retryable error (rate limit, server overload, etc.)
           const isRetryableError =
-                        response.status === 429 || // Rate limit
-                        response.status === 503 || // Service unavailable
-                        response.status === 500 || // Server error
-                        response.status === 502 || // Bad gateway
-                        response.status === 504; // Gateway timeout
+            response.status === 429 || // Rate limit
+            response.status === 503 || // Service unavailable
+            response.status === 500 || // Server error
+            response.status === 502 || // Bad gateway
+            response.status === 504; // Gateway timeout
 
           // Record rate limit tracking
           if (this.performanceMonitor) {
             const throttled = response.status === 429;
             const rejected = response.status === 429;
-            await this.performanceMonitor.recordApiRequest(
-              'gemini',
-              false,
-              throttled,
-              rejected
-            );
+            await this.performanceMonitor.recordApiRequest('gemini', false, throttled, rejected);
           }
 
           if (!isRetryableError) {
@@ -2835,19 +2510,13 @@ Return only the JSON array with properly formatted category names, no additional
                 'API access denied. Please check your API key permissions and ensure Gemini API is enabled.'
               );
             } else if (response.status === 400) {
-              throw new Error(
-                'Bad request. Please check your API key format and try again.'
-              );
+              throw new Error('Bad request. Please check your API key format and try again.');
             } else {
-              throw new Error(
-                `Gemini API request failed: ${response.status}. ${errorText}`
-              );
+              throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
             }
           }
 
-          lastError = new Error(
-            `${currentModel}: ${response.status} - ${errorText}`
-          );
+          lastError = new Error(`${currentModel}: ${response.status} - ${errorText}`);
         }
       } catch (_error) {
         console.error(`❌ ${currentModel} _error:`, _error.message);
@@ -2856,8 +2525,8 @@ Return only the JSON array with properly formatted category names, no additional
         // If it's a non-retryable error, don't try other models
         if (
           _error.message.includes('Invalid API key') ||
-                    _error.message.includes('API access denied') ||
-                    _error.message.includes('Bad request')
+          _error.message.includes('API access denied') ||
+          _error.message.includes('Bad request')
         ) {
           throw _error;
         }
@@ -2879,28 +2548,22 @@ Return only the JSON array with properly formatted category names, no additional
     // Reset to original model for next batch
     this.currentModelIndex = originalModelIndex;
 
-    throw new Error(
-      `All Gemini models failed. Last error: ${lastError?.message}`
-    );
+    throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
   }
 
   /**
-     * Process batch with Cerebras model fallback sequence
-     * @param {Array} batch - Batch of bookmarks
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @returns {Promise<Array>} Batch results
-     */
+   * Process batch with Cerebras model fallback sequence
+   * @param {Array} batch - Batch of bookmarks
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @returns {Promise<Array>} Batch results
+   */
   async _processBatchWithCerebrasModels(batch, categories, learningData) {
     const prompt = await this._buildPrompt(batch, categories, learningData);
     let lastError = null;
 
     // Try each Cerebras model in sequence
-    for (
-      let modelIndex = 0;
-      modelIndex < this.cerebrasModels.length;
-      modelIndex++
-    ) {
+    for (let modelIndex = 0; modelIndex < this.cerebrasModels.length; modelIndex++) {
       const currentModel = this.cerebrasModels[modelIndex];
       console.log(
         `🧠 Trying Cerebras model: ${currentModel} (${modelIndex + 1}/${
@@ -2909,24 +2572,18 @@ Return only the JSON array with properly formatted category names, no additional
       );
 
       try {
-        const result = await this._processWithCerebras(
-          prompt,
-          batch,
-          currentModel
-        );
+        const result = await this._processWithCerebras(prompt, batch, currentModel);
         console.log(`✅ SUCCESS with Cerebras ${currentModel}`);
         return result;
       } catch (_error) {
-        console.log(
-          `❌ Cerebras ${currentModel} failed: ${_error.message}`
-        );
+        console.log(`❌ Cerebras ${currentModel} failed: ${_error.message}`);
         lastError = error;
 
         // If it's a non-retryable error, don't try other models
         if (
           _error.message.includes('Invalid API key') ||
-                    _error.message.includes('API access denied') ||
-                    _error.message.includes('Unauthorized')
+          _error.message.includes('API access denied') ||
+          _error.message.includes('Unauthorized')
         ) {
           throw _error;
         }
@@ -2938,18 +2595,16 @@ Return only the JSON array with properly formatted category names, no additional
       }
     }
 
-    throw new Error(
-      `All Cerebras models failed. Last error: ${lastError?.message}`
-    );
+    throw new Error(`All Cerebras models failed. Last error: ${lastError?.message}`);
   }
 
   /**
-     * Process batch with Cerebras API (OpenAI-compatible format) with exponential backoff
-     * @param {string} prompt - Formatted prompt
-     * @param {Array} batch - Batch of bookmarks
-     * @param {string} model - Cerebras model name
-     * @returns {Promise<Array>} Batch results
-     */
+   * Process batch with Cerebras API (OpenAI-compatible format) with exponential backoff
+   * @param {string} prompt - Formatted prompt
+   * @param {Array} batch - Batch of bookmarks
+   * @param {string} model - Cerebras model name
+   * @returns {Promise<Array>} Batch results
+   */
   async _processWithCerebras(prompt, batch, model) {
     const maxTokens = this._calculateMaxTokens(batch.length);
     const requestBody = {
@@ -2957,8 +2612,7 @@ Return only the JSON array with properly formatted category names, no additional
       messages: [
         {
           role: 'system',
-          content:
-                        'You are a bookmark categorization expert. Always return valid JSON arrays.'
+          content: 'You are a bookmark categorization expert. Always return valid JSON arrays.'
         },
         {
           role: 'user',
@@ -2970,17 +2624,11 @@ Return only the JSON array with properly formatted category names, no additional
     };
 
     // Exponential backoff retry logic
-    for (
-      let retryAttempt = 0;
-      retryAttempt <= this.maxRetries;
-      retryAttempt++
-    ) {
+    for (let retryAttempt = 0; retryAttempt <= this.maxRetries; retryAttempt++) {
       try {
         const requestStart = Date.now();
         console.log(
-          `   🔄 Cerebras ${model} request attempt ${
-            retryAttempt + 1
-          }/${this.maxRetries + 1}`
+          `   🔄 Cerebras ${model} request attempt ${retryAttempt + 1}/${this.maxRetries + 1}`
         );
 
         const response = await this.requestQueue.enqueue(
@@ -3003,15 +2651,9 @@ Return only the JSON array with properly formatted category names, no additional
         if (response.ok) {
           const data = await response.json();
 
-          if (
-            data.choices &&
-                        data.choices[0] &&
-                        data.choices[0].message
-          ) {
+          if (data.choices && data.choices[0] && data.choices[0].message) {
             const responseText = data.choices[0].message.content;
-            console.log(
-              `   ✅ Cerebras ${model} SUCCESS (${responseTime}ms)`
-            );
+            console.log(`   ✅ Cerebras ${model} SUCCESS (${responseTime}ms)`);
 
             // Record API usage analytics
             if (this.analyticsService) {
@@ -3028,12 +2670,7 @@ Return only the JSON array with properly formatted category names, no additional
 
             // Record rate limit tracking
             if (this.performanceMonitor) {
-              await this.performanceMonitor.recordApiRequest(
-                'cerebras',
-                true,
-                false,
-                false
-              );
+              await this.performanceMonitor.recordApiRequest('cerebras', true, false, false);
             }
 
             return this._parseResponse(responseText, batch);
@@ -3044,19 +2681,17 @@ Return only the JSON array with properly formatted category names, no additional
           const errorText = await response.text();
           const isRateLimitError = response.status === 429;
           const isServerError =
-                        response.status === 503 ||
-                        response.status === 500 ||
-                        response.status === 502 ||
-                        response.status === 504;
+            response.status === 503 ||
+            response.status === 500 ||
+            response.status === 502 ||
+            response.status === 504;
 
           console.log(
             `   ❌ Cerebras ${model} failed: ${
               response.status
             } (attempt ${retryAttempt + 1}/${this.maxRetries + 1})`
           );
-          console.log(
-            `   Error details: ${errorText.substring(0, 200)}`
-          );
+          console.log(`   Error details: ${errorText.substring(0, 200)}`);
 
           // Record API failure analytics
           if (this.analyticsService) {
@@ -3075,12 +2710,7 @@ Return only the JSON array with properly formatted category names, no additional
           if (this.performanceMonitor) {
             const throttled = isRateLimitError;
             const rejected = isRateLimitError;
-            await this.performanceMonitor.recordApiRequest(
-              'cerebras',
-              false,
-              throttled,
-              rejected
-            );
+            await this.performanceMonitor.recordApiRequest('cerebras', false, throttled, rejected);
           }
 
           // Check if this is a retryable error
@@ -3093,68 +2723,48 @@ Return only the JSON array with properly formatted category names, no additional
                 'Invalid Cerebras API key. Please check your API key (should start with "csk-").'
               );
             } else if (response.status === 403) {
-              throw new Error(
-                'Cerebras API access denied. Please check your API key permissions.'
-              );
+              throw new Error('Cerebras API access denied. Please check your API key permissions.');
             } else if (response.status === 400) {
-              throw new Error(
-                'Bad request to Cerebras API. Please check your configuration.'
-              );
+              throw new Error('Bad request to Cerebras API. Please check your configuration.');
             } else {
-              throw new Error(
-                `Cerebras API request failed: ${response.status}. ${errorText}`
-              );
+              throw new Error(`Cerebras API request failed: ${response.status}. ${errorText}`);
             }
           }
 
           // If this is the last retry, throw the error
           if (retryAttempt >= this.maxRetries) {
             if (isRateLimitError) {
-              throw new Error(
-                `Cerebras rate limit exceeded after ${
-                  this.maxRetries + 1
-                } attempts`
-              );
+              throw new Error(`Cerebras rate limit exceeded after ${this.maxRetries + 1} attempts`);
             } else {
               throw new Error(
-                `Cerebras server error (${
-                  response.status
-                }) after ${this.maxRetries + 1} attempts`
+                `Cerebras server error (${response.status}) after ${this.maxRetries + 1} attempts`
               );
             }
           }
 
           // Calculate exponential backoff delay with jitter
-          const baseDelay =
-                        this.baseRetryDelay * Math.pow(2, retryAttempt);
+          const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
           const jitter = Math.random() * 1000; // Add 0-1s jitter
-          const retryDelay = Math.min(
-            baseDelay + jitter,
-            this.maxRetryDelay
-          );
+          const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
 
           console.log(
             `   ⏳ Rate limit/server error detected. Retrying in ${Math.round(
               retryDelay / 1000
             )}s...`
           );
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay)
-          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       } catch (_error) {
         console.log(
-          `   ❌ Cerebras ${model} error on attempt ${
-            retryAttempt + 1
-          }: ${_error.message}`
+          `   ❌ Cerebras ${model} error on attempt ${retryAttempt + 1}: ${_error.message}`
         );
 
         // If it's a non-retryable error, throw immediately
         if (
           _error.message.includes('Invalid') ||
-                    _error.message.includes('denied') ||
-                    _error.message.includes('Unauthorized') ||
-                    _error.message.includes('Bad request')
+          _error.message.includes('denied') ||
+          _error.message.includes('Unauthorized') ||
+          _error.message.includes('Bad request')
         ) {
           throw _error;
         }
@@ -3165,35 +2775,27 @@ Return only the JSON array with properly formatted category names, no additional
         }
 
         // Retry with exponential backoff
-        const baseDelay =
-                    this.baseRetryDelay * Math.pow(2, retryAttempt);
+        const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
         const jitter = Math.random() * 1000;
-        const retryDelay = Math.min(
-          baseDelay + jitter,
-          this.maxRetryDelay
-        );
+        const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
 
         console.log(
-          `   ⏳ Network/timeout error. Retrying in ${Math.round(
-            retryDelay / 1000
-          )}s...`
+          `   ⏳ Network/timeout error. Retrying in ${Math.round(retryDelay / 1000)}s...`
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
 
-    throw new Error(
-      `Cerebras ${model} failed after ${this.maxRetries + 1} attempts`
-    );
+    throw new Error(`Cerebras ${model} failed after ${this.maxRetries + 1} attempts`);
   }
 
   /**
-     * Process batch with Groq API (OpenAI-compatible format) with exponential backoff
-     * @param {string} prompt - Formatted prompt
-     * @param {Array} batch - Batch of bookmarks
-     * @param {string} model - Groq model name
-     * @returns {Promise<Array>} Batch results
-     */
+   * Process batch with Groq API (OpenAI-compatible format) with exponential backoff
+   * @param {string} prompt - Formatted prompt
+   * @param {Array} batch - Batch of bookmarks
+   * @param {string} model - Groq model name
+   * @returns {Promise<Array>} Batch results
+   */
   async _processWithGroq(prompt, batch, model) {
     const maxTokens = this._calculateMaxTokens(batch.length);
     const requestBody = {
@@ -3201,8 +2803,7 @@ Return only the JSON array with properly formatted category names, no additional
       messages: [
         {
           role: 'system',
-          content:
-                        'You are a bookmark categorization expert. Always return valid JSON arrays.'
+          content: 'You are a bookmark categorization expert. Always return valid JSON arrays.'
         },
         {
           role: 'user',
@@ -3214,17 +2815,11 @@ Return only the JSON array with properly formatted category names, no additional
     };
 
     // Exponential backoff retry logic
-    for (
-      let retryAttempt = 0;
-      retryAttempt <= this.maxRetries;
-      retryAttempt++
-    ) {
+    for (let retryAttempt = 0; retryAttempt <= this.maxRetries; retryAttempt++) {
       try {
         const requestStart = Date.now();
         console.log(
-          `   🔄 Groq ${model} request attempt ${retryAttempt + 1}/${
-            this.maxRetries + 1
-          }`
+          `   🔄 Groq ${model} request attempt ${retryAttempt + 1}/${this.maxRetries + 1}`
         );
 
         const response = await this.requestQueue.enqueue(
@@ -3247,15 +2842,9 @@ Return only the JSON array with properly formatted category names, no additional
         if (response.ok) {
           const data = await response.json();
 
-          if (
-            data.choices &&
-                        data.choices[0] &&
-                        data.choices[0].message
-          ) {
+          if (data.choices && data.choices[0] && data.choices[0].message) {
             const responseText = data.choices[0].message.content;
-            console.log(
-              `   ✅ Groq ${model} SUCCESS (${responseTime}ms)`
-            );
+            console.log(`   ✅ Groq ${model} SUCCESS (${responseTime}ms)`);
 
             // Record API usage analytics
             if (this.analyticsService) {
@@ -3272,12 +2861,7 @@ Return only the JSON array with properly formatted category names, no additional
 
             // Record rate limit tracking
             if (this.performanceMonitor) {
-              await this.performanceMonitor.recordApiRequest(
-                'groq',
-                true,
-                false,
-                false
-              );
+              await this.performanceMonitor.recordApiRequest('groq', true, false, false);
             }
 
             return this._parseResponse(responseText, batch);
@@ -3288,19 +2872,17 @@ Return only the JSON array with properly formatted category names, no additional
           const errorText = await response.text();
           const isRateLimitError = response.status === 429;
           const isServerError =
-                        response.status === 503 ||
-                        response.status === 500 ||
-                        response.status === 502 ||
-                        response.status === 504;
+            response.status === 503 ||
+            response.status === 500 ||
+            response.status === 502 ||
+            response.status === 504;
 
           console.log(
             `   ❌ Groq ${model} failed: ${
               response.status
             } (attempt ${retryAttempt + 1}/${this.maxRetries + 1})`
           );
-          console.log(
-            `   Error details: ${errorText.substring(0, 200)}`
-          );
+          console.log(`   Error details: ${errorText.substring(0, 200)}`);
 
           // Record API failure analytics
           if (this.analyticsService) {
@@ -3319,12 +2901,7 @@ Return only the JSON array with properly formatted category names, no additional
           if (this.performanceMonitor) {
             const throttled = isRateLimitError;
             const rejected = isRateLimitError;
-            await this.performanceMonitor.recordApiRequest(
-              'groq',
-              false,
-              throttled,
-              rejected
-            );
+            await this.performanceMonitor.recordApiRequest('groq', false, throttled, rejected);
           }
 
           // Check if this is a retryable error
@@ -3337,68 +2914,46 @@ Return only the JSON array with properly formatted category names, no additional
                 'Invalid Groq API key. Please check your API key (should start with "gsk_").'
               );
             } else if (response.status === 403) {
-              throw new Error(
-                'Groq API access denied. Please check your API key permissions.'
-              );
+              throw new Error('Groq API access denied. Please check your API key permissions.');
             } else if (response.status === 400) {
-              throw new Error(
-                'Bad request to Groq API. Please check your configuration.'
-              );
+              throw new Error('Bad request to Groq API. Please check your configuration.');
             } else {
-              throw new Error(
-                `Groq API request failed: ${response.status}. ${errorText}`
-              );
+              throw new Error(`Groq API request failed: ${response.status}. ${errorText}`);
             }
           }
 
           // If this is the last retry, throw the error
           if (retryAttempt >= this.maxRetries) {
             if (isRateLimitError) {
-              throw new Error(
-                `Groq rate limit exceeded after ${
-                  this.maxRetries + 1
-                } attempts`
-              );
+              throw new Error(`Groq rate limit exceeded after ${this.maxRetries + 1} attempts`);
             } else {
               throw new Error(
-                `Groq server error (${response.status}) after ${
-                  this.maxRetries + 1
-                } attempts`
+                `Groq server error (${response.status}) after ${this.maxRetries + 1} attempts`
               );
             }
           }
 
           // Calculate exponential backoff delay with jitter
-          const baseDelay =
-                        this.baseRetryDelay * Math.pow(2, retryAttempt);
+          const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
           const jitter = Math.random() * 1000; // Add 0-1s jitter
-          const retryDelay = Math.min(
-            baseDelay + jitter,
-            this.maxRetryDelay
-          );
+          const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
 
           console.log(
             `   ⏳ Rate limit/server error detected. Retrying in ${Math.round(
               retryDelay / 1000
             )}s...`
           );
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay)
-          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       } catch (_error) {
-        console.log(
-          `   ❌ Groq ${model} error on attempt ${
-            retryAttempt + 1
-          }: ${_error.message}`
-        );
+        console.log(`   ❌ Groq ${model} error on attempt ${retryAttempt + 1}: ${_error.message}`);
 
         // If it's a non-retryable error, throw immediately
         if (
           _error.message.includes('Invalid') ||
-                    _error.message.includes('denied') ||
-                    _error.message.includes('Unauthorized') ||
-                    _error.message.includes('Bad request')
+          _error.message.includes('denied') ||
+          _error.message.includes('Unauthorized') ||
+          _error.message.includes('Bad request')
         ) {
           throw _error;
         }
@@ -3409,36 +2964,28 @@ Return only the JSON array with properly formatted category names, no additional
         }
 
         // Retry with exponential backoff
-        const baseDelay =
-                    this.baseRetryDelay * Math.pow(2, retryAttempt);
+        const baseDelay = this.baseRetryDelay * Math.pow(2, retryAttempt);
         const jitter = Math.random() * 1000;
-        const retryDelay = Math.min(
-          baseDelay + jitter,
-          this.maxRetryDelay
-        );
+        const retryDelay = Math.min(baseDelay + jitter, this.maxRetryDelay);
 
         console.log(
-          `   ⏳ Network/timeout error. Retrying in ${Math.round(
-            retryDelay / 1000
-          )}s...`
+          `   ⏳ Network/timeout error. Retrying in ${Math.round(retryDelay / 1000)}s...`
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
 
-    throw new Error(
-      `Groq ${model} failed after ${this.maxRetries + 1} attempts`
-    );
+    throw new Error(`Groq ${model} failed after ${this.maxRetries + 1} attempts`);
   }
 
   /**
-     * Process single Gemini model request
-     * @param {Array} batch - Batch of bookmarks
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @param {string} modelName - Gemini model name
-     * @returns {Promise<Array>} Batch results
-     */
+   * Process single Gemini model request
+   * @param {Array} batch - Batch of bookmarks
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @param {string} modelName - Gemini model name
+   * @returns {Promise<Array>} Batch results
+   */
   async _processWithGemini(batch, categories, learningData, modelName) {
     const prompt = await this._buildPrompt(batch, categories, learningData);
     const requestBody = {
@@ -3469,11 +3016,7 @@ Return only the JSON array with properly formatted category names, no additional
     if (response.ok) {
       const data = await response.json();
 
-      if (
-        data.candidates &&
-                data.candidates[0] &&
-                data.candidates[0].content
-      ) {
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
         const responseText = data.candidates[0].content.parts[0].text;
         console.log(`✅ SUCCESS with ${modelName}`);
 
@@ -3495,11 +3038,7 @@ Return only the JSON array with properly formatted category names, no additional
       }
     } else {
       const errorText = await response.text();
-      console.error(
-        `❌ ${modelName} failed:`,
-        response.status,
-        errorText
-      );
+      console.error(`❌ ${modelName} failed:`, response.status, errorText);
 
       // Record API failure analytics
       if (this.analyticsService) {
@@ -3515,32 +3054,24 @@ Return only the JSON array with properly formatted category names, no additional
 
       // Handle specific error types
       if (response.status === 401) {
-        throw new Error(
-          'Invalid API key. Please check your Gemini API key in settings.'
-        );
+        throw new Error('Invalid API key. Please check your Gemini API key in settings.');
       } else if (response.status === 403) {
-        throw new Error(
-          'API access denied. Please check your API key permissions.'
-        );
+        throw new Error('API access denied. Please check your API key permissions.');
       } else if (response.status === 400) {
-        throw new Error(
-          'Bad request. Please check your API key format.'
-        );
+        throw new Error('Bad request. Please check your API key format.');
       } else {
-        throw new Error(
-          `Gemini API request failed: ${response.status}. ${errorText}`
-        );
+        throw new Error(`Gemini API request failed: ${response.status}. ${errorText}`);
       }
     }
   }
 
   /**
-     * Build prompt for Gemini API
-     * @param {Array} bookmarks - Bookmarks to categorize
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @returns {string} Formatted prompt
-     */
+   * Build prompt for Gemini API
+   * @param {Array} bookmarks - Bookmarks to categorize
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @returns {string} Formatted prompt
+   */
   async _buildPrompt(bookmarks, categories, learningData) {
     // Get existing folder structure to include in prompt
     const existingFolders = await this._getExistingFolderStructure();
@@ -3640,10 +3171,9 @@ Based on previous user corrections and manual categorizations, follow these patt
         prompt += `\n- ✅ URLs/titles containing "${pattern}" → MUST go to "${category}"`;
       }
       prompt +=
-                '\n\n**IMPORTANT:** These patterns are based on user corrections. Follow them exactly to avoid repeating mistakes.';
+        '\n\n**IMPORTANT:** These patterns are based on user corrections. Follow them exactly to avoid repeating mistakes.';
     } else {
-      prompt +=
-                '\n- No previous learning data available - use content analysis for categorization';
+      prompt += '\n- No previous learning data available - use content analysis for categorization';
     }
 
     prompt += '\n\n**Bookmarks to Categorize:**';
@@ -3733,20 +3263,18 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Parse API response
-     * @param {string} responseText - Raw API response
-     * @param {Array} batch - Original batch of bookmarks
-     * @returns {Array} Parsed results
-     */
+   * Parse API response
+   * @param {string} responseText - Raw API response
+   * @param {Array} batch - Original batch of bookmarks
+   * @returns {Array} Parsed results
+   */
   _parseResponse(responseText, batch) {
     try {
       // Clean the response text
       let cleanText = responseText.trim();
 
       // Remove markdown code blocks if present
-      cleanText = cleanText
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '');
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
 
       // Try to find JSON array in the response
       const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
@@ -3780,9 +3308,7 @@ Return only the JSON array, no additional text or formatting`;
         // Ensure category is not empty
         if (!category || category.trim() === '') {
           console.warn(
-            `⚠️ Empty category detected for bookmark ${
-              index + 1
-            }. Using "Tools > Utilities"`
+            `⚠️ Empty category detected for bookmark ${index + 1}. Using "Tools > Utilities"`
           );
           category = 'Tools > Utilities';
         }
@@ -3805,9 +3331,7 @@ Return only the JSON array, no additional text or formatting`;
           '🚨 CRITICAL: "Other" categories detected after validation!',
           otherCategories
         );
-        throw new Error(
-          'AI returned forbidden "Other" categories despite explicit instructions'
-        );
+        throw new Error('AI returned forbidden "Other" categories despite explicit instructions');
       }
 
       return results;
@@ -3818,12 +3342,10 @@ Return only the JSON array, no additional text or formatting`;
       // Check if this might be a truncation error
       if (
         _error.message.includes('Unexpected end of JSON') ||
-                _error.message.includes('Unexpected token') ||
-                _error.message.includes('JSON')
+        _error.message.includes('Unexpected token') ||
+        _error.message.includes('JSON')
       ) {
-        const truncationError = new Error(
-          `JSON truncation detected: ${_error.message}`
-        );
+        const truncationError = new Error(`JSON truncation detected: ${_error.message}`);
         truncationError.isTruncation = true;
         throw truncationError;
       }
@@ -3833,36 +3355,32 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Calculate dynamic max_tokens based on batch size
-     * @param {number} batchSize - Number of bookmarks in batch
-     * @returns {number} Calculated max_tokens value
-     */
+   * Calculate dynamic max_tokens based on batch size
+   * @param {number} batchSize - Number of bookmarks in batch
+   * @returns {number} Calculated max_tokens value
+   */
   _calculateMaxTokens(batchSize) {
     const baseTokensPerBookmark = 150;
     const overhead = 500;
     const buffer = 1.2;
 
-    const calculated = Math.ceil(
-      (batchSize * baseTokensPerBookmark + overhead) * buffer
-    );
+    const calculated = Math.ceil((batchSize * baseTokensPerBookmark + overhead) * buffer);
     const min = 2000;
     const max = 8000;
 
     const result = Math.max(min, Math.min(max, calculated));
-    console.log(
-      `   📊 Dynamic max_tokens: ${result} (batch size: ${batchSize})`
-    );
+    console.log(`   📊 Dynamic max_tokens: ${result} (batch size: ${batchSize})`);
     return result;
   }
 
   /**
-     * Retry processing with smaller batches when truncation is detected
-     * @param {Array} batch - Original batch that failed
-     * @param {Array} categories - Available categories
-     * @param {Object} learningData - Learning data
-     * @param {Object} model - Model that encountered truncation
-     * @returns {Promise<Array>} Combined results from split batches
-     */
+   * Retry processing with smaller batches when truncation is detected
+   * @param {Array} batch - Original batch that failed
+   * @param {Array} categories - Available categories
+   * @param {Object} learningData - Learning data
+   * @param {Object} model - Model that encountered truncation
+   * @returns {Promise<Array>} Combined results from split batches
+   */
   async _retryWithSmallerBatches(batch, categories, learningData, model) {
     const splitSize = Math.ceil(batch.length / 2);
     console.log(
@@ -3877,42 +3395,19 @@ Return only the JSON array, no additional text or formatting`;
       console.log(
         `   📦 Processing sub-batch ${
           Math.floor(i / splitSize) + 1
-        }/${Math.ceil(batch.length / splitSize)} (${
-          subBatch.length
-        } bookmarks)`
+        }/${Math.ceil(batch.length / splitSize)} (${subBatch.length} bookmarks)`
       );
 
       try {
         let subResult;
         if (model.provider === 'gemini') {
-          subResult = await this._processWithGemini(
-            subBatch,
-            categories,
-            learningData,
-            model.name
-          );
+          subResult = await this._processWithGemini(subBatch, categories, learningData, model.name);
         } else if (model.provider === 'cerebras') {
-          const prompt = await this._buildPrompt(
-            subBatch,
-            categories,
-            learningData
-          );
-          subResult = await this._processWithCerebras(
-            prompt,
-            subBatch,
-            model.name
-          );
+          const prompt = await this._buildPrompt(subBatch, categories, learningData);
+          subResult = await this._processWithCerebras(prompt, subBatch, model.name);
         } else if (model.provider === 'groq') {
-          const prompt = await this._buildPrompt(
-            subBatch,
-            categories,
-            learningData
-          );
-          subResult = await this._processWithGroq(
-            prompt,
-            subBatch,
-            model.name
-          );
+          const prompt = await this._buildPrompt(subBatch, categories, learningData);
+          subResult = await this._processWithGroq(prompt, subBatch, model.name);
         }
 
         if (subResult) {
@@ -3921,9 +3416,7 @@ Return only the JSON array, no additional text or formatting`;
       } catch (subError) {
         // If sub-batch also fails with truncation and can be split further
         if (subError.isTruncation && subBatch.length > 1) {
-          console.warn(
-            '   ⚠️ Sub-batch truncation detected, splitting further...'
-          );
+          console.warn('   ⚠️ Sub-batch truncation detected, splitting further...');
           const deeperResults = await this._retryWithSmallerBatches(
             subBatch,
             categories,
@@ -3943,17 +3436,15 @@ Return only the JSON array, no additional text or formatting`;
       }
     }
 
-    console.log(
-      `✅ Successfully processed split batch: ${results.length} results`
-    );
+    console.log(`✅ Successfully processed split batch: ${results.length} results`);
     return results;
   }
 
   /**
-     * Repair truncated JSON by adding missing closing brackets/braces
-     * @param {string} jsonStr - Potentially truncated JSON string
-     * @returns {string} Repaired JSON string
-     */
+   * Repair truncated JSON by adding missing closing brackets/braces
+   * @param {string} jsonStr - Potentially truncated JSON string
+   * @returns {string} Repaired JSON string
+   */
   _repairTruncatedJson(jsonStr) {
     if (!jsonStr || jsonStr.trim() === '') {
       return jsonStr;
@@ -3971,21 +3462,14 @@ Return only the JSON array, no additional text or formatting`;
     // If truncation detected, try to repair
     if (openBrackets > closeBrackets || openBraces > closeBraces) {
       console.warn('⚠️ JSON truncation detected - attempting repair...');
-      console.warn(
-        `   Open brackets: ${openBrackets}, Close: ${closeBrackets}`
-      );
-      console.warn(
-        `   Open braces: ${openBraces}, Close: ${closeBraces}`
-      );
+      console.warn(`   Open brackets: ${openBrackets}, Close: ${closeBrackets}`);
+      console.warn(`   Open braces: ${openBraces}, Close: ${closeBraces}`);
 
       // Remove trailing incomplete entries
       // Look for the last complete object in array
       const lastCompleteObjectMatch = repaired.match(/\},\s*\{[^}]*$/);
       if (lastCompleteObjectMatch) {
-        repaired = repaired.substring(
-          0,
-          lastCompleteObjectMatch.index + 1
-        );
+        repaired = repaired.substring(0, lastCompleteObjectMatch.index + 1);
         modified = true;
         console.warn('   ✂️ Removed incomplete trailing object');
       }
@@ -4002,23 +3486,18 @@ Return only the JSON array, no additional text or formatting`;
       if (missingBraces > 0) {
         repaired += '}'.repeat(missingBraces);
         modified = true;
-        console.warn(
-          `   🔧 Added ${missingBraces} missing closing brace(s)`
-        );
+        console.warn(`   🔧 Added ${missingBraces} missing closing brace(s)`);
       }
 
       // Add missing closing brackets (for arrays)
       const remainingOpenBrackets = (repaired.match(/\[/g) || []).length;
       const remainingCloseBrackets = (repaired.match(/\]/g) || []).length;
-      const missingBrackets =
-                remainingOpenBrackets - remainingCloseBrackets;
+      const missingBrackets = remainingOpenBrackets - remainingCloseBrackets;
 
       if (missingBrackets > 0) {
         repaired += ']'.repeat(missingBrackets);
         modified = true;
-        console.warn(
-          `   🔧 Added ${missingBrackets} missing closing bracket(s)`
-        );
+        console.warn(`   🔧 Added ${missingBrackets} missing closing bracket(s)`);
       }
 
       if (modified) {
@@ -4030,9 +3509,9 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Test API key validity
-     * @returns {Promise<boolean>} True if API key is valid
-     */
+   * Test API key validity
+   * @returns {Promise<boolean>} True if API key is valid
+   */
   async testApiKey() {
     if (!this.apiKey) {
       return false;
@@ -4040,9 +3519,7 @@ Return only the JSON array, no additional text or formatting`;
 
     // Basic format validation
     if (!this.apiKey.startsWith('AIza') || this.apiKey.length < 35) {
-      console.error(
-        'API key format invalid. Should start with "AIza" and be ~39 characters long.'
-      );
+      console.error('API key format invalid. Should start with "AIza" and be ~39 characters long.');
       return false;
     }
 
@@ -4078,11 +3555,7 @@ Return only the JSON array, no additional text or formatting`;
         return true;
       } else {
         const errorText = await testResponse.text();
-        console.error(
-          'API key test failed:',
-          testResponse.status,
-          errorText
-        );
+        console.error('API key test failed:', testResponse.status, errorText);
         return false;
       }
     } catch (_error) {
@@ -4092,9 +3565,9 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Get user settings
-     * @returns {Promise<Object>} User settings
-     */
+   * Get user settings
+   * @returns {Promise<Object>} User settings
+   */
   async _getSettings() {
     const defaultSettings = {
       functionalMode: true, // FMHY-style functional organization
@@ -4105,9 +3578,7 @@ Return only the JSON array, no additional text or formatting`;
     };
 
     try {
-      const result = await chrome.storage.sync.get([
-        'bookmarkMindSettings'
-      ]);
+      const result = await chrome.storage.sync.get(['bookmarkMindSettings']);
       return { ...defaultSettings, ...result.bookmarkMindSettings };
     } catch (_error) {
       console.error('_error getting settings:', _error);
@@ -4116,19 +3587,19 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Delay helper function
-     * @param {number} ms - Milliseconds to delay
-     * @returns {Promise} Promise that resolves after delay
-     */
+   * Delay helper function
+   * @param {number} ms - Milliseconds to delay
+   * @returns {Promise} Promise that resolves after delay
+   */
   _delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-     * Enrich a batch of bookmarks with live titles fetched from their URLs
-     * Optimized with configurable concurrency and performance metrics
-     * @param {Array} batch - Batch of bookmarks to enrich
-     */
+   * Enrich a batch of bookmarks with live titles fetched from their URLs
+   * Optimized with configurable concurrency and performance metrics
+   * @param {Array} batch - Batch of bookmarks to enrich
+   */
   async _enrichBatchWithTitles(batch) {
     // Configurable concurrency based on settings or use default
     const settings = await this._getSettings();
@@ -4155,15 +3626,9 @@ Return only the JSON array, no additional text or formatting`;
 
         try {
           const liveTitle = await this._fetchPageTitle(bookmark.url);
-          if (
-            liveTitle &&
-                        liveTitle.length > 0 &&
-                        liveTitle !== bookmark.title
-          ) {
+          if (liveTitle && liveTitle.length > 0 && liveTitle !== bookmark.title) {
             if (ENABLE_METRICS) {
-              console.log(
-                `   📝 Updated title: "${bookmark.title}" → "${liveTitle}"`
-              );
+              console.log(`   📝 Updated title: "${bookmark.title}" → "${liveTitle}"`);
             }
             bookmark.title = liveTitle;
             updatedCount++;
@@ -4216,10 +3681,10 @@ Return only the JSON array, no additional text or formatting`;
   }
 
   /**
-     * Fetch the page title from a URL
-     * @param {string} url - URL to fetch
-     * @returns {Promise<string>} Page title or null
-     */
+   * Fetch the page title from a URL
+   * @param {string} url - URL to fetch
+   * @returns {Promise<string>} Page title or null
+   */
   async _fetchPageTitle(url) {
     try {
       const controller = new AbortController();
@@ -4230,7 +3695,7 @@ Return only the JSON array, no additional text or formatting`;
         signal: controller.signal,
         headers: {
           'User-Agent':
-                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
       });
 

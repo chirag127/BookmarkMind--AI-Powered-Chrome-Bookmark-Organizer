@@ -16,9 +16,9 @@ class FolderConsolidator {
   }
 
   /**
-     * Main function to consolidate sparse folders
-     * @returns {Promise<Object>} Consolidation results
-     */
+   * Main function to consolidate sparse folders
+   * @returns {Promise<Object>} Consolidation results
+   */
   async consolidateSparsefolders() {
     console.log('🗂️ Starting folder consolidation process...');
 
@@ -49,7 +49,6 @@ class FolderConsolidator {
       }
 
       return this.consolidationResults;
-
     } catch (_error) {
       console.error('❌ _error during folder consolidation:', _error);
       throw new Error(`Folder consolidation failed: ${_error.message}`);
@@ -57,15 +56,15 @@ class FolderConsolidator {
   }
 
   /**
-     * Recursively process folders and consolidate sparse ones
-     * @param {string} folderId - Folder ID to process
-     * @param {number} depth - Current depth in folder hierarchy
-     */
+   * Recursively process folders and consolidate sparse ones
+   * @param {string} folderId - Folder ID to process
+   * @param {number} depth - Current depth in folder hierarchy
+   */
   async _processFolder(folderId, depth) {
     try {
       const children = await chrome.bookmarks.getChildren(folderId);
-      const folders = children.filter(child => !child.url);
-      const bookmarks = children.filter(child => child.url);
+      const folders = children.filter((child) => !child.url);
+      const bookmarks = children.filter((child) => child.url);
 
       // Process subfolders first (bottom-up approach)
       for (const folder of folders) {
@@ -73,24 +72,24 @@ class FolderConsolidator {
       }
 
       // After processing subfolders, check if current folder needs consolidation
-      if (depth > 0) { // Don't consolidate root folders
+      if (depth > 0) {
+        // Don't consolidate root folders
         await this._checkAndConsolidateFolder(folderId);
       }
-
     } catch (_error) {
       console.error(`_error processing folder ${folderId}:`, _error);
     }
   }
 
   /**
-     * Check if a folder should be consolidated and perform consolidation
-     * @param {string} folderId - Folder ID to check
-     */
+   * Check if a folder should be consolidated and perform consolidation
+   * @param {string} folderId - Folder ID to check
+   */
   async _checkAndConsolidateFolder(folderId) {
     try {
       const children = await chrome.bookmarks.getChildren(folderId);
-      const bookmarks = children.filter(child => child.url);
-      const subfolders = children.filter(child => !child.url);
+      const bookmarks = children.filter((child) => child.url);
+      const subfolders = children.filter((child) => !child.url);
 
       // Get folder info
       const folderInfo = await chrome.bookmarks.get(folderId);
@@ -119,22 +118,23 @@ class FolderConsolidator {
         console.log(`📁 Found empty folder: "${folder.title}"`);
         await this._removeEmptyFolder(folderId, folder.title);
       }
-
     } catch (_error) {
       console.error(`_error checking folder ${folderId}:`, _error);
     }
   }
 
   /**
-     * Consolidate a sparse folder by moving its bookmarks to parent
-     * @param {string} folderId - Folder to consolidate
-     * @param {string} parentId - Parent folder ID
-     * @param {Array} bookmarks - Bookmarks to move
-     * @param {string} folderTitle - Title of folder being consolidated
-     */
+   * Consolidate a sparse folder by moving its bookmarks to parent
+   * @param {string} folderId - Folder to consolidate
+   * @param {string} parentId - Parent folder ID
+   * @param {Array} bookmarks - Bookmarks to move
+   * @param {string} folderTitle - Title of folder being consolidated
+   */
   async _consolidateFolder(folderId, parentId, bookmarks, folderTitle) {
     try {
-      console.log(`🚚 Consolidating folder "${folderTitle}" (${bookmarks.length} bookmarks) to parent...`);
+      console.log(
+        `🚚 Consolidating folder "${folderTitle}" (${bookmarks.length} bookmarks) to parent...`
+      );
 
       // Move all bookmarks to parent folder
       for (const bookmark of bookmarks) {
@@ -164,17 +164,16 @@ class FolderConsolidator {
 
       // Check if parent folder now needs consolidation too
       await this._checkParentForConsolidation(parentId);
-
     } catch (_error) {
       console.error(`_error consolidating folder ${folderId}:`, _error);
     }
   }
 
   /**
-     * Remove an empty folder
-     * @param {string} folderId - Folder ID to remove
-     * @param {string} folderTitle - Folder title for logging
-     */
+   * Remove an empty folder
+   * @param {string} folderId - Folder ID to remove
+   * @param {string} folderTitle - Folder title for logging
+   */
   async _removeEmptyFolder(folderId, folderTitle) {
     try {
       await chrome.bookmarks.remove(folderId);
@@ -186,16 +185,15 @@ class FolderConsolidator {
         bookmarkCount: 0,
         action: 'removed_empty'
       });
-
     } catch (_error) {
       console.error(`_error removing empty folder ${folderId}:`, _error);
     }
   }
 
   /**
-     * Check if parent folder now needs consolidation after receiving bookmarks
-     * @param {string} parentId - Parent folder ID to check
-     */
+   * Check if parent folder now needs consolidation after receiving bookmarks
+   * @param {string} parentId - Parent folder ID to check
+   */
   async _checkParentForConsolidation(parentId) {
     try {
       // Get parent folder info
@@ -209,24 +207,29 @@ class FolderConsolidator {
 
       // Get parent's children
       const children = await chrome.bookmarks.getChildren(parentId);
-      const bookmarks = children.filter(child => child.url);
+      const bookmarks = children.filter((child) => child.url);
 
       // If parent still has fewer than threshold bookmarks, consolidate it too
-      if (bookmarks.length < this.minBookmarksThreshold && bookmarks.length > 0 && parent.parentId) {
-        console.log(`📁 Parent folder "${parent.title}" also needs consolidation (${bookmarks.length} bookmarks)`);
+      if (
+        bookmarks.length < this.minBookmarksThreshold &&
+        bookmarks.length > 0 &&
+        parent.parentId
+      ) {
+        console.log(
+          `📁 Parent folder "${parent.title}" also needs consolidation (${bookmarks.length} bookmarks)`
+        );
         await this._consolidateFolder(parentId, parent.parentId, bookmarks, parent.title);
       }
-
     } catch (_error) {
       console.error(`_error checking parent folder ${parentId}:`, _error);
     }
   }
 
   /**
-     * Check if a folder is a system folder that shouldn't be consolidated
-     * @param {Object} folder - Folder object
-     * @returns {boolean} True if system folder
-     */
+   * Check if a folder is a system folder that shouldn't be consolidated
+   * @param {Object} folder - Folder object
+   * @returns {boolean} True if system folder
+   */
   _isSystemFolder(folder) {
     if (!folder) return true;
 
@@ -245,9 +248,9 @@ class FolderConsolidator {
   }
 
   /**
-     * Get consolidation preview without actually moving bookmarks
-     * @returns {Promise<Object>} Preview of what would be consolidated
-     */
+   * Get consolidation preview without actually moving bookmarks
+   * @returns {Promise<Object>} Preview of what would be consolidated
+   */
   async getConsolidationPreview() {
     console.log('🔍 Generating consolidation preview...');
 
@@ -267,7 +270,6 @@ class FolderConsolidator {
 
       console.log('📊 Consolidation preview:', preview);
       return preview;
-
     } catch (_error) {
       console.error('❌ _error generating preview:', _error);
       throw new Error(`Preview generation failed: ${_error.message}`);
@@ -275,16 +277,16 @@ class FolderConsolidator {
   }
 
   /**
-     * Preview folder consolidation without making changes
-     * @param {string} folderId - Folder ID to preview
-     * @param {number} depth - Current depth
-     * @param {Object} preview - Preview object to populate
-     */
+   * Preview folder consolidation without making changes
+   * @param {string} folderId - Folder ID to preview
+   * @param {number} depth - Current depth
+   * @param {Object} preview - Preview object to populate
+   */
   async _previewFolder(folderId, depth, preview) {
     try {
       const children = await chrome.bookmarks.getChildren(folderId);
-      const folders = children.filter(child => !child.url);
-      const bookmarks = children.filter(child => child.url);
+      const folders = children.filter((child) => !child.url);
+      const bookmarks = children.filter((child) => child.url);
 
       // Preview subfolders first
       for (const folder of folders) {
@@ -318,17 +320,16 @@ class FolderConsolidator {
           }
         }
       }
-
     } catch (_error) {
       console.error(`_error previewing folder ${folderId}:`, _error);
     }
   }
 
   /**
-     * Get the full path of a folder
-     * @param {string} folderId - Folder ID
-     * @returns {Promise<string>} Full folder path
-     */
+   * Get the full path of a folder
+   * @param {string} folderId - Folder ID
+   * @returns {Promise<string>} Full folder path
+   */
   async _getFolderPath(folderId) {
     try {
       const path = [];
@@ -351,7 +352,6 @@ class FolderConsolidator {
       }
 
       return path.join(' > ') || 'Root';
-
     } catch (_error) {
       console.error(`_error getting folder path for ${folderId}:`, _error);
       return 'Unknown Path';
@@ -359,9 +359,9 @@ class FolderConsolidator {
   }
 
   /**
-     * Set the minimum bookmarks threshold
-     * @param {number} threshold - New threshold value
-     */
+   * Set the minimum bookmarks threshold
+   * @param {number} threshold - New threshold value
+   */
   setMinBookmarksThreshold(threshold) {
     if (threshold > 0) {
       this.minBookmarksThreshold = threshold;

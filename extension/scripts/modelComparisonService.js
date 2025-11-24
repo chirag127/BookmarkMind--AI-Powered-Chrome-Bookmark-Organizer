@@ -10,8 +10,8 @@ class ModelComparisonService {
   }
 
   /**
-     * Initialize model comparison data
-     */
+   * Initialize model comparison data
+   */
   async initialize() {
     const existing = await this._getModelData();
     if (!existing || !existing.version) {
@@ -20,9 +20,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Record model performance metrics
-     * @param {Object} metrics - Performance metrics
-     */
+   * Record model performance metrics
+   * @param {Object} metrics - Performance metrics
+   */
   async recordModelPerformance(metrics) {
     const data = await this._getModelData();
     const timestamp = Date.now();
@@ -62,9 +62,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Record A/B test comparison
-     * @param {Object} comparison - A/B test results
-     */
+   * Record A/B test comparison
+   * @param {Object} comparison - A/B test results
+   */
   async recordABTest(comparison) {
     const data = await this._getModelData();
 
@@ -95,9 +95,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Track API cost
-     * @param {Object} costData - Cost information
-     */
+   * Track API cost
+   * @param {Object} costData - Cost information
+   */
   async trackCost(costData) {
     const costTracking = await this._getCostTracking();
     const timestamp = Date.now();
@@ -144,11 +144,11 @@ class ModelComparisonService {
   }
 
   /**
-     * Get recommended model for bookmark type
-     * @param {string} bookmarkType - Type of bookmark content
-     * @param {Array} userHistory - User's categorization history
-     * @returns {Promise<Object>} Recommended model and reason
-     */
+   * Get recommended model for bookmark type
+   * @param {string} bookmarkType - Type of bookmark content
+   * @param {Array} userHistory - User's categorization history
+   * @returns {Promise<Object>} Recommended model and reason
+   */
   async getRecommendedModel(bookmarkType = 'general', userHistory = []) {
     const data = await this._getModelData();
     const costTracking = await this._getCostTracking();
@@ -160,23 +160,25 @@ class ModelComparisonService {
       if (performances.length === 0) continue;
 
       // Filter by bookmark type if enough data
-      const relevantPerf = performances.filter(p =>
-        p.bookmarkType === bookmarkType || bookmarkType === 'general'
+      const relevantPerf = performances.filter(
+        (p) => p.bookmarkType === bookmarkType || bookmarkType === 'general'
       );
 
       if (relevantPerf.length === 0) continue;
 
       // Calculate average metrics
-      const avgSuccessRate = relevantPerf.reduce((sum, p) => sum + p.successRate, 0) / relevantPerf.length;
-      const avgSpeed = relevantPerf.reduce((sum, p) => sum + p.responseTime, 0) / relevantPerf.length;
+      const avgSuccessRate =
+        relevantPerf.reduce((sum, p) => sum + p.successRate, 0) / relevantPerf.length;
+      const avgSpeed =
+        relevantPerf.reduce((sum, p) => sum + p.responseTime, 0) / relevantPerf.length;
       const avgCost = relevantPerf.reduce((sum, p) => sum + p.cost, 0) / relevantPerf.length;
       const totalUsage = relevantPerf.length;
 
       // Weighted score: success rate (50%), speed (30%), cost (20%)
-      const speedScore = Math.max(0, 1 - (avgSpeed / 30000)); // Normalize to 30s max
-      const costScore = Math.max(0, 1 - (avgCost / 0.01)); // Normalize to $0.01 max
+      const speedScore = Math.max(0, 1 - avgSpeed / 30000); // Normalize to 30s max
+      const costScore = Math.max(0, 1 - avgCost / 0.01); // Normalize to $0.01 max
 
-      const score = (avgSuccessRate * 0.5) + (speedScore * 0.3) + (costScore * 0.2);
+      const score = avgSuccessRate * 0.5 + speedScore * 0.3 + costScore * 0.2;
 
       modelScores[modelName] = {
         score,
@@ -189,8 +191,7 @@ class ModelComparisonService {
     }
 
     // Sort by score
-    const sortedModels = Object.entries(modelScores)
-      .sort((a, b) => b[1].score - a[1].score);
+    const sortedModels = Object.entries(modelScores).sort((a, b) => b[1].score - a[1].score);
 
     if (sortedModels.length === 0) {
       // No history, return default recommendation
@@ -234,9 +235,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get model comparison dashboard data
-     * @returns {Promise<Object>} Dashboard data
-     */
+   * Get model comparison dashboard data
+   * @returns {Promise<Object>} Dashboard data
+   */
   async getComparisonDashboard() {
     const data = await this._getModelData();
     const costTracking = await this._getCostTracking();
@@ -282,10 +283,10 @@ class ModelComparisonService {
   }
 
   /**
-     * Get cost tracking report
-     * @param {string} period - Time period ('day', 'week', 'month', 'all')
-     * @returns {Promise<Object>} Cost report
-     */
+   * Get cost tracking report
+   * @param {string} period - Time period ('day', 'week', 'month', 'all')
+   * @returns {Promise<Object>} Cost report
+   */
   async getCostReport(period = 'all') {
     const costTracking = await this._getCostTracking();
     const now = Date.now();
@@ -294,11 +295,11 @@ class ModelComparisonService {
       day: 24 * 60 * 60 * 1000,
       week: 7 * 24 * 60 * 60 * 1000,
       month: 30 * 24 * 60 * 60 * 1000,
-      all: Infinity
+      all: Number.POSITIVE_INFINITY
     };
 
-    const startTime = now - (periodMs[period] || Infinity);
-    const periodCosts = costTracking.costHistory.filter(c => c.timestamp >= startTime);
+    const startTime = now - (periodMs[period] || Number.POSITIVE_INFINITY);
+    const periodCosts = costTracking.costHistory.filter((c) => c.timestamp >= startTime);
 
     const totalCost = periodCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
     const totalTokens = periodCosts.reduce((sum, c) => sum + c.totalTokens, 0);
@@ -343,9 +344,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Set budget alert threshold
-     * @param {Object} budget - Budget configuration
-     */
+   * Set budget alert threshold
+   * @param {Object} budget - Budget configuration
+   */
   async setBudgetAlert(budget) {
     const costTracking = await this._getCostTracking();
 
@@ -361,37 +362,37 @@ class ModelComparisonService {
   }
 
   /**
-     * Calculate cost based on token usage and model pricing
-     * @param {Object} data - Usage data with model, inputTokens, outputTokens
-     * @returns {number} Estimated cost in USD
-     * @private
-     */
+   * Calculate cost based on token usage and model pricing
+   * @param {Object} data - Usage data with model, inputTokens, outputTokens
+   * @returns {number} Estimated cost in USD
+   * @private
+   */
   _calculateCost(data) {
     const pricing = {
       // Gemini pricing
-      'gemini-2.5-pro': { input: 1.25, output: 5.00 },
-      'gemini-2.5-flash-preview-09-2025': { input: 0.075, output: 0.30 },
-      'gemini-2.5-flash': { input: 0.075, output: 0.30 },
+      'gemini-2.5-pro': { input: 1.25, output: 5.0 },
+      'gemini-2.5-flash-preview-09-2025': { input: 0.075, output: 0.3 },
+      'gemini-2.5-flash': { input: 0.075, output: 0.3 },
       'gemini-2.5-flash-image': { input: 0.0375, output: 0.15 },
       'gemini-2.0-flash': { input: 0.0375, output: 0.15 },
       'gemini-2.5-flash-lite-preview-09-2025': { input: 0.02, output: 0.08 },
       'gemini-2.5-flash-lite': { input: 0.02, output: 0.08 },
 
       // Cerebras pricing
-      'gpt-oss-120b': { input: 0.60, output: 0.60 },
-      'llama-3.3-70b': { input: 0.60, output: 0.60 },
-      'qwen-3-32b': { input: 0.10, output: 0.10 },
-      'llama3.1-8b': { input: 0.10, output: 0.10 },
+      'gpt-oss-120b': { input: 0.6, output: 0.6 },
+      'llama-3.3-70b': { input: 0.6, output: 0.6 },
+      'qwen-3-32b': { input: 0.1, output: 0.1 },
+      'llama3.1-8b': { input: 0.1, output: 0.1 },
 
       // Groq pricing (free tier)
-      'openai/gpt-oss-120b': { input: 0.00, output: 0.00 },
-      'llama-3.3-70b-versatile': { input: 0.00, output: 0.00 },
-      'qwen/qwen3-32b': { input: 0.00, output: 0.00 },
-      'openai/gpt-oss-20b': { input: 0.00, output: 0.00 },
-      'llama-3.1-8b-instant': { input: 0.00, output: 0.00 }
+      'openai/gpt-oss-120b': { input: 0.0, output: 0.0 },
+      'llama-3.3-70b-versatile': { input: 0.0, output: 0.0 },
+      'qwen/qwen3-32b': { input: 0.0, output: 0.0 },
+      'openai/gpt-oss-20b': { input: 0.0, output: 0.0 },
+      'llama-3.1-8b-instant': { input: 0.0, output: 0.0 }
     };
 
-    const modelPricing = pricing[data.model] || { input: 0.10, output: 0.30 };
+    const modelPricing = pricing[data.model] || { input: 0.1, output: 0.3 };
     const inputTokens = data.inputTokens || 0;
     const outputTokens = data.outputTokens || 0;
 
@@ -403,9 +404,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Update aggregate statistics
-     * @private
-     */
+   * Update aggregate statistics
+   * @private
+   */
   _updateAggregateStats(data, performance) {
     const modelName = performance.model;
 
@@ -428,12 +429,12 @@ class ModelComparisonService {
   }
 
   /**
-     * Calculate model statistics
-     * @private
-     */
+   * Calculate model statistics
+   * @private
+   */
   _calculateModelStats(performances) {
     const totalCalls = performances.length;
-    const successfulCalls = performances.filter(p => p.successRate >= 0.5).length;
+    const successfulCalls = performances.filter((p) => p.successRate >= 0.5).length;
     const avgResponseTime = performances.reduce((sum, p) => sum + p.responseTime, 0) / totalCalls;
     const totalCost = performances.reduce((sum, p) => sum + p.cost, 0);
     const avgSuccessRate = performances.reduce((sum, p) => sum + p.successRate, 0) / totalCalls;
@@ -448,22 +449,20 @@ class ModelComparisonService {
   }
 
   /**
-     * Get recent costs for trending
-     * @private
-     */
+   * Get recent costs for trending
+   * @private
+   */
   _getRecentCosts(costHistory) {
     const now = Date.now();
     const last7Days = now - 7 * 24 * 60 * 60 * 1000;
 
-    return costHistory
-      .filter(c => c.timestamp >= last7Days)
-      .slice(-50);
+    return costHistory.filter((c) => c.timestamp >= last7Days).slice(-50);
   }
 
   /**
-     * Summarize A/B test results
-     * @private
-     */
+   * Summarize A/B test results
+   * @private
+   */
   _summarizeABTests(abTests) {
     if (abTests.length === 0) {
       return { totalTests: 0, preferences: {} };
@@ -487,9 +486,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Check budget alerts
-     * @private
-     */
+   * Check budget alerts
+   * @private
+   */
   async _checkBudgetAlerts(costTracking) {
     if (!costTracking.budgetAlert || !costTracking.budgetAlert.enabled) {
       return;
@@ -501,7 +500,7 @@ class ModelComparisonService {
     // Check daily limit
     if (costTracking.budgetAlert.dailyLimit) {
       const dayStart = new Date(now).setHours(0, 0, 0, 0);
-      const todayCosts = costTracking.costHistory.filter(c => c.timestamp >= dayStart);
+      const todayCosts = costTracking.costHistory.filter((c) => c.timestamp >= dayStart);
       const todayTotal = todayCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
 
       if (todayTotal >= costTracking.budgetAlert.dailyLimit * threshold) {
@@ -512,7 +511,7 @@ class ModelComparisonService {
     // Check weekly limit
     if (costTracking.budgetAlert.weeklyLimit) {
       const weekStart = now - 7 * 24 * 60 * 60 * 1000;
-      const weekCosts = costTracking.costHistory.filter(c => c.timestamp >= weekStart);
+      const weekCosts = costTracking.costHistory.filter((c) => c.timestamp >= weekStart);
       const weekTotal = weekCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
 
       if (weekTotal >= costTracking.budgetAlert.weeklyLimit * threshold) {
@@ -523,7 +522,7 @@ class ModelComparisonService {
     // Check monthly limit
     if (costTracking.budgetAlert.monthlyLimit) {
       const monthStart = now - 30 * 24 * 60 * 60 * 1000;
-      const monthCosts = costTracking.costHistory.filter(c => c.timestamp >= monthStart);
+      const monthCosts = costTracking.costHistory.filter((c) => c.timestamp >= monthStart);
       const monthTotal = monthCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
 
       if (monthTotal >= costTracking.budgetAlert.monthlyLimit * threshold) {
@@ -533,12 +532,14 @@ class ModelComparisonService {
   }
 
   /**
-     * Send budget alert notification
-     * @private
-     */
+   * Send budget alert notification
+   * @private
+   */
   async _sendBudgetAlert(period, current, limit) {
     const percentage = Math.round((current / limit) * 100);
-    console.warn(`⚠️ Budget Alert: ${period} spending at ${percentage}% ($${current.toFixed(4)} / $${limit.toFixed(2)})`);
+    console.warn(
+      `⚠️ Budget Alert: ${period} spending at ${percentage}% ($${current.toFixed(4)} / $${limit.toFixed(2)})`
+    );
 
     // Send message to background script for notification
     if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -557,9 +558,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get budget status
-     * @private
-     */
+   * Get budget status
+   * @private
+   */
   _getBudgetStatus(costTracking) {
     if (!costTracking.budgetAlert || !costTracking.budgetAlert.enabled) {
       return { enabled: false };
@@ -571,7 +572,7 @@ class ModelComparisonService {
     // Daily status
     if (costTracking.budgetAlert.dailyLimit) {
       const dayStart = new Date(now).setHours(0, 0, 0, 0);
-      const todayCosts = costTracking.costHistory.filter(c => c.timestamp >= dayStart);
+      const todayCosts = costTracking.costHistory.filter((c) => c.timestamp >= dayStart);
       const todayTotal = todayCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
       const percentage = (todayTotal / costTracking.budgetAlert.dailyLimit) * 100;
 
@@ -586,7 +587,7 @@ class ModelComparisonService {
     // Weekly status
     if (costTracking.budgetAlert.weeklyLimit) {
       const weekStart = now - 7 * 24 * 60 * 60 * 1000;
-      const weekCosts = costTracking.costHistory.filter(c => c.timestamp >= weekStart);
+      const weekCosts = costTracking.costHistory.filter((c) => c.timestamp >= weekStart);
       const weekTotal = weekCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
       const percentage = (weekTotal / costTracking.budgetAlert.weeklyLimit) * 100;
 
@@ -601,7 +602,7 @@ class ModelComparisonService {
     // Monthly status
     if (costTracking.budgetAlert.monthlyLimit) {
       const monthStart = now - 30 * 24 * 60 * 60 * 1000;
-      const monthCosts = costTracking.costHistory.filter(c => c.timestamp >= monthStart);
+      const monthCosts = costTracking.costHistory.filter((c) => c.timestamp >= monthStart);
       const monthTotal = monthCosts.reduce((sum, c) => sum + c.estimatedCost, 0);
       const percentage = (monthTotal / costTracking.budgetAlert.monthlyLimit) * 100;
 
@@ -617,9 +618,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get model data from storage
-     * @private
-     */
+   * Get model data from storage
+   * @private
+   */
   async _getModelData() {
     try {
       const result = await chrome.storage.local.get([this.storageKey]);
@@ -631,9 +632,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Save model data to storage
-     * @private
-     */
+   * Save model data to storage
+   * @private
+   */
   async _saveModelData(data) {
     try {
       data.lastUpdated = Date.now();
@@ -644,9 +645,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Reset model data to defaults
-     * @private
-     */
+   * Reset model data to defaults
+   * @private
+   */
   async _resetModelData() {
     const defaults = this._getDefaultModelData();
     defaults.firstUsed = Date.now();
@@ -654,9 +655,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get default model data structure
-     * @private
-     */
+   * Get default model data structure
+   * @private
+   */
   _getDefaultModelData() {
     return {
       version: '1.0',
@@ -669,9 +670,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get cost tracking from storage
-     * @private
-     */
+   * Get cost tracking from storage
+   * @private
+   */
   async _getCostTracking() {
     try {
       const result = await chrome.storage.local.get([this.costTrackingKey]);
@@ -683,9 +684,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Save cost tracking to storage
-     * @private
-     */
+   * Save cost tracking to storage
+   * @private
+   */
   async _saveCostTracking(data) {
     try {
       data.lastUpdated = Date.now();
@@ -696,9 +697,9 @@ class ModelComparisonService {
   }
 
   /**
-     * Get default cost tracking structure
-     * @private
-     */
+   * Get default cost tracking structure
+   * @private
+   */
   _getDefaultCostTracking() {
     return {
       version: '1.0',

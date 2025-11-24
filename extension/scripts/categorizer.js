@@ -9,26 +9,17 @@ class Categorizer {
     this.aiProcessor = aiProcessor || new AIProcessor();
     this.folderManager = new FolderManager();
     this.callbacks = callbacks;
-    this.learningService =
-            typeof LearningService !== 'undefined'
-              ? new LearningService()
-              : null;
-    this.snapshotManager =
-            typeof SnapshotManager !== 'undefined'
-              ? new SnapshotManager()
-              : null;
-    this.analyticsService =
-            typeof AnalyticsService !== 'undefined'
-              ? new AnalyticsService()
-              : null;
+    this.learningService = typeof LearningService !== 'undefined' ? new LearningService() : null;
+    this.snapshotManager = typeof SnapshotManager !== 'undefined' ? new SnapshotManager() : null;
+    this.analyticsService = typeof AnalyticsService !== 'undefined' ? new AnalyticsService() : null;
     this.isProcessing = false;
     this.sessionStartTime = null;
   }
 
   /**
-     * Initialize categorizer with settings
-     * @param {Object} settings - User settings
-     */
+   * Initialize categorizer with settings
+   * @param {Object} settings - User settings
+   */
   async initialize(settings) {
     if (settings.apiKey) {
       this.aiProcessor.setApiKey(
@@ -40,11 +31,11 @@ class Categorizer {
   }
 
   /**
-     * Main categorization process
-     * @param {Function} progressCallback - Progress update callback
-     * @param {boolean} forceReorganize - Whether to reorganize all bookmarks
-     * @returns {Promise<Object>} Results summary
-     */
+   * Main categorization process
+   * @param {Function} progressCallback - Progress update callback
+   * @param {boolean} forceReorganize - Whether to reorganize all bookmarks
+   * @returns {Promise<Object>} Results summary
+   */
   async categorizeAllBookmarks(progressCallback, forceReorganize = false) {
     if (this.isProcessing) {
       throw new Error('Categorization already in progress');
@@ -65,20 +56,14 @@ class Categorizer {
             progress: 5,
             message: 'Creating backup snapshot...'
           });
-          const bookmarks =
-                        await this.bookmarkService.getAllBookmarks();
+          const bookmarks = await this.bookmarkService.getAllBookmarks();
           await this.snapshotManager.createSnapshot(
-            forceReorganize
-              ? 'Before Force Reorganization'
-              : 'Before AI Categorization',
+            forceReorganize ? 'Before Force Reorganization' : 'Before AI Categorization',
             {
-              operationType: forceReorganize
-                ? 'force_reorganize'
-                : 'categorization',
+              operationType: forceReorganize ? 'force_reorganize' : 'categorization',
               bookmarkCount: bookmarks.length,
-              uncategorizedCount: bookmarks.filter((b) =>
-                ['1', '2', '3'].includes(b.parentId)
-              ).length
+              uncategorizedCount: bookmarks.filter((b) => ['1', '2', '3'].includes(b.parentId))
+                .length
             }
           );
         } catch (snapshotError) {
@@ -107,16 +92,12 @@ class Categorizer {
         uncategorizedBookmarks = bookmarks;
       } else {
         uncategorizedBookmarks = bookmarks.filter((bookmark) => {
-          const isInMainFolders = ['1', '2', '3'].includes(
-            bookmark.parentId
-          );
+          const isInMainFolders = ['1', '2', '3'].includes(bookmark.parentId);
           const isInRootLevel =
-                        bookmark.currentFolderName &&
-                        [
-                          'Bookmarks Bar',
-                          'Other Bookmarks',
-                          'Mobile Bookmarks'
-                        ].includes(bookmark.currentFolderName);
+            bookmark.currentFolderName &&
+            ['Bookmarks Bar', 'Other Bookmarks', 'Mobile Bookmarks'].includes(
+              bookmark.currentFolderName
+            );
           return isInMainFolders || isInRootLevel;
         });
       }
@@ -157,9 +138,7 @@ class Categorizer {
         when: Date.now() + 100
       });
 
-      console.log(
-        `Categorization started: ${uncategorizedBookmarks.length} bookmarks queued.`
-      );
+      console.log(`Categorization started: ${uncategorizedBookmarks.length} bookmarks queued.`);
       return {
         started: true,
         message: 'Categorization started in background'
@@ -172,8 +151,8 @@ class Categorizer {
   }
 
   /**
-     * Process the next batch of bookmarks (called by alarm)
-     */
+   * Process the next batch of bookmarks (called by alarm)
+   */
   async processNextBatch() {
     try {
       const state = await this._loadState();
@@ -196,10 +175,7 @@ class Categorizer {
       }
 
       // Get batch
-      const batch = state.bookmarks.slice(
-        state.currentIndex,
-        state.currentIndex + state.batchSize
-      );
+      const batch = state.bookmarks.slice(state.currentIndex, state.currentIndex + state.batchSize);
 
       // Enrich titles
       await this.aiProcessor._enrichBatchWithTitles(batch);
@@ -211,12 +187,11 @@ class Categorizer {
       // Get dynamic categories from state or generate new ones if first batch
       let dynamicCategories = state.generatedCategories;
       if (state.currentIndex === 0) {
-        dynamicCategories =
-                    await this.aiProcessor._generateDynamicCategories(
-                      state.bookmarks, // Use all bookmarks for better category generation
-                      state.settings.categories,
-                      learningData
-                    );
+        dynamicCategories = await this.aiProcessor._generateDynamicCategories(
+          state.bookmarks, // Use all bookmarks for better category generation
+          state.settings.categories,
+          learningData
+        );
       }
 
       // Process batch
@@ -247,26 +222,26 @@ class Categorizer {
   }
 
   /**
-     * Save categorization state
-     * @param {Object} state - State to save
-     */
+   * Save categorization state
+   * @param {Object} state - State to save
+   */
   async _saveState(state) {
     await chrome.storage.local.set({ categorizationState: state });
   }
 
   /**
-     * Load categorization state
-     * @returns {Promise<Object>} State
-     */
+   * Load categorization state
+   * @returns {Promise<Object>} State
+   */
   async _loadState() {
     const result = await chrome.storage.local.get('categorizationState');
     return result.categorizationState;
   }
 
   /**
-     * Finish categorization process
-     * @param {Object} state - Final state
-     */
+   * Finish categorization process
+   * @param {Object} state - Final state
+   */
   async _finishCategorization(state) {
     this.isProcessing = false;
     await chrome.alarms.clear('process_categorization_batch');
@@ -284,11 +259,11 @@ class Categorizer {
   }
 
   /**
-     * Record user correction for learning
-     * @param {string} bookmarkId - Bookmark ID
-     * @param {string} originalCategory - AI-assigned category
-     * @param {string} correctedCategory - User-corrected category
-     */
+   * Record user correction for learning
+   * @param {string} bookmarkId - Bookmark ID
+   * @param {string} originalCategory - AI-assigned category
+   * @param {string} correctedCategory - User-corrected category
+   */
   async recordCorrection(bookmarkId, originalCategory, correctedCategory) {
     try {
       const bookmark = await chrome.bookmarks.get(bookmarkId);
@@ -313,14 +288,14 @@ class Categorizer {
   }
 
   /**
-     * Categorize bookmarks with progress tracking across batches
-     * @param {Array} bookmarks - All bookmarks to categorize
-     * @param {Array} suggestedCategories - Suggested categories
-     * @param {Object} learningData - Learning data
-     * @param {number} batchSize - Size of each batch
-     * @param {Function} progressCallback - Progress callback
-     * @returns {Promise<Object>} Categorization results
-     */
+   * Categorize bookmarks with progress tracking across batches
+   * @param {Array} bookmarks - All bookmarks to categorize
+   * @param {Array} suggestedCategories - Suggested categories
+   * @param {Object} learningData - Learning data
+   * @param {number} batchSize - Size of each batch
+   * @param {Function} progressCallback - Progress callback
+   * @returns {Promise<Object>} Categorization results
+   */
   async _categorizeWithProgress(
     bookmarks,
     suggestedCategories,
@@ -356,9 +331,9 @@ class Categorizer {
   }
 
   /**
-     * Get user settings
-     * @returns {Promise<Object>} User settings
-     */
+   * Get user settings
+   * @returns {Promise<Object>} User settings
+   */
   async _getSettings() {
     const defaultSettings = {
       apiKey: '',
@@ -377,9 +352,7 @@ class Categorizer {
     };
 
     try {
-      const result = await chrome.storage.sync.get([
-        'bookmarkMindSettings'
-      ]);
+      const result = await chrome.storage.sync.get(['bookmarkMindSettings']);
       return { ...defaultSettings, ...result.bookmarkMindSettings };
     } catch (_error) {
       console.error('_error getting settings:', _error);
@@ -388,9 +361,9 @@ class Categorizer {
   }
 
   /**
-     * Get learning data
-     * @returns {Promise<Object>} Learning data
-     */
+   * Get learning data
+   * @returns {Promise<Object>} Learning data
+   */
   async _getLearningData() {
     try {
       if (!this.learningService) {
@@ -409,23 +382,19 @@ class Categorizer {
   }
 
   /**
-     * Update bookmarks with titles from currently open tabs
-     * @param {Array} bookmarks - Array of bookmark objects
-     * @returns {Promise<Array>} Updated bookmarks
-     */
+   * Update bookmarks with titles from currently open tabs
+   * @param {Array} bookmarks - Array of bookmark objects
+   * @returns {Promise<Array>} Updated bookmarks
+   */
   async _updateBookmarksWithCurrentTabTitles(bookmarks) {
     try {
       // Check if tabs API is available
       if (!chrome.tabs) {
-        console.warn(
-          'Tabs API not available, skipping title update from open tabs'
-        );
+        console.warn('Tabs API not available, skipping title update from open tabs');
         return bookmarks;
       }
 
-      console.log(
-        'Categorizer: Checking open tabs for updated titles...'
-      );
+      console.log('Categorizer: Checking open tabs for updated titles...');
       const tabs = await chrome.tabs.query({});
 
       // Create a map of normalized URL -> Title
@@ -451,9 +420,7 @@ class Categorizer {
         return bookmark;
       });
 
-      console.log(
-        `Updated ${updatedCount} bookmark titles from open tabs`
-      );
+      console.log(`Updated ${updatedCount} bookmark titles from open tabs`);
       return updatedBookmarks;
     } catch (_error) {
       console.error('_error updating bookmark titles from tabs:', _error);
@@ -462,9 +429,9 @@ class Categorizer {
   }
 
   /**
-     * Get categorization statistics
-     * @returns {Promise<Object>} Statistics
-     */
+   * Get categorization statistics
+   * @returns {Promise<Object>} Statistics
+   */
   async getStats() {
     try {
       const bookmarkStats = await this.bookmarkService.getBookmarkStats();
