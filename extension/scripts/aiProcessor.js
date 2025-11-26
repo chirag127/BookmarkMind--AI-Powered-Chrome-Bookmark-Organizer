@@ -515,6 +515,10 @@ class AIProcessor {
         // Custom model configuration support
         this.customModelConfig = null;
         this.modelsFetched = false;
+
+        // Rate limit penalty system
+        this.modelPenalties = new Map(); // Map<modelName, penaltyExpiryTimestamp>
+        this.RATE_LIMIT_PENALTY_MS = 5 * 60 * 1000; // 5 minutes penalty for 429s
     }
 
     /**
@@ -1561,7 +1565,7 @@ class AIProcessor {
             );
         }
 
-        const parts = categoryPath.split(" > ").map((part) => part.trim());
+        const parts = categoryPath.split(/\s*>\s*|\s*\/\s*/).map((part) => part.trim());
         let currentParentId = rootFolderId;
 
         console.log(`📁 Creating folder structure for: "${categoryPath}"`);
@@ -2399,6 +2403,12 @@ Return only the JSON array with properly formatted category names, no additional
                 }/${this.geminiModels.length})`
             );
 
+            // Check if model is penalized
+            if (this._isModelPenalized(currentModel)) {
+                console.log(`⏭️ Skipping penalized model: ${currentModel}`);
+                continue;
+            }
+
             try {
                 const response = await this.requestQueue.enqueue(
                     async () => {
@@ -2467,6 +2477,11 @@ Return only the JSON array with properly formatted category names, no additional
                                 `Category generation failed: ${response.status} - ${errorText}`
                             );
                         }
+                    }
+
+                    // Apply penalty for rate limits
+                    if (response.status === 429) {
+                        this._penalizeModel(currentModel);
                     }
 
                     lastError = new Error(
@@ -2577,13 +2592,23 @@ Return only the JSON array with properly formatted category names, no additional
         // Sort models by parameter count (largest first), with Gemini categories mapped
         const sizeOrder = { ultra: 1000, large: 100, medium: 50, small: 10 };
         allModels.sort((a, b) => {
-            const aSize = a.paramCount || sizeOrder[a.sizeCategory] || 0;
-            const bSize = b.paramCount || sizeOrder[b.sizeCategory] || 0;
             return bSize - aSize;
         });
 
+        // Filter out penalized models (unless all are penalized, then try anyway)
+        const activeModels = allModels.filter(m => !this._isModelPenalized(m.name));
+        const penalizedModels = allModels.filter(m => this._isModelPenalized(m.name));
+
+        let modelsToTry = activeModels;
+        if (activeModels.length === 0) {
+             console.warn("⚠️ All models are currently penalized. Forcing retry with all models.");
+             modelsToTry = allModels;
+        } else if (penalizedModels.length > 0) {
+            console.log(`ℹ️ Skipping ${penalizedModels.length} penalized models: ${penalizedModels.map(m => m.name).join(', ')}`);
+        }
+
         console.log("\n📊 Sorted model sequence (largest to smallest):");
-        allModels.forEach((model, idx) => {
+        modelsToTry.forEach((model, idx) => {
             const size = model.paramCount
                 ? `${model.paramCount}B`
                 : model.sizeCategory;
@@ -2596,11 +2621,11 @@ Return only the JSON array with properly formatted category names, no additional
 
         // Try models in order
         let lastError = null;
-        for (let i = 0; i < allModels.length; i++) {
-            const model = allModels[i];
+        for (let i = 0; i < modelsToTry.length; i++) {
+            const model = modelsToTry[i];
             console.log(
                 `\n🔄 Trying model ${i + 1}/${
-                    allModels.length
+                    modelsToTry.length
                 }: ${model.provider.toUpperCase()} - ${model.name}`
             );
 
@@ -2708,6 +2733,11 @@ Return only the JSON array with properly formatted category names, no additional
                     );
                 }
 
+                // Handle rate limits with penalty
+                if (_error.message.includes("429") || _error.message.includes("quota")) {
+                    this._penalizeModel(model.name);
+                }
+
                 // Stop trying if it's a non-retryable error
                 if (
                     _error.message.includes("Invalid API key") ||
@@ -2720,7 +2750,7 @@ Return only the JSON array with properly formatted category names, no additional
                 }
 
                 // Small delay between attempts
-                if (i < allModels.length - 1) {
+                if (i < modelsToTry.length - 1) {
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                 }
             }
@@ -4308,10 +4338,38 @@ Return only the JSON array, no additional text or formatting`;
             return null;
         }
     }
+    /**
+     * Check if a model is currently penalized
+     * @param {string} modelName - Name of the model
+     * @returns {boolean} True if penalized
+     */
+    _isModelPenalized(modelName) {
+        if (!this.modelPenalties.has(modelName)) return false;
+
+        const expiry = this.modelPenalties.get(modelName);
+        if (Date.now() > expiry) {
+            this.modelPenalties.delete(modelName);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Penalize a model for rate limiting
+     * @param {string} modelName - Name of the model
+     */
+    _penalizeModel(modelName) {
+        const expiry = Date.now() + this.RATE_LIMIT_PENALTY_MS;
+        this.modelPenalties.set(modelName, expiry);
+        console.warn(`⚠️ Penalizing model ${modelName} for ${this.RATE_LIMIT_PENALTY_MS/1000}s due to rate limit`);
+    }
 }
 
 // Export for use in other modules
-if (typeof window !== "undefined") {
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = { AIProcessor };
+} else {
     window.AIProcessor = AIProcessor;
 }
 
