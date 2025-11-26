@@ -430,18 +430,25 @@ class AIProcessor {
         // Gemini model fallback sequence - try models in order when one fails
         this.geminiModels = [
             {
+                name: "gemini-3.0-pro",
+                provider: "gemini",
+                sizeCategory: "ultra",
+                costPer1MInputTokens: 2.5, // Estimated
+                costPer1MOutputTokens: 10.0, // Estimated
+            },
+            {
+                name: "gemini-3.0-deep-think",
+                provider: "gemini",
+                sizeCategory: "ultra",
+                costPer1MInputTokens: 3.0, // Estimated
+                costPer1MOutputTokens: 12.0, // Estimated
+            },
+            {
                 name: "gemini-2.5-pro",
                 provider: "gemini",
                 sizeCategory: "ultra",
                 costPer1MInputTokens: 1.25,
                 costPer1MOutputTokens: 5.0,
-            },
-            {
-                name: "gemini-2.5-flash-preview-09-2025",
-                provider: "gemini",
-                sizeCategory: "large",
-                costPer1MInputTokens: 0.075,
-                costPer1MOutputTokens: 0.3,
             },
             {
                 name: "gemini-2.5-flash",
@@ -451,32 +458,39 @@ class AIProcessor {
                 costPer1MOutputTokens: 0.3,
             },
             {
-                name: "gemini-2.5-flash-image",
-                provider: "gemini",
-                sizeCategory: "medium",
-                costPer1MInputTokens: 0.0375,
-                costPer1MOutputTokens: 0.15,
-            },
-            {
-                name: "gemini-2.0-flash",
-                provider: "gemini",
-                sizeCategory: "medium",
-                costPer1MInputTokens: 0.0375,
-                costPer1MOutputTokens: 0.15,
-            },
-            {
-                name: "gemini-2.5-flash-lite-preview-09-2025",
-                provider: "gemini",
-                sizeCategory: "small",
-                costPer1MInputTokens: 0.02,
-                costPer1MOutputTokens: 0.08,
-            },
-            {
                 name: "gemini-2.5-flash-lite",
                 provider: "gemini",
                 sizeCategory: "small",
                 costPer1MInputTokens: 0.02,
                 costPer1MOutputTokens: 0.08,
+            },
+            {
+                name: "gemini-2.0-pro",
+                provider: "gemini",
+                sizeCategory: "medium",
+                costPer1MInputTokens: 1.0,
+                costPer1MOutputTokens: 4.0,
+            },
+            {
+                name: "gemini-2.0-flash",
+                provider: "gemini",
+                sizeCategory: "medium",
+                costPer1MInputTokens: 0.1,
+                costPer1MOutputTokens: 0.4,
+            },
+            {
+                name: "gemini-1.5-pro",
+                provider: "gemini",
+                sizeCategory: "medium",
+                costPer1MInputTokens: 1.25,
+                costPer1MOutputTokens: 3.75,
+            },
+            {
+                name: "gemini-1.5-flash",
+                provider: "gemini",
+                sizeCategory: "small",
+                costPer1MInputTokens: 0.075,
+                costPer1MOutputTokens: 0.3,
             },
         ];
         this.currentModelIndex = 0;
@@ -563,6 +577,185 @@ class AIProcessor {
 
         // Custom model configuration support
         this.customModelConfig = null;
+        this.modelsFetched = false;
+    }
+
+    /**
+     * Fetch available models from Gemini API
+     * @returns {Promise<Array>} List of available models
+     */
+    async fetchAvailableModels() {
+        if (!this.apiKey) {
+            console.warn("Cannot fetch models: API key not set");
+            return this.geminiModels;
+        }
+
+        try {
+            console.log("Fetching available Gemini models from API...");
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch models: ${response.statusText}`
+                );
+            }
+
+            const data = await response.json();
+
+            if (!data.models) {
+                console.warn("No models returned from API");
+                return this.geminiModels;
+            }
+
+            // Filter for models that support generateContent
+            const availableModels = data.models.filter(
+                (model) =>
+                    model.supportedGenerationMethods &&
+                    model.supportedGenerationMethods.includes(
+                        "generateContent"
+                    ) &&
+                    model.name.startsWith("models/gemini") // Ensure it's a Gemini model
+            );
+
+            this._mergeAndSortModels(availableModels);
+            this.modelsFetched = true;
+            console.log(
+                `Successfully fetched and updated ${this.geminiModels.length} Gemini models`
+            );
+
+            return this.geminiModels;
+        } catch (error) {
+            console.error("Error fetching models:", error);
+            return this.geminiModels; // Return existing models on error
+        }
+    }
+
+    /**
+     * Merge fetched models with existing metadata and sort by capability
+     * @param {Array} fetchedModels - Models fetched from API
+     */
+    _mergeAndSortModels(fetchedModels) {
+        const mergedModels = fetchedModels.map((apiModel) => {
+            // Remove 'models/' prefix if present
+            const name = apiModel.name.replace(/^models\//, "");
+
+            // Find existing metadata if available
+            const existingModel = this.geminiModels.find(
+                (m) => m.name === name
+            );
+
+            // Estimate cost and size if not known
+            const cost = existingModel
+                ? {
+                      input: existingModel.costPer1MInputTokens,
+                      output: existingModel.costPer1MOutputTokens,
+                  }
+                : this._estimateCostForModel(name);
+
+            const sizeCategory = existingModel
+                ? existingModel.sizeCategory
+                : this._inferSizeCategory(name);
+
+            return {
+                name: name,
+                provider: "gemini",
+                sizeCategory: sizeCategory,
+                costPer1MInputTokens: cost.input,
+                costPer1MOutputTokens: cost.output,
+                displayName: apiModel.displayName,
+                description: apiModel.description,
+                inputTokenLimit: apiModel.inputTokenLimit,
+                outputTokenLimit: apiModel.outputTokenLimit,
+                capabilityScore: this._calculateModelCapabilityScore(name),
+            };
+        });
+
+        // Sort by capability score (descending)
+        this.geminiModels = mergedModels.sort(
+            (a, b) => b.capabilityScore - a.capabilityScore
+        );
+    }
+
+    /**
+     * Calculate a capability score for sorting
+     * @param {string} name - Model name
+     * @returns {number} Capability score
+     */
+    _calculateModelCapabilityScore(name) {
+        let score = 0;
+
+        // Version scoring (3.0 > 2.5 > 2.0 > 1.5 > 1.0)
+        if (name.includes("3.0")) score += 500;
+        else if (name.includes("2.5")) score += 400;
+        else if (name.includes("2.0")) score += 300;
+        else if (name.includes("1.5")) score += 200;
+        else if (name.includes("1.0")) score += 100;
+
+        // Tier scoring (Ultra > Pro > Flash > Flash-Lite > Nano)
+        if (name.includes("ultra")) score += 50;
+        else if (name.includes("deep-think")) score += 45; // High capability
+        else if (name.includes("pro")) score += 40;
+        else if (name.includes("flash")) {
+            score += 30;
+            if (name.includes("lite")) score -= 5; // Flash-Lite is below Flash
+            if (name.includes("8b")) score -= 5;
+        } else if (name.includes("nano")) score += 10;
+
+        // Penalty for previews/experimental if stable exists (heuristic)
+        if (name.includes("preview") || name.includes("experimental"))
+            score -= 1;
+
+        return score;
+    }
+
+    /**
+     * Infer size category from name
+     * @param {string} name
+     * @returns {string}
+     */
+    _inferSizeCategory(name) {
+        if (name.includes("ultra") || name.includes("deep-think"))
+            return "ultra";
+        if (name.includes("pro")) return "medium"; // Or large/ultra depending on version, keeping consistent with existing
+        if (name.includes("flash")) return "small"; // Flash is generally smaller/faster
+        if (name.includes("nano")) return "tiny";
+        return "medium"; // Default
+    }
+
+    /**
+     * Estimate cost based on model family
+     * @param {string} name
+     * @returns {Object} {input, output}
+     */
+    _estimateCostForModel(name) {
+        // Rough estimates based on known pricing tiers
+        if (name.includes("3.0")) {
+            if (name.includes("deep-think"))
+                return { input: 3.0, output: 12.0 };
+            return { input: 2.5, output: 10.0 };
+        }
+        if (name.includes("2.5")) {
+            if (name.includes("pro")) return { input: 1.25, output: 5.0 };
+            if (name.includes("flash")) {
+                if (name.includes("lite")) return { input: 0.02, output: 0.08 };
+                return { input: 0.075, output: 0.3 };
+            }
+        }
+        if (name.includes("2.0")) {
+            if (name.includes("pro")) return { input: 1.0, output: 4.0 };
+            if (name.includes("flash")) {
+                if (name.includes("lite")) return { input: 0.02, output: 0.08 };
+                return { input: 0.1, output: 0.4 };
+            }
+        }
+        if (name.includes("1.5")) {
+            if (name.includes("pro")) return { input: 1.25, output: 3.75 };
+            if (name.includes("flash")) return { input: 0.075, output: 0.3 };
+        }
+
+        return { input: 0.1, output: 0.4 }; // Default fallback
     }
 
     /**
@@ -988,6 +1181,13 @@ class AIProcessor {
         this.apiKey = apiKey;
         this.cerebrasApiKey = cerebrasKey;
         this.groqApiKey = groqKey;
+
+        // Fetch available models if we have an API key and haven't fetched yet
+        if (this.apiKey && !this.modelsFetched) {
+            this.fetchAvailableModels().catch((err) =>
+                console.warn("Failed to auto-fetch models on init:", err)
+            );
+        }
         console.log(
             `🔑 API Keys configured: Gemini=${!!apiKey}, Cerebras=${!!cerebrasKey}, Groq=${!!groqKey}`
         );

@@ -833,10 +833,12 @@ async function handleGetSnapshots(sendResponse) {
     try {
         console.log("Retrieving snapshots from storage...");
 
-        const result = await chrome.storage.local.get(["bookmarkSnapshots"]);
-        const snapshots = result.bookmarkSnapshots || [];
+        const snapshotManager = new SnapshotManager();
+        const snapshots = await snapshotManager.getSnapshots();
 
-        console.log(`Retrieved ${snapshots.length} snapshots from storage`);
+        console.log(
+            `Retrieved ${snapshots.length} snapshots via SnapshotManager`
+        );
 
         sendResponse({
             success: true,
