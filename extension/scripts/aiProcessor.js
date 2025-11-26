@@ -439,68 +439,59 @@ class AIProcessor {
             {
                 name: "gpt-oss-120b",
                 provider: "cerebras",
-                paramCount: 120,
                 costPer1MInputTokens: 0.6,
                 costPer1MOutputTokens: 0.6,
             },
             {
                 name: "llama-3.3-70b",
                 provider: "cerebras",
-                paramCount: 70,
                 costPer1MInputTokens: 0.6,
                 costPer1MOutputTokens: 0.6,
             },
             {
                 name: "qwen-3-32b",
                 provider: "cerebras",
-                paramCount: 32,
                 costPer1MInputTokens: 0.1,
                 costPer1MOutputTokens: 0.1,
             },
             {
                 name: "llama3.1-8b",
                 provider: "cerebras",
-                paramCount: 8,
                 costPer1MInputTokens: 0.1,
                 costPer1MOutputTokens: 0.1,
             },
         ];
         this.cerebrasBaseUrl = "https://api.cerebras.ai/v1/chat/completions";
 
-        // Groq model fallback sequence - OpenAI-compatible API (size-descending)
+        // Groq model fallback sequence - OpenAI-compatible API
         this.groqModels = [
             {
                 name: "openai/gpt-oss-120b",
                 provider: "groq",
-                paramCount: 120,
                 costPer1MInputTokens: 0.0,
                 costPer1MOutputTokens: 0.0,
             },
             {
                 name: "llama-3.3-70b-versatile",
                 provider: "groq",
-                paramCount: 70,
                 costPer1MInputTokens: 0.0,
                 costPer1MOutputTokens: 0.0,
             },
             {
                 name: "qwen/qwen3-32b",
                 provider: "groq",
-                paramCount: 32,
                 costPer1MInputTokens: 0.0,
                 costPer1MOutputTokens: 0.0,
             },
             {
                 name: "openai/gpt-oss-20b",
                 provider: "groq",
-                paramCount: 20,
                 costPer1MInputTokens: 0.0,
                 costPer1MOutputTokens: 0.0,
             },
             {
                 name: "llama-3.1-8b-instant",
                 provider: "groq",
-                paramCount: 8,
                 costPer1MInputTokens: 0.0,
                 costPer1MOutputTokens: 0.0,
             },
@@ -2589,12 +2580,6 @@ Return only the JSON array with properly formatted category names, no additional
             this.groqModels.forEach((model) => allModels.push(model));
         }
 
-        // Sort models by parameter count (largest first), with Gemini categories mapped
-        const sizeOrder = { ultra: 1000, large: 100, medium: 50, small: 10 };
-        allModels.sort((a, b) => {
-            return bSize - aSize;
-        });
-
         // Filter out penalized models (unless all are penalized, then try anyway)
         const activeModels = allModels.filter(m => !this._isModelPenalized(m.name));
         const penalizedModels = allModels.filter(m => this._isModelPenalized(m.name));
@@ -2607,15 +2592,12 @@ Return only the JSON array with properly formatted category names, no additional
             console.log(`ℹ️ Skipping ${penalizedModels.length} penalized models: ${penalizedModels.map(m => m.name).join(', ')}`);
         }
 
-        console.log("\n📊 Sorted model sequence (largest to smallest):");
+        console.log("\n📊 Model sequence:");
         modelsToTry.forEach((model, idx) => {
-            const size = model.paramCount
-                ? `${model.paramCount}B`
-                : model.sizeCategory;
             console.log(
                 `   ${idx + 1}. ${model.provider.toUpperCase()}: ${
                     model.name
-                } (${size})`
+                }`
             );
         });
 
