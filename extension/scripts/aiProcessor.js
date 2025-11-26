@@ -510,6 +510,10 @@ class AIProcessor {
         // Rate limit penalty system
         this.modelPenalties = new Map(); // Map<modelName, penaltyExpiryTimestamp>
         this.RATE_LIMIT_PENALTY_MS = 5 * 60 * 1000; // 5 minutes penalty for 429s
+
+        // Quota exhaustion state management
+        this.QUOTA_STORAGE_KEY = 'gemini_quota_exhausted_state';
+        this.quotaExhaustedUntil = null; // Timestamp when quota will reset
     }
 
     /**
@@ -2441,6 +2445,29 @@ Return only the JSON array with properly formatted category names, no additional
                         errorText
                     );
 
+                    // Check for quota exhaustion on 429 errors
+                    if (response.status === 429) {
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            const { isQuotaExhausted, retryDelaySeconds } = this._checkQuotaExhaustion(errorData);
+
+                            if (isQuotaExhausted && retryDelaySeconds) {
+                                // Mark quota as exhausted
+                                await this._markQuotaExhausted(retryDelaySeconds);
+
+                                // Throw specific quota exhaustion error
+                                const quotaMessage = await this._getQuotaExhaustedMessage();
+                                throw new Error(`QUOTA_EXHAUSTED: ${quotaMessage}`);
+                            }
+                        } catch (parseError) {
+                            // If JSON parsing fails, continue with normal rate limit handling
+                            console.warn('Failed to parse quota error response:', parseError);
+                        }
+
+                        // Apply penalty for rate limits
+                        this._penalizeModel(currentModel);
+                    }
+
                     // Check if this is a retryable error
                     const isRetryableError =
                         response.status === 429 || // Rate limit
@@ -2468,11 +2495,6 @@ Return only the JSON array with properly formatted category names, no additional
                                 `Category generation failed: ${response.status} - ${errorText}`
                             );
                         }
-                    }
-
-                    // Apply penalty for rate limits
-                    if (response.status === 429) {
-                        this._penalizeModel(currentModel);
                     }
 
                     lastError = new Error(
@@ -4345,6 +4367,150 @@ Return only the JSON array, no additional text or formatting`;
         const expiry = Date.now() + this.RATE_LIMIT_PENALTY_MS;
         this.modelPenalties.set(modelName, expiry);
         console.warn(`⚠️ Penalizing model ${modelName} for ${this.RATE_LIMIT_PENALTY_MS/1000}s due to rate limit`);
+    }
+
+    /**
+     * Check if Gemini API quota is currently exhausted
+     * @returns {Promise<boolean>} True if quota exhausted
+     */
+    async _isQuotaExhausted() {
+        // Check in-memory state first
+        if (this.quotaExhaustedUntil && Date.now() < this.quotaExhaustedUntil) {
+            return true;
+        }
+
+        // Check persisted state
+        try {
+            const result = await chrome.storage.local.get(this.QUOTA_STORAGE_KEY);
+            const quotaState = result[this.QUOTA_STORAGE_KEY];
+
+            if (quotaState && quotaState.exhaustedUntil) {
+                if (Date.now() < quotaState.exhaustedUntil) {
+                    this.quotaExhaustedUntil = quotaState.exhaustedUntil;
+                    return true;
+                } else {
+                    // Quota has reset, clear the state
+                    await this._clearQuotaExhaustedState();
+                }
+            }
+        } catch (error) {
+            console.warn('Error checking quota state:', error);
+        }
+
+        return false;
+    }
+
+    /**
+     * Mark quota as exhausted with retry delay
+     * @param {number} retryDelaySeconds - Seconds until quota resets (from API response)
+     */
+    async _markQuotaExhausted(retryDelaySeconds) {
+        const exhaustedUntil = Date.now() + (retryDelaySeconds * 1000);
+        this.quotaExhaustedUntil = exhaustedUntil;
+
+        // Persist to storage
+        try {
+            await chrome.storage.local.set({
+                [this.QUOTA_STORAGE_KEY]: {
+                    exhaustedUntil,
+                    markedAt: Date.now(),
+                    retryDelaySeconds
+                }
+            });
+            console.warn(`🚫 Gemini API quota exhausted. Reset in ${retryDelaySeconds}s (${new Date(exhaustedUntil).toLocaleString()})`);
+        } catch (error) {
+            console.error('Error persisting quota state:', error);
+        }
+    }
+
+    /**
+     * Clear quota exhausted state (for manual retry or after reset)
+     */
+    async _clearQuotaExhaustedState() {
+        this.quotaExhaustedUntil = null;
+        try {
+            await chrome.storage.local.remove(this.QUOTA_STORAGE_KEY);
+            console.log('✅ Quota exhausted state cleared');
+        } catch (error) {
+            console.error('Error clearing quota state:', error);
+        }
+    }
+
+    /**
+     * Check if an error response indicates quota exhaustion (vs temporary rate limit)
+     * @param {Object} errorResponse - Parsed error response from API
+     * @returns {Object} { isQuotaExhausted: boolean, retryDelaySeconds: number|null }
+     */
+    _checkQuotaExhaustion(errorResponse) {
+        try {
+            const errorMessage = errorResponse.error?.message || '';
+
+            // Check for quota exhaustion indicators
+            const isQuotaExhausted = (
+                errorMessage.includes('quota exceeded') ||
+                errorMessage.includes('Quota exceeded') ||
+                errorMessage.includes('free_tier') ||
+                (errorResponse.error?.details &&
+                 errorResponse.error.details.some(d =>
+                    d['@type']?.includes('QuotaFailure') ||
+                    d.violations?.some(v => v.quotaMetric?.includes('free_tier'))
+                 ))
+            );
+
+            // Extract retry delay from RetryInfo
+            let retryDelaySeconds = null;
+            if (errorResponse.error?.details) {
+                const retryInfo = errorResponse.error.details.find(d => d['@type']?.includes('RetryInfo'));
+                if (retryInfo?.retryDelay) {
+                    // Parse formats like "57s" or "57.356284637s"
+                    const match = retryInfo.retryDelay.match(/^([\d.]+)s?$/);
+                    if (match) {
+                        retryDelaySeconds = Math.ceil(parseFloat(match[1]));
+                    }
+                }
+            }
+
+            // Default to 24 hours if quota exhausted but no retry delay specified
+            if (isQuotaExhausted && !retryDelaySeconds) {
+                // Gemini free tier typically resets at midnight Pacific time
+                const now = new Date();
+                const pacificMidnight = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+                pacificMidnight.setHours(24, 0, 0, 0);
+                retryDelaySeconds = Math.ceil((pacificMidnight - now) / 1000);
+            }
+
+            return { isQuotaExhausted, retryDelaySeconds };
+        } catch (error) {
+            console.warn('Error parsing quota exhaustion:', error);
+            return { isQuotaExhausted: false, retryDelaySeconds: null };
+        }
+    }
+
+    /**
+     * Generate user-friendly quota exhaustion error message
+     * @returns {Promise<string>} Error message with details
+     */
+    async _getQuotaExhaustedMessage() {
+        const result = await chrome.storage.local.get(this.QUOTA_STORAGE_KEY);
+        const quotaState = result[this.QUOTA_STORAGE_KEY];
+
+        if (!quotaState) {
+            return 'Gemini API quota exhausted. Please try again later or upgrade your API plan.';
+        }
+
+        const resetDate = new Date(quotaState.exhaustedUntil);
+        const hoursUntilReset = Math.ceil((quotaState.exhaustedUntil - Date.now()) / (1000 * 60 * 60));
+
+        let message = `🚫 **Gemini API Free Tier Quota Exhausted**\n\n`;
+        message += `Your daily quota will reset at: **${resetDate.toLocaleString()}**\n`;
+        message += `(approximately ${hoursUntilReset} hour${hoursUntilReset !== 1 ? 's' : ''})\n\n`;
+        message += `**Options:**\n`;
+        message += `1. Wait for quota reset (typically midnight Pacific time)\n`;
+        message += `2. Upgrade to a paid Gemini API plan at https://ai.google.dev/pricing\n`;
+        message += `3. Add alternative API keys (Cerebras or Groq) in Settings\n\n`;
+        message += `Monitor your usage at: https://ai.dev/usage?tab=rate-limit`;
+
+        return message;
     }
 }
 

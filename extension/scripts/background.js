@@ -23,22 +23,24 @@ if (!scriptsLoaded) {
         "benchmarkService.js"
     ];
 
-    try {
-        // Try loading all at once first for performance
-        importScripts(...scripts);
-        scriptsLoaded = true;
-        console.log("Background scripts loaded successfully");
-    } catch (e) {
-        console.warn("Bulk import failed, trying individual imports to identify culprit:", e);
-        // Fallback to individual loading to identify the specific failing script
-        for (const script of scripts) {
-            try {
-                importScripts(script);
-                console.log(`Loaded ${script}`);
-            } catch (err) {
-                console.error(`FAILED to load ${script}:`, err);
-            }
+    // Load scripts individually for reliability in Chrome MV3 service workers
+    let successCount = 0;
+    for (const script of scripts) {
+        try {
+            importScripts(script);
+            successCount++;
+            console.log(`✓ Loaded ${script}`);
+        } catch (err) {
+            console.error(`✗ FAILED to load ${script}:`, err);
+            console.error(`  Error details:`, err.message, err.stack);
         }
+    }
+
+    if (successCount === scripts.length) {
+        scriptsLoaded = true;
+        console.log(`✅ All ${successCount} background scripts loaded successfully`);
+    } else {
+        console.error(`⚠️ Only ${successCount}/${scripts.length} scripts loaded. Extension may not function correctly.`);
     }
 
     // Verify classes are available
@@ -444,6 +446,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 await handleGetCustomModelConfig(sendResponse);
                 break;
 
+            case "clearQuotaState":
+                await handleClearQuotaState(sendResponse);
+                break;
+
             default:
                 console.warn("Unknown message action:", message.action);
                 sendResponse({ success: false, error: "Unknown action" });
@@ -546,6 +552,20 @@ async function handleCategorization(data, sendResponse) {
             );
         }
         console.log("✓ Settings validated");
+
+        // Check if Gemini quota is exhausted before attempting categorization
+        const aiProcessor = new AIProcessor();
+        aiProcessor.setApiKey(
+            settings.bookmarkMindSettings.apiKey,
+            settings.bookmarkMindSettings.cerebrasApiKey || null,
+            settings.bookmarkMindSettings.groqApiKey || null
+        );
+
+        const isQuotaExhausted = await aiProcessor._isQuotaExhausted();
+        if (isQuotaExhausted) {
+            const quotaMessage = await aiProcessor._getQuotaExhaustedMessage();
+            throw new Error(quotaMessage);
+        }
 
         // Initialize categorizer
         console.log("Initializing categorizer...");
@@ -1869,6 +1889,33 @@ async function handleMoveAllToBookmarkBar(sendResponse) {
         sendResponse({
             success: false,
             error: _error.message || "Move operation failed",
+        });
+    }
+}
+
+/**
+ * Handle clear quota state request (for manual retry)
+ */
+async function handleClearQuotaState(sendResponse) {
+    try {
+        if (typeof AIProcessor === "undefined") {
+            throw new Error(
+                "AIProcessor class not loaded. Please reload the extension."
+            );
+        }
+
+        const aiProcessor = new AIProcessor();
+        await aiProcessor._clearQuotaExhaustedState();
+
+        sendResponse({
+            success: true,
+            message: "Quota state cleared. You can now retry categorization."
+        });
+    } catch (_error) {
+        console.error("Error clearing quota state:", _error);
+        sendResponse({
+            success: false,
+            error: _error.message || "Failed to clear quota state",
         });
     }
 }
