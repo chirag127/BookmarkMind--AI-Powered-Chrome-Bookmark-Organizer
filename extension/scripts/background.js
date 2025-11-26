@@ -8,26 +8,42 @@ let scriptsLoaded = false;
 
 // Import required modules using importScripts for Manifest V3
 if (!scriptsLoaded) {
+    const scripts = [
+        "categoryGrouper.js",
+        "bookmarkService.js",
+        "folderManager.js",
+        "learningService.js",
+        "snapshotManager.js",
+        "analyticsService.js",
+        "aiProcessor.js",
+        "categorizer.js",
+        "folderInsights.js",
+        "performanceMonitor.js",
+        "modelComparisonService.js",
+        "benchmarkService.js"
+    ];
+
     try {
-        importScripts(
-            "categoryGrouper.js",
-            "bookmarkService.js",
-            "folderManager.js",
-            "learningService.js",
-            "snapshotManager.js",
-            "analyticsService.js",
-            "aiProcessor.js",
-            "categorizer.js",
-            "folderInsights.js",
-            "performanceMonitor.js",
-            "modelComparisonService.js",
-            "benchmarkService.js"
-        );
+        // Try loading all at once first for performance
+        importScripts(...scripts);
         scriptsLoaded = true;
         console.log("Background scripts loaded successfully");
+    } catch (e) {
+        console.warn("Bulk import failed, trying individual imports to identify culprit:", e);
+        // Fallback to individual loading to identify the specific failing script
+        for (const script of scripts) {
+            try {
+                importScripts(script);
+                console.log(`Loaded ${script}`);
+            } catch (err) {
+                console.error(`FAILED to load ${script}:`, err);
+            }
+        }
+    }
 
-        // Verify classes are available
-        console.log("Available classes:", {
+    // Verify classes are available
+    setTimeout(() => {
+        console.log("Available classes check:", {
             BookmarkService: typeof BookmarkService !== "undefined",
             CategoryGrouper: typeof CategoryGrouper !== "undefined",
             AIProcessor: typeof AIProcessor !== "undefined",
@@ -38,14 +54,10 @@ if (!scriptsLoaded) {
             SnapshotManager: typeof SnapshotManager !== "undefined",
             AnalyticsService: typeof AnalyticsService !== "undefined",
             PerformanceMonitor: typeof PerformanceMonitor !== "undefined",
-            ModelComparisonService:
-                typeof ModelComparisonService !== "undefined",
+            ModelComparisonService: typeof ModelComparisonService !== "undefined",
             BenchmarkService: typeof BenchmarkService !== "undefined",
         });
-    } catch (_error) {
-        console.error("Failed to load background scripts:", _error);
-        console.log("Will create instances dynamically if needed");
-    }
+    }, 100);
 }
 
 // Global flag to track AI categorization state
