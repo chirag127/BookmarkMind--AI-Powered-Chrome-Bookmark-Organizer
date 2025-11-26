@@ -258,7 +258,7 @@ class PopupController {
 
       console.log('Stats response:', response);
 
-      if (response && response.success) {
+      if (response?.success) {
         this.stats = response.data;
         console.log('Stats loaded successfully:', this.stats);
       } else {
@@ -805,7 +805,7 @@ class PopupController {
 
       console.log('Popup: Background move response:', response);
 
-      if (response && response.success) {
+      if (response?.success) {
         // Show success message
         this.showResults({
           processed: response.total,
@@ -991,7 +991,9 @@ class PopupController {
     const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
     const items = this.bookmarkList.querySelectorAll('.bookmark-item');
 
-    checkboxes.forEach((checkbox) => (checkbox.checked = true));
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = true;
+    });
     items.forEach((item) => item.classList.add('selected'));
 
     this.updateSelectedCount();
@@ -1007,7 +1009,9 @@ class PopupController {
     const checkboxes = this.bookmarkList.querySelectorAll('.bookmark-checkbox');
     const items = this.bookmarkList.querySelectorAll('.bookmark-item');
 
-    checkboxes.forEach((checkbox) => (checkbox.checked = false));
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
     items.forEach((item) => item.classList.remove('selected'));
 
     this.updateSelectedCount();
@@ -1059,9 +1063,7 @@ class PopupController {
     const confirmed = confirm(
       `This will categorize ${selectedCount} selected bookmark${
         selectedCount > 1 ? 's' : ''
-      } using AI.\n\n` +
-        'The AI will analyze each bookmark and move it to an appropriate folder.\n\n' +
-        'Are you sure you want to continue?'
+      } using AI.\n\nThe AI will analyze each bookmark and move it to an appropriate folder.\n\nAre you sure you want to continue?`
     );
 
     if (!confirmed) return;
@@ -1092,7 +1094,7 @@ class PopupController {
 
       console.log('Bulk categorization response:', response);
 
-      if (response && response.success) {
+      if (response?.success) {
         this.showResults({
           ...response.data,
           processed: selectedCount,
@@ -1134,7 +1136,7 @@ class PopupController {
 
       console.log('Popup: Categorization response:', response);
 
-      if (response && response.success) {
+      if (response?.success) {
         this.showResults(response.data);
       } else {
         const errorMsg = response?.error || 'Categorization failed - no response';
@@ -1251,7 +1253,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
       });
       console.log('Stats response:', statsResponse);
 
-      if (statsResponse && statsResponse.success) {
+      if (statsResponse?.success) {
         alert('✅ Communication working! Background script is responding.');
       } else {
         alert(`❌ Stats failed: ${statsResponse?.error || 'No response'}`);
@@ -1632,7 +1634,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         action: 'getSnapshots'
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const snapshots = Array.isArray(response.data) ? response.data : [];
 
         const storageInfo = {
@@ -1758,7 +1760,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         data: { snapshotId }
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const results = response.data;
 
         this.showResults({
@@ -1797,7 +1799,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         data: { snapshotId }
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         await this.showSnapshots();
       } else {
         this.showError('Failed to delete snapshot');
@@ -1820,7 +1822,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         action: 'runSnapshotDiagnostics'
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const diagnostics = response.data;
         console.log('📊 Diagnostics results:', diagnostics);
 
@@ -1912,7 +1914,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         action: 'getAllBookmarks'
       });
 
-      if (!response || !response.success) {
+      if (!response?.success) {
         throw new Error('Failed to load bookmarks');
       }
 
@@ -2007,7 +2009,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         action: 'getAvailableCategories'
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         return response.data;
       }
 
@@ -2052,7 +2054,7 @@ Need an API key? Visit: https://makersuite.google.com/app/apikey`;
         }
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         this.showNotification(`Moved "${bookmark.title}" to "${newCategory}"`);
 
         // Reload bookmarks to show updated categories

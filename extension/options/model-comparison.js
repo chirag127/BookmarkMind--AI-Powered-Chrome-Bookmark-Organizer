@@ -232,7 +232,7 @@ class ModelComparisonController {
                 action: "getModelComparison",
             });
 
-            if (response && response.success) {
+            if (response?.success) {
                 this.dashboard = response.data;
                 this.updateOverview();
                 this.updatePerformanceTable();
@@ -325,7 +325,7 @@ class ModelComparisonController {
                 data: { period },
             });
 
-            if (response && response.success) {
+            if (response?.success) {
                 this.costReport = response.data;
                 this.updateCostReport();
                 this.updateBudgetStatus();
@@ -500,7 +500,7 @@ class ModelComparisonController {
                 data: { budget },
             });
 
-            if (response && response.success) {
+            if (response?.success) {
                 this.showSuccess("Budget settings saved successfully");
                 this.loadCostReport();
             }
@@ -562,7 +562,7 @@ class ModelComparisonController {
                 data: { modelA, modelB, bookmarks },
             });
 
-            if (response && response.success) {
+            if (response?.success) {
                 this.displayABTestResults(response.data);
                 this.showSuccess(
                     `A/B test completed! Processed ${bookmarks.length} bookmarks.`
@@ -645,33 +645,16 @@ class ModelComparisonController {
      * Estimate cost for a model based on token usage
      * @private
      */
-    _estimateCost(model, metrics) {
+    /**
+     * Estimate cost for a model based on token usage
+     * @private
+     */
+    _estimateCost(_model, metrics) {
         if (!metrics) return 0;
 
-        const pricing = {
-            "gemini-3.0-pro": { input: 2.5, output: 10.0 },
-            "gemini-3.0-deep-think": { input: 3.0, output: 12.0 },
-            "gemini-2.5-pro": { input: 1.25, output: 5.0 },
-            "gemini-2.5-flash": { input: 0.075, output: 0.3 },
-            "gemini-2.5-flash-lite": { input: 0.02, output: 0.08 },
-            "gemini-2.0-pro": { input: 1.0, output: 4.0 },
-            "gemini-2.0-flash": { input: 0.1, output: 0.4 },
-            "gemini-1.5-pro": { input: 1.25, output: 3.75 },
-            "gemini-1.5-flash": { input: 0.075, output: 0.3 },
-            "llama-3.3-70b": { input: 0.6, output: 0.6 },
-            "llama-3.3-70b-versatile": { input: 0.0, output: 0.0 },
-            "qwen-3-32b": { input: 0.1, output: 0.1 },
-            "llama3.1-8b": { input: 0.1, output: 0.1 },
-        };
-
-        const modelPricing = pricing[model] || { input: 0.1, output: 0.3 };
-        const inputTokens = metrics.inputTokens || 0;
-        const outputTokens = metrics.outputTokens || 0;
-
-        return (
-            (inputTokens / 1000000) * modelPricing.input +
-            (outputTokens / 1000000) * modelPricing.output
-        );
+        // Cost estimation is disabled as per user request to remove hardcoded values.
+        // API does not provide cost data.
+        return 0;
     }
 
     /**
@@ -721,7 +704,7 @@ class ModelComparisonController {
                 action: "getCustomModelConfig",
             });
 
-            if (response && response.success && response.data) {
+            if (response?.success && response.data) {
                 const config = response.data;
                 this.temperature.value = config.temperature || 1.0;
                 this.temperatureValue.textContent = this.temperature.value;
@@ -766,7 +749,7 @@ class ModelComparisonController {
                 data: { config },
             });
 
-            if (response && response.success) {
+            if (response?.success) {
                 this.showSuccess("Model configuration saved successfully");
             }
         } catch (_error) {
@@ -850,7 +833,7 @@ class ModelComparisonController {
             }, 2000);
         } catch (_error) {
             console.error("_error running benchmark:", _error);
-            this.showError("Failed to run benchmark: " + _error.message);
+            this.showError(`Failed to run benchmark: ${_error.message}`);
             this.benchmarkProgress.classList.add("hidden");
         } finally {
             this.runBenchmarkBtn.disabled = false;
@@ -1024,7 +1007,7 @@ class ModelComparisonController {
      * Show error message
      */
     showError(message) {
-        alert("Error: " + message);
+        alert(`Error: ${message}`);
     }
 }
 

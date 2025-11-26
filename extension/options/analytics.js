@@ -62,7 +62,7 @@ async function loadAnalytics() {
       analyticsData = response.data;
       updateAllDashboards();
     } else {
-      showError('Failed to load analytics: ' + response.error);
+      showError(`Failed to load analytics: ${response.error}`);
     }
   } catch (_error) {
     console.error('_error loading analytics:', _error);
@@ -141,9 +141,9 @@ function updateCategorization() {
             <div class="session-item">
                 <div class="session-title">${session.mode.charAt(0).toUpperCase() + session.mode.slice(1)} Categorization</div>
                 <div class="session-details">
-                    Processed: ${session.bookmarksProcessed} | 
-                    Categorized: ${session.bookmarksCategorized} | 
-                    Errors: ${session.errors} | 
+                    Processed: ${session.bookmarksProcessed} |
+                    Categorized: ${session.bookmarksCategorized} |
+                    Errors: ${session.errors} |
                     Success: ${session.successRate}%
                 </div>
                 <div class="session-meta">
@@ -187,9 +187,9 @@ function updateApiStats() {
             <div class="provider-item">
                 <div class="provider-name">${provider.charAt(0).toUpperCase() + provider.slice(1)}</div>
                 <div class="provider-details">
-                    Total Calls: ${stats.total} | 
-                    Success: ${stats.successful} | 
-                    Failed: ${stats.failed} | 
+                    Total Calls: ${stats.total} |
+                    Success: ${stats.successful} |
+                    Failed: ${stats.failed} |
                     Tokens: ${stats.totalTokens.toLocaleString()}
                 </div>
             </div>
@@ -264,8 +264,8 @@ function updateConsolidation() {
             <div class="consolidation-item">
                 <div class="consolidation-title">Consolidation</div>
                 <div class="consolidation-details">
-                    Folders Processed: ${consol.foldersProcessed} | 
-                    Bookmarks Moved: ${consol.bookmarksMoved} | 
+                    Folders Processed: ${consol.foldersProcessed} |
+                    Bookmarks Moved: ${consol.bookmarksMoved} |
                     Folders Removed: ${consol.foldersRemoved}
                 </div>
                 <div class="session-meta">
@@ -389,7 +389,7 @@ async function clearAnalytics() {
       showSuccess('Analytics data cleared successfully');
       await loadAnalytics();
     } else {
-      showError('Failed to clear analytics: ' + response.error);
+      showError(`Failed to clear analytics: ${response.error}`);
     }
   } catch (_error) {
     console.error('Clear _error:', _error);
@@ -440,7 +440,7 @@ function showSuccess(message) {
 }
 
 function showError(message) {
-  alert('Error: ' + message);
+  alert(`Error: ${message}`);
 }
 
 async function updateRateLimits() {
@@ -535,8 +535,10 @@ function updateRpmChart(rateLimitDashboard) {
 }
 
 function drawRpmChart(ctx, canvas, allHistory) {
-  const width = (canvas.width = canvas.offsetWidth);
-  const height = (canvas.height = 300);
+  canvas.width = canvas.offsetWidth;
+  const width = canvas.width;
+  canvas.height = 300;
+  const height = canvas.height;
 
   ctx.clearRect(0, 0, width, height);
 

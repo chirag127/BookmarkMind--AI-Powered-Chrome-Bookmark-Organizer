@@ -1722,7 +1722,7 @@ class OptionsController {
           action: 'clearLearningData'
         });
 
-        if (response && response.success) {
+        if (response?.success) {
           this.showToast('Learning data cleared', 'success');
           this.loadStats(); // Refresh stats
           this.loadLearningData(); // Refresh learning data display
@@ -1772,7 +1772,7 @@ class OptionsController {
         action: 'getPerformanceDashboard'
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const dashboard = response.data;
         this.displayPerformanceDashboard(dashboard);
       } else {
@@ -2100,7 +2100,7 @@ class OptionsController {
         }
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const exportData = response.data;
         const dateStr = new Date().toISOString().slice(0, 10);
 

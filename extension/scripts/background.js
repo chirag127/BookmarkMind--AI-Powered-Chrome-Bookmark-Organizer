@@ -173,7 +173,7 @@ async function initializeExtension() {
 }
 
 // Handle messages from popup and options pages
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     console.log("Background received message:", message);
 
     // Handle async operations properly
@@ -205,6 +205,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             case "testApiKey":
                 await handleApiKeyTest(message.data, sendResponse);
+                break; // Added break to prevent fallthrough
             case "getAvailableCategories":
                 await handleGetAvailableCategories(sendResponse);
                 break;
@@ -334,9 +335,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse({ success: true });
                 break;
 
-            case "getSnapshots":
-                await handleGetSnapshots(sendResponse);
-                break;
+
 
             case "startSnapshotRestore":
                 // Disable bookmark move listener during restoration
@@ -775,7 +774,7 @@ async function handleGetStats(sendResponse) {
             );
             sendResponse({
                 success: false,
-                error: "Cannot access bookmarks: " + directError.message,
+                error: `Cannot access bookmarks: ${directError.message}`,
             });
             return;
         }
@@ -1482,7 +1481,7 @@ async function getFolderPath(folderId) {
             !["0", "1", "2", "3"].includes(currentParentId)
         ) {
             const parent = await chrome.bookmarks.get(currentParentId);
-            if (parent && parent[0]) {
+            if (parent?.[0]) {
                 pathParts.unshift(parent[0].title);
                 currentParentId = parent[0].parentId;
             } else {

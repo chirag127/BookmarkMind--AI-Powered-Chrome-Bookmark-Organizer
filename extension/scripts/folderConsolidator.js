@@ -64,7 +64,7 @@ class FolderConsolidator {
     try {
       const children = await chrome.bookmarks.getChildren(folderId);
       const folders = children.filter((child) => !child.url);
-      const bookmarks = children.filter((child) => child.url);
+      const _bookmarks = children.filter((child) => child.url);
 
       // Process subfolders first (bottom-up approach)
       for (const folder of folders) {

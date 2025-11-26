@@ -442,18 +442,18 @@ class RedirectResolver {
             timestamp: cached.timestamp,
             status: cached.status || 200
           };
-        } else {
-          console.log(
-            `🗑️ Cache expired for: ${url} (${Math.round(
-              ageInDays
-            )} days old, max: ${this.CACHE_EXPIRY_DAYS} days)`
-          );
-          // Remove expired entry
-          delete cacheData[url];
-          await chrome.storage.local.set({
-            [this.CACHE_KEY]: cacheData
-          });
         }
+
+        console.log(
+          `🗑️ Cache expired for: ${url} (${Math.round(
+            (Date.now() - cached.timestamp) / 1000 / 60
+          )}m old)`
+        );
+        // Remove expired entry
+        delete cacheData[url];
+        await chrome.storage.local.set({
+          [this.CACHE_KEY]: cacheData
+        });
       }
 
       return null;
