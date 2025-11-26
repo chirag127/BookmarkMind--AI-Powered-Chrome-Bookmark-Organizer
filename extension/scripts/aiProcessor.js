@@ -2478,7 +2478,7 @@ Return only the JSON array with properly formatted category names, no additional
                     `❌ Category generation error with ${currentModel}:`,
                     _error.message
                 );
-                lastError = error;
+                lastError = _error;
 
                 // If it's a non-retryable error, don't try other models
                 if (
@@ -2693,10 +2693,10 @@ Return only the JSON array with properly formatted category names, no additional
                         model.name
                     } failed: ${_error.message}`
                 );
-                lastError = error;
+                lastError = _error;
 
                 // Check for truncation error and retry with smaller batches
-                if (error.isTruncation && batch.length > 1) {
+                if (_error.isTruncation && batch.length > 1) {
                     console.warn(
                         "⚠️ JSON truncation detected! Retrying with split batches..."
                     );
@@ -2892,7 +2892,7 @@ Return only the JSON array with properly formatted category names, no additional
                 }
             } catch (_error) {
                 console.error(`❌ ${currentModel} _error:`, _error.message);
-                lastError = error;
+                lastError = _error;
 
                 // If it's a non-retryable error, don't try other models
                 if (
@@ -2961,7 +2961,7 @@ Return only the JSON array with properly formatted category names, no additional
                 console.log(
                     `❌ Cerebras ${currentModel} failed: ${_error.message}`
                 );
-                lastError = error;
+                lastError = _error;
 
                 // If it's a non-retryable error, don't try other models
                 if (
