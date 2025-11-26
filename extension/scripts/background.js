@@ -12,13 +12,13 @@ if (!scriptsLoaded) {
         importScripts(
             "categoryGrouper.js",
             "bookmarkService.js",
-            "aiProcessor.js",
-            "categorizer.js",
             "folderManager.js",
-            "folderInsights.js",
             "learningService.js",
             "snapshotManager.js",
             "analyticsService.js",
+            "aiProcessor.js",
+            "categorizer.js",
+            "folderInsights.js",
             "performanceMonitor.js",
             "modelComparisonService.js",
             "benchmarkService.js"
