@@ -193,7 +193,7 @@ This guide provides step-by-step instructions for publishing and managing the Bo
    - **Learning System**: Adapts to your organizational preferences
 
    # How It Works
-   1. Install extension and configure AI provider (Gemini or AgentRouter)
+   1. Install extension and configure AI provider (Gemini or Cerebras/Groq)
    2. Click extension icon to access popup interface
    3. Choose categorization mode and folders to organize
    4. AI analyzes and organizes bookmarks automatically
@@ -376,7 +376,7 @@ Beta Test Instructions:
    - Must explain:
      - What data is collected (bookmark URLs, titles)
      - How data is used (AI categorization)
-     - Third-party services (Gemini/AgentRouter API)
+     - Third-party services (Gemini/Cerebras/Groq API)
      - User data storage (Chrome Storage API)
      - User controls (delete data, API key management)
 
@@ -390,7 +390,7 @@ Beta Test Instructions:
    - AI API keys (stored locally)
 
    ## Data Usage
-   - Bookmark data sent to AI provider (Gemini/AgentRouter) for categorization
+   - Bookmark data sent to AI provider (Gemini/Cerebras/Groq) for categorization
    - Analytics data stored locally for insights
    - No data sold or shared with third parties
 
@@ -611,7 +611,7 @@ If you believe rejection was incorrect:
 
 2. **Testing Focus**
    - Core functionality (categorization, search)
-   - API integration (Gemini, AgentRouter)
+   - API integration (Gemini, Cerebras/Groq)
    - Error handling
    - Performance on different bookmark sizes
 

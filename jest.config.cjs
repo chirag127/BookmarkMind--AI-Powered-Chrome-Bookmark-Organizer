@@ -7,9 +7,7 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'extension/scripts/**/*.js',
-    'extension/popup/**/*.js',
-    'extension/options/**/*.js',
+    'extension/features/**/*.js',
     '!**/node_modules/**',
     '!**/tests/**'
   ],
@@ -22,5 +20,6 @@ module.exports = {
     TextEncoder: TextEncoder,
     TextDecoder: TextDecoder
   },
-  testTimeout: 10000
+  testTimeout: 10000,
+  transform: {} // Disable transformation to support ES modules natively
 };

@@ -6,12 +6,12 @@
     "main": "manifest.json",
     "scripts": {
         "build": "echo 'No build process needed - pure vanilla JS extension'",
-        "test": "jest",
-        "test:unit": "jest tests/*.test.js --testPathIgnorePatterns=e2e",
-        "test:integration": "jest tests/bookmarkService.test.js tests/folderManager.test.js",
-        "test:e2e": "jest tests/categorizer.e2e.test.js",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage",
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+        "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest tests/features/**/*.test.js --testPathIgnorePatterns=e2e",
+        "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest tests/features/bookmarks/bookmarkService.test.js tests/features/bookmarks/folderManager.test.js",
+        "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest tests/features/ai/categorizer.e2e.test.js",
+        "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+        "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
         "lint": "biome lint ./extension",
         "lint:fix": "biome lint --write ./extension",
         "format": "biome format --write ./extension",
@@ -68,5 +68,8 @@
     },
     "directories": {
         "example": "examples"
+    },
+    "dependencies": {
+        "@jest/globals": "^30.2.0"
     }
 }
