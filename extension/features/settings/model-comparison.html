@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Model Comparison - BookmarkMind</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="stylesheet" href="model-comparison.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z" fill="#4285f4"/>
+            <path d="M7 7H17V9H7V7ZM7 11H17V13H7V11ZM7 15H14V17H7V15Z" fill="#4285f4"/>
+          </svg>
+          <div>
+            <h1>AI Model Comparison</h1>
+            <p>Performance Analysis & Optimization</p>
+          </div>
+        </div>
+        <button id="backToSettings" class="btn btn-secondary">Back to Settings</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="performance">Performance</button>
+      <button class="tab-btn" data-tab="costs">Cost Tracking</button>
+      <button class="tab-btn" data-tab="abtest">A/B Testing</button>
+      <button class="tab-btn" data-tab="benchmark">Benchmarks</button>
+      <button class="tab-btn" data-tab="config">Model Configuration</button>
+    </nav>
+
+    <main class="main">
+      <!-- Overview Tab -->
+      <div id="overview-tab" class="tab-content active">
+        <section class="section">
+          <h2>Performance Dashboard</h2>
+          
+          <!-- Summary Cards -->
+          <div class="summary-cards">
+            <div class="summary-card">
+              <div class="summary-icon">🤖</div>
+              <div class="summary-content">
+                <div class="summary-label">Models Tracked</div>
+                <div class="summary-value" id="totalModelsTracked">0</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">💰</div>
+              <div class="summary-content">
+                <div class="summary-label">Total Cost</div>
+                <div class="summary-value" id="totalCostDisplay">$0.00</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">🎯</div>
+              <div class="summary-content">
+                <div class="summary-label">Best Model</div>
+                <div class="summary-value" id="bestModelDisplay">-</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon">🧪</div>
+              <div class="summary-content">
+                <div class="summary-label">A/B Tests</div>
+                <div class="summary-value" id="totalABTests">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Recommendation -->
+          <div class="recommendation-box">
+            <h3>Recommended Model</h3>
+            <div class="recommendation-content">
+              <div class="recommendation-model">
+                <strong id="recommendedModel">Loading...</strong>
+                <span class="confidence-badge" id="recommendationConfidence">Medium</span>
+              </div>
+              <p class="recommendation-reason" id="recommendationReason">Analyzing performance data...</p>
+              <div class="recommendation-metrics">
+                <div class="metric">
+                  <span class="metric-label">Success Rate:</span>
+                  <span class="metric-value" id="recSuccessRate">-</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Avg Speed:</span>
+                  <span class="metric-value" id="recAvgSpeed">-</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Avg Cost:</span>
+                  <span class="metric-value" id="recAvgCost">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Performance Tab -->
+      <div id="performance-tab" class="tab-content">
+        <section class="section">
+          <h2>Model Performance Comparison</h2>
+          <div class="performance-table-container">
+            <table class="performance-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Provider</th>
+                  <th>Success Rate</th>
+                  <th>Avg Speed</th>
+                  <th>Total Cost</th>
+                  <th>Calls</th>
+                  <th>Cost/Call</th>
+                </tr>
+              </thead>
+              <tbody id="performanceTableBody">
+                <tr>
+                  <td colspan="7" class="loading">Loading performance data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Cost Tracking Tab -->
+      <div id="costs-tab" class="tab-content">
+        <section class="section">
+          <h2>Cost Tracking & Budget Alerts</h2>
+          
+          <!-- Budget Configuration -->
+          <div class="budget-config">
+            <h3>Budget Alerts</h3>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="budgetAlertEnabled">
+                Enable budget alerts
+              </label>
+            </div>
+            <div class="budget-inputs">
+              <div class="form-group">
+                <label for="dailyBudget">Daily Limit ($)</label>
+                <input type="number" id="dailyBudget" placeholder="0.00" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label for="weeklyBudget">Weekly Limit ($)</label>
+                <input type="number" id="weeklyBudget" placeholder="0.00" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label for="monthlyBudget">Monthly Limit ($)</label>
+                <input type="number" id="monthlyBudget" placeholder="0.00" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label for="alertThreshold">Alert Threshold (%)</label>
+                <input type="number" id="alertThreshold" value="80" min="0" max="100">
+              </div>
+            </div>
+            <button id="saveBudgetBtn" class="btn btn-primary">Save Budget Settings</button>
+          </div>
+
+          <!-- Budget Status -->
+          <div class="budget-status" id="budgetStatusContainer">
+            <h3>Current Usage</h3>
+            <div id="budgetStatusContent">
+              <p>Configure budget alerts above to track usage.</p>
+            </div>
+          </div>
+
+          <!-- Cost Report -->
+          <div class="cost-report">
+            <h3>Cost Report</h3>
+            <div class="report-controls">
+              <select id="costReportPeriod">
+                <option value="day">Last 24 Hours</option>
+                <option value="week">Last 7 Days</option>
+                <option value="month" selected>Last 30 Days</option>
+                <option value="all">All Time</option>
+              </select>
+              <button id="refreshCostReport" class="btn btn-secondary">Refresh</button>
+            </div>
+            <div id="costReportContent">
+              <p>Loading cost report...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- A/B Testing Tab -->
+      <div id="abtest-tab" class="tab-content">
+        <section class="section">
+          <h2>A/B Testing</h2>
+          <p>Compare two AI models side-by-side to determine which performs better for your bookmarks.</p>
+          
+          <!-- A/B Test Configuration -->
+          <div class="abtest-config">
+            <h3>Start New A/B Test</h3>
+            <p class="help-text">Compare two AI models to find the best performer for your bookmarks. Tests run on a random sample and measure success rate, speed, and cost.</p>
+            <div class="abtest-inputs">
+              <div class="form-group">
+                <label for="modelASelect">Model A</label>
+                <select id="modelASelect">
+                  <optgroup label="Gemini (Google)">
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (Most Capable)</option>
+                    <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Balanced)</option>
+                    <option value="gemini-2.5-flash-preview-09-2025">Gemini 2.5 Flash Preview</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  </optgroup>
+                  <optgroup label="Cerebras (Fast, Paid)">
+                    <option value="llama-3.3-70b">Llama 3.3 70B</option>
+                    <option value="qwen-3-32b">Qwen 3 32B</option>
+                    <option value="llama3.1-8b">Llama 3.1 8B</option>
+                  </optgroup>
+                  <optgroup label="Groq (Fast, Free)">
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                    <option value="openai/gpt-oss-120b">GPT-OSS 120B</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="modelBSelect">Model B</label>
+                <select id="modelBSelect">
+                  <optgroup label="Gemini (Google)">
+                    <option value="gemini-2.5-pro" selected>Gemini 2.5 Pro (Most Capable)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Balanced)</option>
+                    <option value="gemini-2.5-flash-preview-09-2025">Gemini 2.5 Flash Preview</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  </optgroup>
+                  <optgroup label="Cerebras (Fast, Paid)">
+                    <option value="llama-3.3-70b">Llama 3.3 70B</option>
+                    <option value="qwen-3-32b">Qwen 3 32B</option>
+                    <option value="llama3.1-8b">Llama 3.1 8B</option>
+                  </optgroup>
+                  <optgroup label="Groq (Fast, Free)">
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                    <option value="openai/gpt-oss-120b">GPT-OSS 120B</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="abtestSampleSize">Sample Size (bookmarks)</label>
+                <input type="number" id="abtestSampleSize" value="10" min="1" max="50">
+                <small>Number of random bookmarks to test (1-50)</small>
+              </div>
+            </div>
+            <button id="startABTestBtn" class="btn btn-primary">Start A/B Test</button>
+          </div>
+
+          <!-- A/B Test Results -->
+          <div id="abtestResults" class="abtest-results hidden">
+            <h3>Test Results</h3>
+            <div class="abtest-comparison">
+              <div class="abtest-result">
+                <h4 id="modelAName">Model A</h4>
+                <div class="result-metrics">
+                  <div class="metric">
+                    <span class="metric-label">Success Rate:</span>
+                    <span class="metric-value" id="modelASuccessRate">-</span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Speed:</span>
+                    <span class="metric-value" id="modelASpeed">-</span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Cost:</span>
+                    <span class="metric-value" id="modelACost">-</span>
+                  </div>
+                </div>
+              </div>
+              <div class="abtest-result">
+                <h4 id="modelBName">Model B</h4>
+                <div class="result-metrics">
+                  <div class="metric">
+                    <span class="metric-label">Success Rate:</span>
+                    <span class="metric-value" id="modelBSuccessRate">-</span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Speed:</span>
+                    <span class="metric-value" id="modelBSpeed">-</span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Cost:</span>
+                    <span class="metric-value" id="modelBCost">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Previous A/B Tests -->
+          <div class="previous-tests">
+            <h3>Previous Tests</h3>
+            <div id="previousTestsList">
+              <p>No A/B tests run yet.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Benchmark Tab -->
+      <div id="benchmark-tab" class="tab-content">
+        <section class="section">
+          <h2>Automated Benchmarks</h2>
+          <p>Evaluate categorization accuracy and performance across AI models using predefined test sets.</p>
+          
+          <!-- Benchmark Configuration -->
+          <div class="benchmark-config">
+            <h3>Run Benchmark Suite</h3>
+            <div class="benchmark-inputs">
+              <div class="form-group">
+                <label>Test Categories</label>
+                <div class="checkbox-group">
+                  <label><input type="checkbox" class="benchmark-category" value="technical" checked> Technical/Development</label>
+                  <label><input type="checkbox" class="benchmark-category" value="news" checked> News/Media</label>
+                  <label><input type="checkbox" class="benchmark-category" value="shopping" checked> Shopping/E-commerce</label>
+                  <label><input type="checkbox" class="benchmark-category" value="entertainment" checked> Entertainment</label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Providers to Test</label>
+                <div class="checkbox-group">
+                  <label><input type="checkbox" class="benchmark-provider" value="gemini" checked> Gemini</label>
+                  <label><input type="checkbox" class="benchmark-provider" value="cerebras"> Cerebras</label>
+                  <label><input type="checkbox" class="benchmark-provider" value="groq"> Groq</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="benchmarkBatchSize">Batch Size</label>
+                <input type="number" id="benchmarkBatchSize" value="10" min="1" max="50">
+                <small>Number of bookmarks to process per batch</small>
+              </div>
+            </div>
+
+            <div class="benchmark-actions">
+              <button id="runBenchmarkBtn" class="btn btn-primary">
+                <span class="btn-icon">🧪</span>
+                Run Benchmark Suite
+              </button>
+              <button id="clearBenchmarkHistoryBtn" class="btn btn-secondary">Clear History</button>
+            </div>
+
+            <div id="benchmarkProgress" class="benchmark-progress hidden">
+              <div class="progress-bar">
+                <div class="progress-fill" id="benchmarkProgressFill"></div>
+              </div>
+              <p id="benchmarkProgressText">Starting benchmark...</p>
+            </div>
+          </div>
+
+          <!-- Benchmark Results -->
+          <div id="benchmarkResults" class="benchmark-results hidden">
+            <h3>Latest Results</h3>
+            <div class="results-summary">
+              <div class="summary-metric">
+                <span class="metric-label">Overall Accuracy:</span>
+                <span class="metric-value" id="benchmarkAccuracy">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Average Speed:</span>
+                <span class="metric-value" id="benchmarkSpeed">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Total Cost:</span>
+                <span class="metric-value" id="benchmarkCost">-</span>
+              </div>
+              <div class="summary-metric">
+                <span class="metric-label">Tests Run:</span>
+                <span class="metric-value" id="benchmarkTests">-</span>
+              </div>
+            </div>
+
+            <!-- Best Model Recommendation -->
+            <div class="benchmark-recommendation">
+              <h4>🏆 Best Model</h4>
+              <div class="recommendation-details">
+                <div class="model-badge" id="bestBenchmarkModel">-</div>
+                <div class="model-metrics">
+                  <span id="bestBenchmarkMetrics">-</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Comparison Table -->
+            <h4>Detailed Comparison</h4>
+            <div class="benchmark-table-container">
+              <table class="benchmark-table">
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Model</th>
+                    <th>Success Rate</th>
+                    <th>Avg Speed</th>
+                    <th>Total Cost</th>
+                    <th>Consistency</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmarkTableBody">
+                  <tr>
+                    <td colspan="7" class="loading">Run a benchmark to see results...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="benchmark-recommendations">
+              <h4>Recommendations</h4>
+              <div id="benchmarkRecommendationsList"></div>
+            </div>
+          </div>
+
+          <!-- Historical Results -->
+          <div class="benchmark-history">
+            <h3>Historical Results</h3>
+            <div class="history-controls">
+              <select id="benchmarkHistoryLimit">
+                <option value="5">Last 5 runs</option>
+                <option value="10" selected>Last 10 runs</option>
+                <option value="20">Last 20 runs</option>
+                <option value="50">Last 50 runs</option>
+              </select>
+              <button id="refreshBenchmarkHistory" class="btn btn-secondary">Refresh</button>
+            </div>
+            <div id="benchmarkHistoryList">
+              <p>No benchmark history available. Run a benchmark to get started.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Model Configuration Tab -->
+      <div id="config-tab" class="tab-content">
+        <section class="section">
+          <h2>Custom Model Configuration</h2>
+          <p>Fine-tune AI model parameters for optimal performance.</p>
+          
+          <div class="model-config">
+            <div class="form-group">
+              <label for="temperature">Temperature</label>
+              <div class="slider-group">
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.0">
+                <span id="temperatureValue">1.0</span>
+              </div>
+              <small>Higher values = more creative/random, lower = more focused/deterministic</small>
+            </div>
+
+            <div class="form-group">
+              <label for="topP">Top P (Nucleus Sampling)</label>
+              <div class="slider-group">
+                <input type="range" id="topP" min="0" max="1" step="0.05" value="0.95">
+                <span id="topPValue">0.95</span>
+              </div>
+              <small>Controls diversity of output. Lower values = more focused responses</small>
+            </div>
+
+            <div class="form-group">
+              <label for="maxTokens">Max Tokens</label>
+              <input type="number" id="maxTokens" min="100" max="8000" value="2048">
+              <small>Maximum length of AI response</small>
+            </div>
+
+            <div class="form-group">
+              <label>Batch Size Optimization</label>
+              <select id="batchSizeMode">
+                <option value="auto">Automatic (Recommended)</option>
+                <option value="small">Small (10-25)</option>
+                <option value="medium">Medium (25-50)</option>
+                <option value="large">Large (50-100)</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input type="number" id="customBatchSize" class="hidden" min="1" max="100" value="50">
+              <small>Automatically adjusts based on bookmark count and rate limits</small>
+            </div>
+
+            <button id="saveModelConfigBtn" class="btn btn-primary">Save Configuration</button>
+            <button id="resetModelConfigBtn" class="btn btn-secondary">Reset to Defaults</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="model-comparison.js"></script>
+</body>
+</html>

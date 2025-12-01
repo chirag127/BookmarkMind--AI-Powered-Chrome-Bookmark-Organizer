@@ -16,7 +16,7 @@
 
 - **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3
 - **APIs:** Chrome Extension Manifest V3, Chrome Bookmarks API, Chrome Storage API
-- **AI:** Google Gemini API (primary), AgentRouter API (fallback)
+- **AI:** Google Gemini API (primary), Cerebras/Groq API (fallback)
 - **Architecture:** Service Worker background script, popup UI, options page
 
 ## Repo Structure

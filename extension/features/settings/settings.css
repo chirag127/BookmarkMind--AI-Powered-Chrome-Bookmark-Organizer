@@ -1,0 +1,321 @@
+/* Liquid Glass + Neo-Brutalist + Material You - Settings */
+:root {
+    --primary: #4285f4;
+    --primary-dark: #3367d6;
+    --surface: rgba(255, 255, 255, 0.85);
+    --glass-blur: 16px;
+    --border-width: 2px;
+    --border-color: #000000;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 8px;
+    --shadow-hard: 4px 4px 0px #000000;
+    --shadow-sm: 2px 2px 0px #000000;
+    --text-main: #000000;
+    --text-sec: #444444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #f0f4f8;
+    color: #000;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.container {
+    background: var(--surface);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-hard);
+    overflow: hidden;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: var(--border-width) solid var(--border-color);
+    background: rgba(255,255,255,0.5);
+    gap: 16px;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: white;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    padding: 0 20px;
+    background: white;
+    border-bottom: var(--border-width) solid var(--border-color);
+    overflow-x: auto;
+}
+
+.tab-btn {
+    padding: 16px 24px;
+    background: none;
+    border: none;
+    font-weight: 600;
+    color: var(--text-sec);
+    cursor: pointer;
+    border-bottom: 4px solid transparent;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+    color: var(--primary);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Main Content */
+.main-content {
+    padding: 30px;
+    flex: 1;
+}
+
+.section {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.section.active {
+    display: block;
+}
+
+.section-header {
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.section-header p {
+    color: var(--text-sec);
+}
+
+/* Form Groups */
+.form-group {
+    background: rgba(255,255,255,0.6);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.form-group h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: white;
+    font-size: 14px;
+    color: var(--text-main);
+    transition: all 0.2s;
+    box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05);
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+}
+
+.input-help {
+    font-size: 12px;
+    color: var(--text-sec);
+    margin-top: 6px;
+}
+
+/* Checkboxes */
+.checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 6px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* Buttons */
+.primary-btn, .secondary-btn, .danger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: var(--shadow-hard);
+    transition: all 0.1s;
+    font-size: 14px;
+}
+
+.primary-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.secondary-btn {
+    background: white;
+    color: var(--text-main);
+}
+
+.danger-btn {
+    background: #ffcdd2;
+    color: #d32f2f;
+}
+
+.primary-btn:hover, .secondary-btn:hover, .danger-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000;
+}
+
+.primary-btn:active, .secondary-btn:active, .danger-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* Footer */
+.footer {
+    padding: 20px;
+    border-top: var(--border-width) solid var(--border-color);
+    background: rgba(255,255,255,0.5);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: var(--text-main);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.footer-links a:hover {
+    border-bottom-color: var(--primary);
+}
+
+.footer-text {
+    font-size: 12px;
+    color: var(--text-sec);
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 16px 24px;
+    background: #323232;
+    color: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-hard);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid black;
+}
+
+.toast.hidden {
+    display: none;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

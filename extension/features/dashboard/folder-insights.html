@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folder Insights - BookmarkMind</title>
+  <link rel="stylesheet" href="folder-insights.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-section">
+        <h1>📊 Folder Insights</h1>
+        <p class="subtitle">Analyze and optimize your bookmark organization</p>
+      </div>
+      <button id="backBtn" class="btn-secondary">← Back</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="comparison">Comparison</button>
+      <button class="tab" data-tab="treemap">Tree Map</button>
+      <button class="tab" data-tab="favorites">Favorites</button>
+    </div>
+
+    <div class="content">
+      <!-- Overview Tab -->
+      <div id="overviewTab" class="tab-content active">
+        <div class="folder-selector">
+          <label for="folderSelect">Select Folder:</label>
+          <select id="folderSelect" class="select-input">
+            <option value="">Loading folders...</option>
+          </select>
+        </div>
+
+        <div id="folderStatsSection" class="stats-section hidden">
+          <div class="card">
+            <h2>📁 Folder Statistics</h2>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Total Bookmarks</span>
+                <span class="stat-value" id="totalBookmarks">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Direct Bookmarks</span>
+                <span class="stat-value" id="directBookmarks">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Subfolders</span>
+                <span class="stat-value" id="subfolderCount">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Folder Depth</span>
+                <span class="stat-value" id="folderDepth">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Last Modified</span>
+                <span class="stat-value" id="lastModified">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">AI Confidence</span>
+                <span class="stat-value" id="aiConfidence">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>❤️ Health Score</h2>
+            <div class="health-score-container">
+              <div class="health-score-circle" id="healthScoreCircle">
+                <span class="health-score-value" id="healthScoreValue">-</span>
+                <span class="health-score-label" id="healthScoreStatus">-</span>
+              </div>
+              <div class="health-breakdown">
+                <div class="health-metric">
+                  <span class="metric-label">Bookmark Distribution</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" id="distributionScore"></div>
+                  </div>
+                  <span class="metric-value" id="distributionValue">-</span>
+                </div>
+                <div class="health-metric">
+                  <span class="metric-label">Depth Appropriate</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" id="depthScore"></div>
+                  </div>
+                  <span class="metric-value" id="depthValue">-</span>
+                </div>
+                <div class="health-metric">
+                  <span class="metric-label">Organization Quality</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" id="organizationScore"></div>
+                  </div>
+                  <span class="metric-value" id="organizationValue">-</span>
+                </div>
+                <div class="health-metric">
+                  <span class="metric-label">AI Confidence</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" id="aiConfidenceScore"></div>
+                  </div>
+                  <span class="metric-value" id="aiConfidenceValue">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="suggestionsCard">
+            <h2>💡 Smart Suggestions</h2>
+            <div id="suggestionsList" class="suggestions-list">
+              <p class="no-suggestions">No suggestions at this time. Your folder looks good!</p>
+            </div>
+          </div>
+
+          <div class="card" id="recommendationsCard">
+            <h2>🎯 Recommendations</h2>
+            <ul id="recommendationsList" class="recommendations-list"></ul>
+          </div>
+
+          <div class="folder-actions">
+            <button id="addFavoriteBtn" class="btn-primary">⭐ Add to Favorites</button>
+            <button id="refreshStatsBtn" class="btn-secondary">🔄 Refresh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Tab -->
+      <div id="comparisonTab" class="tab-content">
+        <div class="comparison-controls">
+          <div class="folder-selector-multi">
+            <label>Select Folders to Compare:</label>
+            <div id="folderCheckboxes" class="folder-checkboxes"></div>
+          </div>
+          <button id="compareBtn" class="btn-primary" disabled>Compare Selected</button>
+        </div>
+
+        <div id="comparisonResults" class="comparison-results hidden">
+          <div class="comparison-table-container">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th class="folder-header" data-folder="0"></th>
+                  <th class="folder-header" data-folder="1"></th>
+                  <th class="folder-header" data-folder="2"></th>
+                </tr>
+              </thead>
+              <tbody id="comparisonTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="comparison-summary">
+            <div class="summary-card">
+              <h3>🏆 Best Organized</h3>
+              <div id="bestFolder" class="folder-highlight"></div>
+            </div>
+            <div class="summary-card">
+              <h3>⚠️ Needs Attention</h3>
+              <div id="attentionFolders" class="folder-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tree Map Tab -->
+      <div id="treemapTab" class="tab-content">
+        <div class="treemap-controls">
+          <label for="treemapRoot">Root Folder:</label>
+          <select id="treemapRoot" class="select-input">
+            <option value="1">Bookmarks Bar</option>
+            <option value="2">Other Bookmarks</option>
+            <option value="3">Mobile Bookmarks</option>
+          </select>
+          <button id="generateTreemapBtn" class="btn-primary">Generate Tree Map</button>
+        </div>
+
+        <div class="legend">
+          <h3>Health Status:</h3>
+          <div class="legend-items">
+            <span class="legend-item"><span class="legend-color excellent"></span>Excellent (80+)</span>
+            <span class="legend-item"><span class="legend-color good"></span>Good (60-79)</span>
+            <span class="legend-item"><span class="legend-color fair"></span>Fair (40-59)</span>
+            <span class="legend-item"><span class="legend-color poor"></span>Poor (<40)</span>
+          </div>
+        </div>
+
+        <div id="treemapContainer" class="treemap-container"></div>
+      </div>
+
+      <!-- Favorites Tab -->
+      <div id="favoritesTab" class="tab-content">
+        <div class="favorites-header">
+          <h2>⭐ Favorite Folders</h2>
+          <p>Quick access to your most used folders</p>
+        </div>
+
+        <div id="favoritesList" class="favorites-list">
+          <p class="no-favorites">No favorite folders yet. Add folders from the Overview tab.</p>
+        </div>
+
+        <div class="card">
+          <h3>📊 Most Accessed Folders</h3>
+          <div id="accessStats" class="access-stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="spinner"></div>
+      <p>Loading folder data...</p>
+    </div>
+  </div>
+
+  <script type="module" src="folder-insights.js"></script>
+</body>
+</html>
