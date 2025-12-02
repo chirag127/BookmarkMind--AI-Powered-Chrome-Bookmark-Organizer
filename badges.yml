@@ -1,0 +1,34 @@
+# Badges Configuration
+
+# Documentation: https://shields.io/
+
+badges:
+  # CI/CD Status
+  - name: "Build Status"
+    img: "https://img.shields.io/github/actions/workflow/user/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/ci.yml?style=flat-square"
+    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/actions/workflows/ci.yml"
+  
+  # Code Coverage
+  - name: "Code Coverage"
+    img: "https://img.shields.io/codecov/c/github/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square&token=YOUR_CODECOV_TOKEN"
+    url: "https://codecov.io/gh/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension"
+  
+  # Tech Stack
+  - name: "Tech Stack"
+    img: "https://img.shields.io/badge/Tech%20Stack-JS%2C%20TS%2C%20AI-blue?style=flat-square"
+    url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+  
+  # Linting/Formatting (Example: ESLint/Prettier, adjust if using Biome/Ruff)
+  - name: "Linter/Formatter"
+    img: "https://img.shields.io/badge/Linter-ESLint-grey?style=flat-square"
+    url: "https://eslint.org/"
+  
+  # License
+  - name: "License"
+    img: "https://img.shields.io/github/license/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square"
+    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/blob/main/LICENSE"
+  
+  # GitHub Stars
+  - name: "GitHub Stars"
+    img: "https://img.shields.io/github/stars/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square"
+    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/"
