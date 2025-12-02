@@ -1,69 +1,50 @@
-# BookmarkMind .gitignore
-
-# Development files
-*.log
-*.tmp
-.DS_Store
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Node modules (if added later)
+# Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
 # Build artifacts
-dist/
 build/
-*.zip
-*.crx
-*.pem
+dist/
+.next/
+out/
+coverage/
+*.local
 
-# Environment files
+# Environment variables
 .env
 .env.local
-.env.development
-.env.test
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Test coverage and results
-coverage/
-test-results/
-.nyc_output/
-
-# Temporary files
-temp/
-tmp/
+# IDE and editor
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
-# Chrome extension development
-key.pem
+# Browser Extension specific
 *.crx
+*.xpi
 
-# Backup files
-*.bak
-*.backup
-*~
+# Testing Frameworks
+__snapshots__/
+*.log
 
-# Icon generation artifacts
-icons/*.py
-create_simple_icons.html
+# Specific to JS/TS projects
+*.tsbuildinfo
+
+# Lock files
 package-lock.json
-lint_errors_detailed.txt
-.gitignore
-temp_lint_errors.txt
-lint_report.txt
+yarn.lock
+pnpm-lock.yaml
