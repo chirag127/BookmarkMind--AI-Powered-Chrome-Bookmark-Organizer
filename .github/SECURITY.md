@@ -1,41 +1,43 @@
-# Security Policy for BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension
+# Security Policy for BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
 
-As an Apex Technical Authority project, **BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension** adheres to a 'Zero-Defect' security posture. We treat security as a foundational, non-negotiable requirement, integrated from the first line of code through deployment.
+As an Apex Project, we take security with the utmost seriousness. This document outlines how to report security vulnerabilities found in `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension` and our commitment to rapid remediation.
 
-## Supported Versions
+## 1. Vulnerability Reporting Policy
 
-We only actively support the latest stable release branch of this extension. Security patches will *only* be applied to the `main` branch.
+We adhere to a strict, professional disclosure process designed to protect both users and the integrity of the codebase. If you discover a security vulnerability, **DO NOT** file a public issue or pull request.
 
-| Version | Status | Supported Until |
-| :--- | :--- | :--- |
-| Latest Stable (`main`) | Active Support | Ongoing |
+### 1.1 Reporting Procedure
 
-## Reporting a Vulnerability
+1.  **Private Disclosure:** Please email the security team directly at: `security+chirag127@apex-architect.dev`. (Note: This is a placeholder; please replace with your actual security contact email.)
+2.  **Minimal Information:** In your initial email, provide only enough detail to confirm the issue. Do not include Proof-of-Concept (PoC) code unless explicitly requested or necessary for initial validation.
+3.  **Acknowledgment:** We commit to acknowledging receipt of your report within **48 hours**.
+4.  **Coordinated Disclosure:** We will work with you under a coordinated disclosure timeline to patch and release a fix before details are made public. The standard timeline aims for resolution within **14 days** of validated report, though critical severity issues may require faster action.
 
-We take all reported security vulnerabilities with the utmost seriousness. Our triage process is managed under the strict directives outlined in our `CONTRIBUTING.md` and `ISSUE_TEMPLATE` structure.
+## 2. Supported Versions
 
-If you discover a security vulnerability, **DO NOT** create a public issue or pull request. Please follow these steps:
+We actively support and maintain security patches for the **current major version** of the extension and the preceding major version.
 
-1.  **Contact Directly:** Email the maintainer immediately at `security@chirag127.dev` (or use the security contact email if configured in this repository settings).
-2.  **Be Detailed:** Provide a concise, step-by-step method to reproduce the vulnerability. Include environment details (e.g., Browser version, Extension state).
-3.  **Confidentiality:** Do not disclose the vulnerability publicly until a patch has been developed, tested, and deployed to the `main` branch, or until 90 days have passed since initial responsible disclosure, whichever comes first.
+*   **Current Version:** `v1.x.x` (All active development branches and releases).
+*   **End-of-Life (EOL):** Older, unsupported versions will not receive security updates.
 
-Upon receiving a report, the Apex Team initiates the **Incident Response Protocol (IRP)**, which includes immediate assessment, replication, patching, and deployment verification via CI/CD pipelines.
+## 3. Remediation and Escalation
 
-## Security Auditing & Tooling
+Upon receiving a validated vulnerability report, the following automated and manual steps are triggered, mandated by the **Apex Technical Authority** directives:
 
-This project enforces security standards through continuous integration checks, as mandated by the **Standard 11 Compliance**: 
+1.  **CI/CD Trigger:** The report automatically triggers a high-priority run of the `.github/workflows/ci.yml` pipeline to isolate the potential impact.
+2.  **Dependency Audit:** Automated scanning using standard industry tools (e.g., Snyk integration in CI, or dependency-check) is performed against all dependencies, specifically targeting the Node.js runtime and browser extension manifest requirements.
+3.  **Architecture Review:** The issue is cross-referenced against known threats relevant to **Browser Extensions** and **LLM/API Integration** security (e.g., prompt injection risks against Gemini/Groq inputs).
+4.  **Patch Release:** A patch is developed, rigorously tested via Vitest/Playwright (as defined in the Apex Toolchain), and deployed immediately.
 
-*   **Dependency Scanning:** Automated checks for vulnerable dependencies are performed using standard GitHub Dependabot configurations, supplemented by proactive scanning via `uv` (for Python dependencies) or `npm audit` wrappers in the CI pipeline.
-*   **Static Analysis (SAST):** The TypeScript/JavaScript codebase is rigorously checked by **Biome** and built with **Strict TypeScript** settings to eliminate common pitfalls like type confusion and unsafe DOM manipulation, critical for browser extensions.
-*   **AI Model Security:** Given the reliance on external AI APIs (Gemini, Groq), input sanitization and output validation layers are mandatory architectural components to prevent Prompt Injection and data leakage.
+## 4. Specific Security Considerations for this Project
 
-## Dependencies
+This project utilizes external LLM APIs (Gemini, Groq). Security disclosures related to these integrations should pay special attention to:
 
-This project is built upon modern, well-maintained dependencies. All third-party libraries are subject to automated review. Critical security updates will be backported immediately to the active branch.
+*   **API Key Management:** Ensuring all keys are handled only in secure environments (e.g., GitHub Secrets) and never committed to source control.
+*   **Input Sanitization:** Robust measures against prompt injection attacks directed at the models consuming user input.
+*   **Cross-Origin Resource Sharing (CORS):** Proper configuration within the extension manifest to restrict unauthorized access.
 
-For a detailed list of dependencies and their known vulnerabilities, please refer to the output logs of the `ci.yml` workflow runs.
+--- 
 
----
-
-*This policy reflects the commitment to **Future-Proof** software engineering principles.*
+*Last Reviewed: December 2025*
+*Repository URL for reference: `https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`*
