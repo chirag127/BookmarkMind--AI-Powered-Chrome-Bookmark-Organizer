@@ -1,70 +1,42 @@
 # Bug Report
 
+**Thanks for helping improve BookmarkMind!**
 
---- Please provide as much detail as possible to help us diagnose and fix the issue ---
+To help us diagnose and fix issues quickly, please provide as much detail as possible.
 
-## 🐞 Issue Summary
+## 🐛 Bug Description
 
-A concise, descriptive summary of the bug. (e.g., "Extension crashes when opening snapshot settings")
+*   **What is the unexpected behavior?**
+    (Describe the bug clearly and concisely. What did you expect to happen, and what actually happened?)
 
+*   **What is the expected behavior?**
+    (What should the extension have done?)
 
-## 📍 Location / Context
+## 📍 Steps to Reproduce
 
-*   **Operating System:** (e.g., Windows 11, macOS Sonoma 14.2, Ubuntu 22.04)
+*   **What steps were taken to trigger the bug?**
+    (Be specific! Include any URLs, bookmark data, or configuration settings.)
+    1. 
+    2. 
+    3. 
+    4. 
+
+## 📸 Screenshots or Screen Recordings (Optional)
+
+*   If possible, provide screenshots or a screen recording of the bug in action. This is extremely helpful!
+
+## 💡 Environment Details
+
+*   **BookmarkMind Version:** (e.g., v1.2.3 - check extension details)
 *   **Browser:** (e.g., Chrome 120.0.6099.109, Firefox 115.0)
-*   **Extension Version:** (If known, e.g., v1.2.0)
-*   **Specific URL (if applicable):** (The website you were on when the bug occurred)
+*   **Operating System:** (e.g., Windows 11, macOS Sonoma 14.2, Ubuntu 22.04)
+*   **AI Model(s) in Use:** (e.g., Gemini, Groq, Local Models - if applicable)
 
+## 🧠 AI Agent Context (If applicable to the bug)
 
-## 📝 Detailed Description
+*   **Model Performance Dashboard Snapshot:** (If the bug relates to model performance, please describe or include any relevant dashboard data.)
+*   **Snapshot/Undo State:** (If the bug occurred during a snapshot or undo operation, please describe the state.)
 
-Please describe the bug in detail. What happened? What did you expect to happen?
+## 📝 Additional Information
 
-
-## 📸 Steps to Reproduce
-
-Provide a step-by-step guide to reproduce the bug. Be as specific as possible.
-
-1.  (e.g., Open the extension)
-2.  (e.g., Navigate to the "Organize" tab)
-3.  (e.g., Click the "Snapshot All" button)
-4.  (e.g., Observe the error)
-
-
-## 💡 Expected Behavior
-
-What should have happened instead of the bug?
-
-
-## ❌ Actual Behavior
-
-What actually happened? Please include any error messages you saw.
-
-
-## 🩺 System Information & Logs
-
-**AI Agent Directives Link:** Please refer to the AI Agent Directives for the expected technical stack and tooling:
-[BookmarkFlow AI Agent Directives](https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/blob/main/AGENTS.md)
-
-**Browser Console Logs:**
-If possible, please copy and paste the relevant error messages from your browser's developer console (usually opened by pressing `F12`).
-
-
-// Paste console logs here
-
-
-**Extension Specific Logs (if available):**
-(Provide any application-specific logs if the extension has a logging feature)
-
-
-## 📷 Screenshots / Screen Recordings
-
-Attach any relevant screenshots or short screen recordings that illustrate the bug.
-
-
-## 🔗 Related Issues / Pull Requests (Optional)
-
-If this bug is related to an existing issue or pull request, please link it here.
-
-
---- Thank you for helping us improve BookmarkFlow!
+*   Any other context about the problem that might be useful. (e.g., Are other extensions running? Is this a new bookmark or an old one?)
