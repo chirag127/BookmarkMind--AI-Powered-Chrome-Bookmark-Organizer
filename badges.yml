@@ -1,34 +1,70 @@
 # Badges Configuration
 
-# Documentation: https://shields.io/
+# This file defines the badges that will be displayed in the README.md.
+# It follows the Shields.io and GitHub Actions integration patterns.
 
+# Base URL for the repository (replace with your actual repository URL)
+base_url: "https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension"
+
+# List of badges to be generated and included in the README
 badges:
-  # CI/CD Status
   - name: "Build Status"
-    img: "https://img.shields.io/github/actions/workflow/user/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/ci.yml?style=flat-square"
-    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/actions/workflows/ci.yml"
-  
-  # Code Coverage
+    # Dynamic link to GitHub Actions workflow status for CI
+    # Assumes a main branch and a default workflow file (e.g., ci.yml)
+    url: "https://img.shields.io/github/actions/workflow/status/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/ci.yml?branch=main&style=flat-square"
+    markdown: "[![Build Status](https://img.shields.io/github/actions/workflow/status/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/ci.yml?branch=main&style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/actions/workflows/ci.yml)"
+
   - name: "Code Coverage"
-    img: "https://img.shields.io/codecov/c/github/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square&token=YOUR_CODECOV_TOKEN"
-    url: "https://codecov.io/gh/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension"
-  
-  # Tech Stack
-  - name: "Tech Stack"
-    img: "https://img.shields.io/badge/Tech%20Stack-JS%2C%20TS%2C%20AI-blue?style=flat-square"
-    url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
-  
-  # Linting/Formatting (Example: ESLint/Prettier, adjust if using Biome/Ruff)
-  - name: "Linter/Formatter"
-    img: "https://img.shields.io/badge/Linter-ESLint-grey?style=flat-square"
-    url: "https://eslint.org/"
-  
-  # License
-  - name: "License"
-    img: "https://img.shields.io/github/license/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square"
-    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/blob/main/LICENSE"
-  
-  # GitHub Stars
+    # Placeholder for code coverage badge. Requires integration with services like Codecov, Coveralls.
+    # Example: [![Codecov](https://codecov.io/gh/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)
+    # This example assumes Codecov. Replace 'YOUR_TOKEN' with your actual token.
+    # For now, we'll use a placeholder link that can be updated.
+    url: "https://img.shields.io/badge/coverage-N/A-lightgrey?style=flat-square"
+    markdown: "[![Code Coverage](https://img.shields.io/badge/coverage-N/A-lightgrey?style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)"
+
+  - name: "Tech Stack - TypeScript"
+    # Badge indicating the primary programming language/framework
+    url: "https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"
+    markdown: "[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)"
+
+  - name: "Tech Stack - React"
+    # Badge indicating a key framework/library
+    url: "https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=000"
+    markdown: "[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=000)](https://reactjs.org/)"
+
+  - name: "Tech Stack - Tailwind CSS"
+    # Badge indicating a key styling framework
+    url: "https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white"
+    markdown: "[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)"
+
+  - name: "Linting - Biome"
+    # Badge for the linter used
+    url: "https://img.shields.io/badge/Biome-333333?style=flat-square&logo=biome&logoColor=white"
+    markdown: "[![Biome](https://img.shields.io/badge/Biome-333333?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/)"
+
+  - name: "Testing - Vitest"
+    # Badge for the testing framework used
+    url: "https://img.shields.io/badge/Vitest-333333?style=flat-square&logo=vitest&logoColor=white"
+    markdown: "[![Vitest](https://img.shields.io/badge/Vitest-333333?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)"
+
+  - name: "License - CC BY-NC 4.0"
+    # Badge for the software license
+    url: "https://img.shields.io/badge/License-CC%20BY--NC%204.0-blue?style=flat-square"
+    markdown: "[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-blue?style=flat-square)](https://creativecommons.org/licenses/by-nc/4.0/)"
+
   - name: "GitHub Stars"
-    img: "https://img.shields.io/github/stars/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension?style=flat-square"
-    url: "https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension/"
+    # Dynamic badge for GitHub stars
+    url: "https://img.shields.io/github/stars/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square&label=Star"
+    markdown: "[![GitHub Stars](https://img.shields.io/github/stars/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square&label=Star)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)"
+
+# Additional badges can be added here, following the same structure.
+# Ensure that URLs are dynamic and point to the correct repository resources.
+# For example, if using a package manager like npm, you might add:
+#   - name: "NPM Version"
+#     url: "https://img.shields.io/npm/v/your-package-name?style=flat-square"
+#     markdown: "[![npm version](https://img.shields.io/npm/v/your-package-name?style=flat-square)](https://www.npmjs.com/package/your-package-name)"
+# 
+# Or for a browser extension specific badge:
+#   - name: "Chrome Web Store"
+#     url: "https://img.shields.io/chrome-web-store/v/YOUR_EXTENSION_ID?style=flat-square"
+#     markdown: "[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/YOUR_EXTENSION_ID?style=flat-square)](https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID)"
