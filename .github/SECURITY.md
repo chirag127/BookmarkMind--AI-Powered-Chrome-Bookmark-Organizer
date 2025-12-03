@@ -1,43 +1,42 @@
 # Security Policy for BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
 
-As an Apex Project, we take security with the utmost seriousness. This document outlines how to report security vulnerabilities found in `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension` and our commitment to rapid remediation.
+This repository, `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`, is maintained with a strong commitment to security. We welcome and appreciate security research and responsible disclosure from the community.
 
-## 1. Vulnerability Reporting Policy
+## Vulnerability Reporting
 
-We adhere to a strict, professional disclosure process designed to protect both users and the integrity of the codebase. If you discover a security vulnerability, **DO NOT** file a public issue or pull request.
+If you find a security vulnerability, please follow these steps:
 
-### 1.1 Reporting Procedure
+1.  **DO NOT** report it via public GitHub issues, discussions, or pull requests. This includes security-related information.
+2.  **DO NOT** use the GitHub Security Advisory feature for initial reporting if you are unsure of the process.
+3.  **DO INSTEAD:** Send a detailed report to the security team via email at **security@chirag127.dev**. 
+    *   Please use a clear and concise subject line, such as "Security Vulnerability Report - [Repository Name]".
+    *   In your report, include as much of the following information as possible:
+        *   The affected component or area of the repository.
+        *   A detailed description of the vulnerability.
+        *   Steps to reproduce the vulnerability.
+        *   Any relevant code snippets or logs.
+        *   Your suggested remediation or mitigation.
+4.  We will acknowledge receipt of your report within **2 business days** and will aim to provide an update on the status of the vulnerability within **7 business days**.
 
-1.  **Private Disclosure:** Please email the security team directly at: `security+chirag127@apex-architect.dev`. (Note: This is a placeholder; please replace with your actual security contact email.)
-2.  **Minimal Information:** In your initial email, provide only enough detail to confirm the issue. Do not include Proof-of-Concept (PoC) code unless explicitly requested or necessary for initial validation.
-3.  **Acknowledgment:** We commit to acknowledging receipt of your report within **48 hours**.
-4.  **Coordinated Disclosure:** We will work with you under a coordinated disclosure timeline to patch and release a fix before details are made public. The standard timeline aims for resolution within **14 days** of validated report, though critical severity issues may require faster action.
+## Supported Versions
 
-## 2. Supported Versions
+We are committed to fixing security issues in the latest stable version of `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`. Older versions may not be actively monitored for security vulnerabilities.
 
-We actively support and maintain security patches for the **current major version** of the extension and the preceding major version.
+## Our Security Practices
 
-*   **Current Version:** `v1.x.x` (All active development branches and releases).
-*   **End-of-Life (EOL):** Older, unsupported versions will not receive security updates.
+*   **Code Audits:** Regular internal code reviews focusing on security best practices.
+*   **Dependency Scanning:** Automated scans of dependencies for known vulnerabilities.
+*   **Linting & Formatting:** Utilization of tools like BiomeJS to enforce code quality and catch potential issues early.
+*   **Testing:** Comprehensive test suites using Vitest and Playwright to ensure code behaves as expected and to catch regressions.
+*   **Secure Development Lifecycle:** Integrating security considerations throughout the development process, from design to deployment.
+*   **AI Security:** Strict adherence to API usage policies for Gemini and Groq, input validation, and output sanitization when interacting with AI models.
 
-## 3. Remediation and Escalation
+## Responsible Disclosure Timeline
 
-Upon receiving a validated vulnerability report, the following automated and manual steps are triggered, mandated by the **Apex Technical Authority** directives:
+We strive to address reported vulnerabilities promptly and transparently. Our general timeline is:
 
-1.  **CI/CD Trigger:** The report automatically triggers a high-priority run of the `.github/workflows/ci.yml` pipeline to isolate the potential impact.
-2.  **Dependency Audit:** Automated scanning using standard industry tools (e.g., Snyk integration in CI, or dependency-check) is performed against all dependencies, specifically targeting the Node.js runtime and browser extension manifest requirements.
-3.  **Architecture Review:** The issue is cross-referenced against known threats relevant to **Browser Extensions** and **LLM/API Integration** security (e.g., prompt injection risks against Gemini/Groq inputs).
-4.  **Patch Release:** A patch is developed, rigorously tested via Vitest/Playwright (as defined in the Apex Toolchain), and deployed immediately.
+*   **Acknowledgement:** Within 2 business days.
+*   **Investigation & Patching:** Aim for within 7 business days for common vulnerabilities. Complex issues may require more time.
+*   **Public Disclosure:** Coordinated with the reporter, typically after a fix is available and deployed.
 
-## 4. Specific Security Considerations for this Project
-
-This project utilizes external LLM APIs (Gemini, Groq). Security disclosures related to these integrations should pay special attention to:
-
-*   **API Key Management:** Ensuring all keys are handled only in secure environments (e.g., GitHub Secrets) and never committed to source control.
-*   **Input Sanitization:** Robust measures against prompt injection attacks directed at the models consuming user input.
-*   **Cross-Origin Resource Sharing (CORS):** Proper configuration within the extension manifest to restrict unauthorized access.
-
---- 
-
-*Last Reviewed: December 2025*
-*Repository URL for reference: `https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`*
+Thank you for helping to keep `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension` secure!
