@@ -1,73 +1,54 @@
 name: CI
 
-# This workflow will run tests and linting on pull requests and pushes to the main branch.
-# It will also deploy the extension if it passes all checks.
+# Controls when the workflow will run
+# For more information see: https://docs.github.com/en/actions/using-workflows/about-workflows
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
+  # Build job
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [ '20.x' ]
-        # Add other versions if needed for broader compatibility testing
-
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Checkout Repository
+      # Checks-out your repository into the working environment
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      # Setup Node.js environment
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
           cache: 'npm'
 
-      - name: Install Dependencies
+      # Install dependencies
+      - name: Install dependencies
         run: npm ci
-        # Use 'npm ci' for faster, more reliable installs in CI environments
 
-      - name: Lint with Ruff
-        # Ruff is specified in the Apex Python stack, but this is a JS repo.
-        # Assuming a standard JS linting tool is intended for a JS extension.
-        # If Ruff were applicable to JS, this would change. For now, using ESLint/Biome approach.
-        # Let's assume Biome based on the prompt's general Apex standards where it's mentioned for JS.
-        run: npx @biomejs/biome lint --apply-unsafe
-        # Consider using `--safe` for stricter linting on PRs if needed.
-        # The prompt implies JS for extensions, so Biome is a good fit.
+      # Run linters and formatters (Biome)
+      - name: Lint and format with Biome
+        run: npm run lint
 
-      - name: Format with Biome
-        run: npx @biomejs/biome format --write
+      # Run tests (Vitest)
+      - name: Run tests
+        run: npm test
 
-      - name: Build Extension
-        run: npm run build --if-present
-        # Assumes a 'build' script exists in package.json
-        # This step prepares the extension files for packaging/deployment.
-        env:
-          NODE_ENV: production
-          # Add any specific environment variables needed for the build process
-          # e.g., API keys, but avoid hardcoding sensitive data.
+      # Optional: Build the extension for distribution
+      # This step assumes you have a build script in your package.json
+      # e.g., "build": "vite build"
+      - name: Build extension
+        run: npm run build
 
-      - name: Run Unit Tests with Vitest
-        run: npm run test:unit --if-present
-        # Assumes a 'test:unit' script exists in package.json
-
-      # Optional: Add integration or E2E tests if applicable
-      # - name: Run E2E Tests with Playwright
-      #   run: npm run test:e2e --if-present
-
-      # Optional: Upload artifacts (e.g., built extension files)
-      # - name: Upload Extension Artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: bookmarkmind-extension
-      #     path: ./dist # Adjust path to your build output directory
-
-      # Consider adding deployment steps here based on specific requirements,
-      # e.g., publishing to Chrome Web Store or Firefox Add-ons.
-      # This would typically involve secrets management for API keys/credentials.
+      # Optional: Upload build artifacts
+      # This step saves the built extension files for download
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookmarkmind-extension-build
+          path: dist/ # Adjust this path if your build output is different
