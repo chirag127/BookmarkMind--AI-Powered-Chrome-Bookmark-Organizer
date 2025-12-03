@@ -1,57 +1,30 @@
-# Pull Request: Feature Implementation / Bug Fix / Refactoring
+# Pull Request Template
 
-## 1. PR Overview
+## 🚀 Feature / Fix Description
 
-**Describe the changes in this Pull Request.**
+*   **What:** Briefly describe the changes made in this pull request.
+*   **Why:** Explain the problem this PR solves or the feature it adds. Refer to any related issues.
 
-*   **Type:** (Check one)
-    *   [ ] ✨ Feature: New functionality
-    *   [ ] 🐛 Bugfix: Correcting unexpected behavior
-    *   [ ] 🧹 Refactor: Code cleanup, performance, or structure improvement
-    *   [ ] 📝 Documentation: Updating docs or metadata
-    *   [ ] ⚙️ CI/CD: Workflow or environment updates
+## ✅ Checklist
 
-*   **Related Issue(s):** (Link any associated GitHub Issues)
+*   [ ] My code follows the style guidelines of this project.
+*   [ ] I have performed a self-review of my own code.
+*   [ ] I have commented my code, particularly in hard-to-understand areas.
+*   [ ] I have made corresponding changes to the documentation.
+*   [ ] My changes generate no new warnings.
+*   [ ] I have added tests that prove my fix is effective or that my feature works.
+*   [ ] New and existing unit tests pass locally with my changes.
+*   [ ] Any dependent changes have been merged and published.
 
-**Context/Motivation:**
-<!-- Why is this change necessary? What problem does it solve? -->
+## 🖼️ Screenshots / Recordings
 
+*(Optional) Add screenshots or animated GIFs of your changes. This is especially helpful for UI/UX changes.*
 
-## 2. Technical Changes Implemented
+## 🔗 Related Issues
 
-**Detail the core technical modifications made.** Be specific about new files, significant logic shifts, or dependencies added/removed.
+*   Closes #
+*   Related to #
 
-diff
-// Add specific diff snippets or high-level summaries here.
-// e.g., Updated the primary AI invocation service to use Groq's streaming endpoint.
+## 💡 Additional Information
 
-
-## 3. Verification & Testing
-
-**How was this change verified?** Referencing the architectural standards set forth in `AGENTS.md`.
-
-*   [ ] **Local Testing:** (Describe manual steps taken to confirm functionality).
-*   [ ] **Automated Tests:** (Were unit/integration tests updated or added? Which ones were executed?)
-    *   *If this PR modifies core logic, ensure corresponding Pytest suites have been updated to cover the new paths.*
-
-## 4. Architectural Alignment (Apex Standards)
-
-This PR aligns with the project's core principles:
-
-*   [ ] **SOLID Compliance:** Is the change minimally coupled and highly cohesive?
-*   [ ] **DRY Principle:** Have we avoided duplication?
-*   [ ] **Future-Proofing:** Does this introduce unnecessary technical debt or does it set up for future scalability?
-
-## 5. Self-Review Checklist
-
-*   [ ] Code is formatted correctly via `ruff check --fix` or equivalent tooling.
-*   [ ] Type checking passes without errors (if applicable to the scope).
-*   [ ] README/Documentation updated if public-facing behavior has changed.
-*   [ ] Secrets or keys are NOT committed or hardcoded.
-*   [ ] Appropriate comments added to complex logic sections.
-
----
-
-**Reviewer Guidance:** Please focus verification on data integrity flow between the Browser Extension API and the remote AI providers (Gemini/Groq).
-
-**Repository Reference:** `https://github.com/chirag127/BookmarkFlow-AI-Powered-Bookmark-Organizer-Browser-Extension`
+*(Optional) Provide any other context, such as dependencies that need to be installed, or any other information relevant to the reviewer.*
