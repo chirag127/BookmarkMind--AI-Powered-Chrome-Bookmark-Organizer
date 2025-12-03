@@ -1,72 +1,100 @@
-# 🚀 Contributing to BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
+# Contributing to BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
 
-Thank you for considering contributing to **BookmarkMind-AI-Bookmark-Categorization-Browser-Extension**! We welcome contributions of all kinds, from bug reports and feature requests to code contributions and documentation improvements.
+Thank you for considering contributing to **BookmarkMind-AI-Bookmark-Categorization-Browser-Extension**! We appreciate your interest in improving this AI-powered browser extension.
 
-## 🌟 Our Guiding Principles
+## 🚀 Apex Contribution Philosophy
 
-This project adheres to the **Apex Technical Authority** standards, emphasizing:
+This project adheres to the **Apex Technical Authority** standards, emphasizing **Zero-Defect, High-Velocity, Future-Proof** development. Contributions should align with these principles, aiming for robust, well-tested, and maintainable code.
 
-*   **Zero-Defect:** Aim for high-quality, robust code.
-*   **High-Velocity:** Streamlined development and contribution processes.
-*   **Future-Proof:** Maintainable architecture and forward-looking technology choices.
+## 🎯 Project Vision & Architecture
 
-We are building for the **December 2025 standard**, incorporating the latest advancements and best practices.
+BookmarkMind aims to provide a seamless, AI-driven experience for bookmark management. The project follows a modern web extension architecture, leveraging TypeScript, Vite, React, Tailwind CSS, and Biome for linting and formatting. AI integration relies on models like Gemini and Groq, orchestrated via LLM orchestration principles.
 
-## 🤝 Code of Conduct
+## 📋 Contribution Guidelines
 
-Please read and adhere to our [Code of Conduct](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/CODE_OF_CONDUCT.md). It outlines our expectations for participation to ensure a welcoming and inclusive environment.
+### 1. Code of Conduct
 
-## 💡 How to Contribute
+This project adheres to the Contributor Covenant Code of Conduct. Please read the [CODE_OF_CONDUCT.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/CODE_OF_CONDUCT.md) to understand our expectations for participants.
 
-### 1. Reporting Bugs
+### 2. How to Contribute
 
-Found a bug? We appreciate you reporting it! Please use our [Bug Report Template](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/issues/new?template=bug_report.md).
+We welcome contributions in the form of bug reports, feature requests, documentation improvements, and code submissions. Please follow these steps:
 
-*   **Be Specific:** Include detailed steps to reproduce the issue.
-*   **Environment:** Mention your browser version, operating system, and any relevant extension settings.
-*   **Screenshots/Recordings:** Visual aids are incredibly helpful.
+*   **Fork the Repository:** Create your own fork of the repository.
+*   **Create a Branch:** Start a new branch for your feature or bug fix (e.g., `feature/add-new-ai-model`, `fix/incorrect-categorization`).
+*   **Make Your Changes:** Implement your contribution. Ensure your code is well-commented and follows the project's coding standards.
+*   **Test Your Changes:** Write and run tests to ensure your changes do not introduce regressions. Run linters and formatters.
+*   **Commit Your Changes:** Commit your changes with clear and concise messages, following conventional commit message standards if applicable.
+*   **Submit a Pull Request:** Open a Pull Request against the `main` branch of the original repository. Clearly describe your changes and the problem they solve.
 
-### 2. Suggesting Features
+### 3. Development Setup
 
-Have an idea for a new feature? We'd love to hear it! Please open a new issue and use our [Feature Request Template](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/issues/new?template=feature_request.md).
+To set up the development environment, follow these steps:
 
-### 3. Development Contributions
+1.  **Clone the Repository:**
+    bash
+    git clone https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension.git
+    cd BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
+    
 
-Ready to dive into the code? Here’s how to get started:
+2.  **Install Dependencies:**
+    bash
+    npm install
+    
 
-1.  **Fork the Repository:** Create your own fork of the `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension` repository.
-2.  **Clone Your Fork:** `git clone https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension.git`
-3.  **Set Up Development Environment:**
-    *   Follow the setup instructions in the `README.md`.
-    *   Ensure you have Node.js (v18+) and npm/yarn installed.
-    *   Run `npm install` or `yarn install` to install dependencies.
-4.  **Branch:** Create a new branch for your feature or bug fix: `git checkout -b feature/your-feature-name` or `git checkout -b fix/your-bug-fix`.
-5.  **Code:** Make your changes. Follow the coding standards outlined in [AGENTS.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/AGENTS.md).
-6.  **Test:** Write tests for your changes. Run the test suite using `npm test` or `yarn test`.
-7.  **Lint & Format:** Ensure your code passes the linter: `npm run lint` or `yarn lint`.
-8.  **Commit:** Commit your changes with clear and concise messages.
-9.  **Push:** Push your branch to your fork: `git push origin feature/your-feature-name`.
-10. **Open a Pull Request:** Submit a pull request from your fork to the `main` branch of the `chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension` repository.
+3.  **Run Development Server:**
+    bash
+    npm run dev
+    
 
-#### Coding Standards & Architecture
+4.  **Run Tests:**
+    bash
+    npm run test
+    
 
-*   **Language:** Primarily **JavaScript/TypeScript**.
-*   **Architecture:** Adheres to modern browser extension patterns, ensuring modularity and maintainability. Feature-Sliced Design (FSD) principles are encouraged for organizing the codebase.
-*   **Tooling:** We utilize **Vite** for bundling, **TailwindCSS v4** for styling, and **Playwright** for E2E testing.
-*   **Linting/Formatting:** **Biome** is used for ultra-fast linting and formatting.
-*   **Testing:** **Vitest** for unit tests and **Playwright** for end-to-end tests.
-*   **AI Integration:** Interactions with AI models (Gemini, Groq) should be encapsulated, well-documented, and include robust error handling.
+5.  **Lint and Format:**
+    bash
+    npm run lint
+    npm run format
+    
 
-#### Pull Request Process
+### 4. Branching Strategy
 
-*   **Clear Title & Description:** Explain the *what* and *why* of your changes.
-*   **Link Issues:** Reference any related issues using keywords like `Fixes #123` or `Closes #456`.
-*   **Code Reviews:** Be prepared for constructive feedback from maintainers.
+*   `main`: The stable production branch.
+*   `develop`: The integration branch where features are merged.
+*   `feature/*`: Branches for new features.
+*   `fix/*`: Branches for bug fixes.
+*   `chore/*`: Branches for maintenance tasks.
 
-## ⚖️ License
+### 5. Pull Request Process
 
-This project is licensed under the **CC BY-NC 4.0** license. By contributing, you agree that your contributions will be licensed under the same terms.
+*   All pull requests must target the `develop` branch.
+*   PRs should include a clear description of the changes, the problem they solve, and any relevant context.
+*   Automated checks (CI/CD) will run on every PR. Ensure all checks pass before merging.
+*   At least one reviewer must approve the PR.
 
-## 💬 Questions?
+## 🛠️ Tech Stack & Tools
 
-If you have any questions or need clarification, please feel free to open an issue. We're here to help!
+*   **Language:** TypeScript
+*   **Bundler:** Vite
+*   **Framework:** React
+*   **Styling:** Tailwind CSS
+*   **Linting/Formatting:** Biome
+*   **Testing:** Vitest (Unit), Playwright (E2E - if implemented)
+*   **AI Models:** Gemini API, Groq API
+*   **Extension Framework:** WXT (Web Extension Tooling) is the standard for building cross-browser extensions.
+
+## 📄 AI AGENT DIRECTIVES
+
+This repository is managed by AI Agents following the Apex Technical Authority's directives. For detailed information on the AI's operational parameters, technology stack definitions, architectural patterns, and verification commands, please refer to the [AGENTS.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/AGENTS.md) file.
+
+## 🛡️ Security
+
+*   Please report any security vulnerabilities to `security@example.com` or through GitHub's security reporting feature. See [SECURITY.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/SECURITY.md) for more details.
+*   Avoid committing sensitive information directly into the repository.
+
+## 🤝 Community & Support
+
+For questions, discussions, or support, please use the GitHub Discussions or Issues sections of this repository.
+
+We look forward to your contributions!
