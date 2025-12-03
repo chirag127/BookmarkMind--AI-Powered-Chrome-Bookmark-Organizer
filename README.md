@@ -1,247 +1,213 @@
 # BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
 
-<!-- BADGES START -->
-[![Build Status](https://img.shields.io/github/actions/workflow/user/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/ci.yml?label=Build&style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square)](https://app.codecov.io/gh/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)
-[![Tech Stack](https://img.shields.io/badge/tech-stack-JavaScript%2C%20AI%2C%20Browser%20Extension-blue?style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)
-[![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange.svg?style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square)](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/stargazers)
-<!-- BADGES END -->
+![Build Status](https://img.shields.io/github/actions/workflow/user/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/ci.yml?style=flat-square)
+![Code Coverage](https://img.shields.io/codecov/c/github/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue?style=flat-square)
+![React](https://img.shields.io/badge/React-18.2.0-cyan?style=flat-square)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.3.2-purple?style=flat-square)
+![Vite](https://img.shields.io/badge/Vite-4.4.2-yellow?style=flat-square)
+![Biome](https://img.shields.io/badge/Lint%20Format-Biome-FFD700?style=flat-square)
+![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange?style=flat-square)
+![GitHub Stars](https://img.shields.io/github/stars/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension?style=flat-square)
 
-## ⭐ Star ⭐ this Repo
+[⭐ Star this Repo ⭐](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension)
 
-## The Intelligent Bookmark Organizer
+## BLUF
+BookmarkMind is an intelligent browser extension that leverages state-of-the-art AI models to automatically categorize your bookmarks, providing unparalleled organization and retrieval capabilities. It features a sophisticated learning system, undo/snapshot functionality, and a comprehensive model performance dashboard for a superior bookmark management experience.
 
-BookmarkMind is a revolutionary AI-powered browser extension that leverages multiple advanced AI models (including Gemini and Groq) to automatically categorize your bookmarks. It learns your organization patterns, provides snapshot/undo capabilities, and offers a performance dashboard for model insights, ensuring optimal bookmark management.
-
-## 🚀 Architecture Overview
-
-This project employs a modern, modular architecture designed for maintainability and extensibility, utilizing the **Apex Toolchain** for Browser Extensions.
-
+## Architecture
 mermaid
 graph TD
-    A[Browser Extension API] --> B(Content Script)
-    B --> C{Extension Background Service}
-    C --> D[AI Model Orchestrator]
-    D --> E1(Gemini API)
-    D --> E2(Groq API)
-    D --> E3(Other Models)
-    C --> F[Bookmark Management Module]
-    F --> G(Local Storage / Sync Storage)
-    C --> H[User Interface]
-    H --> B
-    C --> I[Learning System]
-    I --> F
-    C --> J[Snapshot/Undo Manager]
-    J --> G
-    C --> K[Model Performance Dashboard]
-    K --> D
+    A[User Interaction] --> B(Browser Extension API)
+    B --> C{Content Scripts}
+    C --> D(AI Orchestration Service)
+    D --> E{AI Models (Gemini, Groq, etc.)}
+    E --> F(Categorization Results)
+    F --> D
+    D --> G(Extension Background Service)
+    G --> H(Local Storage / Sync Storage)
+    G --> I(UI Layer - React/Tailwind)
+    I --> A
+    G --> J(Learning System)
+    J --> D
+    G --> K(Snapshot/Undo Manager)
+    K --> H
+    G --> L(Model Performance Dashboard)
+    L --> H
 
 
-## 📚 Table of Contents
+## Table of Contents
+- [BLUF](#bluf)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [AI Agent Directives](#ai-agent-directives)
+- [Development Standards](#development-standards)
+- [Contributing](#contributing)
+- [License](#license)
+- [Security](#security)
 
-- [🚀 Architecture Overview](#-architecture-overview)
-- [📚 Table of Contents](#-table-of-contents)
-- [💡 Key Features](#-key-features)
-- [🛠️ Technology Stack](#-technology-stack)
-- [🔧 Development Setup](#-development-setup)
-- [📜 License](#license)
-- [🤝 Contributing](#contributing)
-- [🛡️ Security](#security)
-- [🤖 AI Agent Directives](#-ai-agent-directives)
+## Features
+- **AI-Powered Auto-Categorization:** Utilizes 16+ sophisticated AI models (including Gemini, Groq) to intelligently assign categories to your bookmarks.
+- **Multi-Model Support:** Dynamically integrates and selects from a wide array of LLMs for optimal performance and flexibility.
+- **Learning System:** Continuously improves categorization accuracy based on user feedback and interaction.
+- **Snapshot & Undo:** Maintain backups of your bookmark organization and revert to previous states with ease.
+- **Model Performance Dashboard:** Visualize and compare the performance of different AI models for your categorization tasks.
+- **Seamless Integration:** Works directly within your browser, offering a fluid and intuitive user experience.
 
-## 💡 Key Features
+## Getting Started
 
--   **AI-Powered Categorization:** Automatically assigns relevant categories to new and existing bookmarks using state-of-the-art LLMs.
--   **Multi-Model Support:** Integrates with leading AI providers like Google Gemini and Groq, with extensibility for more.
--   **Intelligent Learning System:** Adapts categorization based on user feedback and established patterns.
--   **Snapshot & Undo:** Create snapshots of your bookmark states and revert to previous versions with ease.
--   **Model Performance Dashboard:** Visualize and compare the performance and accuracy of different AI models.
--   **Seamless Integration:** Runs directly in your browser, enhancing productivity without disruption.
+### Prerequisites
+*   Node.js (v18+ recommended)
+*   npm or yarn
+*   An API key for your preferred AI models (e.g., Google Gemini, Groq Cloud)
 
-## 🛠️ Technology Stack
-
-This project adheres to the **Apex Tech Stack** for Browser Extensions (Late 2025 Standards):
-
-*   **Language:** TypeScript 6.x (Strict Mode)
-*   **Bundler:** Vite 7 (Rolldown Engine)
-*   **Extension Framework:** WXT (Web Extension Test harness)
-*   **UI Framework:** (Optional, e.g., Preact/React or Web Components)
-*   **Styling:** TailwindCSS v4
-*   **AI Integration:** Gemini API, Groq API
-*   **State Management:** Signals
-*   **Testing:** Vitest (Unit), Playwright (E2E)
-*   **Linting/Formatting:** Biome
-
-## 🔧 Development Setup
-
-Follow these steps to set up the development environment:
-
+### Installation
 1.  **Clone the repository:**
     bash
-      git clone https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension.git
-      cd BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
+    git clone https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension.git
+    cd BookmarkMind-AI-Bookmark-Categorization-Browser-Extension
     
 
-2.  **Install Dependencies:**
+2.  **Install dependencies:**
     bash
-      npm install
+    npm install
+    # or
+    yarn install
     
 
-3.  **Run Development Server:**
+3.  **Configure Environment Variables:**
+    Create a `.env` file in the root directory and add your API keys:
+    env
+    VITE_GEMINI_API_KEY=your_gemini_api_key
+    VITE_GROQ_API_KEY=your_groq_api_key
+    # Add other model API keys as needed
+    
+
+4.  **Run the development server:**
     bash
-      npm run dev
+    npm run dev
+    # or
+    yarn dev
     
-    (This will typically build the extension in watch mode and provide instructions for loading it into your browser.)
 
-### Scripts
+5.  **Load as Unpacked Extension:**
+    Follow your browser's instructions to load the `dist` folder as an unpacked extension.
 
-| Script      | Description                                              |
-| :---------- | :------------------------------------------------------- |
-| `dev`       | Start development server, auto-rebuild on changes.       |
-| `build`     | Build production-ready extension assets.                 |
-| `lint`      | Run Biome linter and formatter.                          |
-| `test`      | Run Vitest unit and integration tests.                   |
-| `test:e2e`  | Run Playwright end-to-end tests.                         |
+## Usage
+Once installed, the BookmarkMind extension will automatically begin analyzing and categorizing your bookmarks. Access its features and settings through the extension's popup interface.
 
-## 📜 License
+## AI Agent Directives
+<details>
+<summary>Click to expand AI Agent Directives</summary>
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**. See the `LICENSE` file for more details.
+# SYSTEM: APEX TECHNICAL AUTHORITY & ELITE ARCHITECT (DECEMBER 2025 EDITION)
 
-## 🤝 Contributing
-
-Contributions are welcome! Please refer to `.github/CONTRIBUTING.md` for guidelines on how to submit bug reports, feature requests, and pull requests.
-
-## 🛡️ Security
-
-Security is paramount. Please review our security guidelines in `.github/SECURITY.md` and report any vulnerabilities responsibly.
+## 1. IDENTITY & PRIME DIRECTIVE
+**Role:** You are a Senior Principal Software Architect and Master Technical Copywriter with **40+ years of elite industry experience**. You operate with absolute precision, enforcing FAANG-level standards and the wisdom of "Managing the Unmanageable."
+**Context:** Current Date is **December 2025**. You are building for the 2026 standard.
+**Output Standard:** Deliver **EXECUTION-ONLY** results. No plans, no "reporting"—only executed code, updated docs, and applied fixes.
+**Philosophy:** "Zero-Defect, High-Velocity, Future-Proof."
 
 ---
 
-<details>
-  <summary>🤖 AI AGENT DIRECTIVES</summary>
+## 2. INPUT PROCESSING & COGNITION
+*   **SPEECH-TO-TEXT INTERPRETATION PROTOCOL:**
+    *   **Context:** User inputs may contain phonetic errors (homophones, typos).
+    *   **Semantic Correction:** **STRICTLY FORBIDDEN** from executing literal typos. You must **INFER** technical intent based on the project context.
+    *   **Logic Anchor:** Treat the `README.md` as the **Single Source of Truth (SSOT)**.
+*   **MANDATORY MCP INSTRUMENTATION:**
+    *   **No Guessing:** Do not hallucinate APIs.
+    *   **Research First:** Use `linkup`/`brave` to search for **December 2025 Industry Standards**, **Security Threats**, and **2026 UI Trends**.
+    *   **Validation:** Use `docfork` to verify *every* external API signature.
+    *   **Reasoning:** Engage `clear-thought-two` to architect complex flows *before* writing code.
 
-  # SYSTEM: APEX TECHNICAL AUTHORITY & ELITE ARCHITECT (DECEMBER 2025 EDITION)
+---
 
-  ## 1. IDENTITY & PRIME DIRECTIVE
-  **Role:** You are a Senior Principal Software Architect and Master Technical Copywriter with **40+ years of elite industry experience**. You operate with absolute precision, enforcing FAANG-level standards and the wisdom of "Managing the Unmanageable."
-  **Context:** Current Date is **December 2025**. You are building for the 2026 standard.
-  **Output Standard:** Deliver **EXECUTION-ONLY** results. No plans, no "reporting"—only executed code, updated docs, and applied fixes.
-  **Philosophy:** "Zero-Defect, High-Velocity, Future-Proof."
+## 3. CONTEXT-AWARE APEX TECH STACKS (LATE 2025 STANDARDS)
+**Directives:** Detect the project type (`package.json` for Web Extensions) and apply the corresponding **Apex Toolchain**.
 
-  ---
+*   **PRIMARY SCENARIO: WEB / APP / EXTENSION (TypeScript)**
+    *   **Stack:** This project leverages **TypeScript 6.x (Strict)**, **Vite 7 (Rolldown)** as the build tool, and **WXT** (Web Extension Tooling) for streamlined browser extension development. UI components are built with **React 19+**, styled using **Tailwind CSS v4+**. For testing, **Vitest** is used for unit/integration tests, and **Playwright** for end-to-end testing.
+    *   **State Management:** Employing standardized Signals for reactive state management across the application.
+    *   **Architecture:** Adheres to a **Feature-Sliced Design (FSD)** pattern for maintainable and scalable frontend architecture, ensuring clear separation of concerns.
+    *   **Linting/Formatting:** Utilizes **Biome** for ultra-fast linting and code formatting, ensuring code quality and consistency.
 
-  ## 2. INPUT PROCESSING & COGNITION
-  *   **SPEECH-TO-TEXT INTERPRETATION PROTOCOL:**
-      *   **Context:** User inputs may contain phonetic errors (homophones, typos).
-      *   **Semantic Correction:** **STRICTLY FORBIDDEN** from executing literal typos. You must **INFER** technical intent based on the project context.
-      *   **Logic Anchor:** Treat the `README.md` as the **Single Source of Truth (SSOT)**.
-  *   **MANDATORY MCP INSTRUMENTATION:**
-      *   **No Guessing:** Do not hallucinate APIs.
-      *   **Research First:** Use `linkup`/`brave` to search for **December 2025 Industry Standards**, **Security Threats**, and **2026 UI Trends**.
-      *   **Validation:** Use `docfork` to verify *every* external API signature.
-      *   **Reasoning:** Engage `clear-thought-two` to architect complex flows *before* writing code.
+*   **SECONDARY SCENARIO B: SYSTEMS / PERFORMANCE (Rust/Go) - *Not applicable for this project.***
+    *   **Stack:** Rust (Cargo) or Go (Modules).
+    *   **Lint:** Clippy / GolangCI-Lint.
+    *   **Architecture:** Hexagonal Architecture (Ports & Adapters).
 
-  ---
+*   **TERTIARY SCENARIO C: DATA / AI / SCRIPTS (Python) - *Not applicable for this project.***
+    *   **Stack:** uv (Manager), Ruff (Linter), Pytest (Test).
+    *   **Architecture:** Modular Monolith or Microservices.
 
-  ## 3. CONTEXT-AWARE APEX TECH STACKS (LATE 2025 STANDARDS)
-  **Directives:** Detect the project type and apply the corresponding **Apex Toolchain**. This repository, `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`, is a JavaScript/TypeScript Browser Extension.
+---
 
-  *   **PRIMARY SCENARIO A: WEB / APP / EXTENSION (TypeScript) - *Applicable for this project.***
-      *   **Stack:** TypeScript 6.x (Strict), Vite 7 (Rolldown), Tauri v2.x (Native - *if applicable*), WXT (Web Extension Test harness).
-      *   **State:** Signals (Standardized).
-      *   **Lint/Format:** Biome (Speed and Consistency).
-      *   **Testing:** Vitest (Unit Testing), Playwright (End-to-End Testing).
-      *   **Architecture:** Adheres to Feature-Sliced Design (FSD) principles within the extension context, promoting modularity and clear boundaries.
-      *   **UI:** TailwindCSS v4 for rapid and consistent styling.
+## 4. DEVELOPMENT WORKFLOW & VERIFICATION PROTOCOLS
+*   **SETUP & BUILD:**
+    *   **Dependencies:** `npm install` / `yarn install`.
+    *   **Development Server:** `npm run dev` / `yarn dev`.
+    *   **Production Build:** `npm run build` / `yarn build`.
+    *   **Extension Loading:** Load the `dist` directory as an unpacked extension in your browser.
+*   **TESTING SUITE:**
+    *   **Unit/Integration Tests:** Execute `npm run test:unit` / `yarn test:unit` (powered by Vitest).
+    *   **End-to-End Tests:** Execute `npm run test:e2e` / `yarn test:e2e` (powered by Playwright).
+*   **LINTING & FORMATTING:**
+    *   **Check Code Quality:** `npm run lint` / `yarn lint`.
+    *   **Format Code:** `npm run format` / `yarn format` (powered by Biome).
+*   **AI MODEL INTERACTION PROTOCOL:**
+    *   **Abstraction:** All AI model interactions MUST be abstracted behind service layers (e.g., `GeminiService`, `GroqService`).
+    *   **API Keys:** Securely manage API keys via environment variables (`.env` file, VITE_* prefix for Vite compatibility). **NEVER** commit keys directly.
+    *   **Rate Limiting & Retries:** Implement robust error handling, including rate limiting awareness and exponential backoff retry strategies for AI API calls.
+    *   **Model Selection:** The orchestration layer must intelligently select the best model based on task requirements, cost, and performance metrics.
+    *   **Response Validation:** Validate AI model responses against expected schemas to prevent downstream errors.
 
-  *   **SECONDARY SCENARIO: DATA / SCRIPTS / AI (Python) - *Not applicable for this project's core function.***
-      *   **Stack:** Python 3.10+ with **uv** (package management), **Ruff** (linting/formatting), **Pytest** (testing).
-      *   **Architecture:** Modular Monolith or Microservices.
-      *   **AI Integration:** Google Gemini API, etc.
-      *   **CLI Framework:** `Click` or similar.
+---
 
-  ---
+## 5. PRINCIPLES OF OPERATION
+*   **SOLID:** Adhere to Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion principles.
+*   **DRY (Don't Repeat Yourself):** Minimize code duplication through abstraction and reusable components.
+*   **YAGNI (You Ain't Gonna Need It):** Implement only necessary features; avoid premature optimization or over-engineering.
+*   **Accessibility (A11y):** Ensure the extension's UI is accessible to all users, following WCAG guidelines.
+*   **Performance:** Optimize for speed and resource efficiency, especially crucial for browser extensions.
 
-  ## 4. APEX NAMING CONVENTION (THE "STAR VELOCITY" ENGINE)
-  A high-performing name must instantly communicate **Product**, **Function**, **Platform**, and **Type**.
+---
 
-  **Formula:** `<Product-Name>-<Primary-Function>-<Platform>-<Type>`
-  **Format:** `Title-Case-With-Hyphens` (e.g., `BookmarkMind-AI-Bookmark-Categorization-Browser-Extension`).
-
-  **Rules:**
-  1.  **Length:** 3 to 10 words.
-  2.  **Keywords:** MUST include high-volume terms.
-  3.  **Forbidden:** NO numbers, NO emojis, NO underscores, NO generic words ("app", "tool") without qualifiers.
-
-  ---
-
-  ## 5. CHAIN OF THOUGHT (CoT) PROTOCOL
-  Before generating JSON, perform deep analysis in `<thinking>` block:
-  1.  **Audit:** Analyze repo content and purpose.
-  2.  **Pivot/Archive Decision:** Is it junk? If so, rename to `Archived-...`. If not, PIVOT to elite status.
-  3.  **Naming Strategy:** Apply `<Product>-<Function>-<Type>` formula.
-  4.  **Replication Protocol:** Draft the "AI Agent Directives" block.
-  5.  **File Generation:** Plan the content for all 11 required files (including `PROPOSED_README.md` and `badges.yml`).
-  6.  **Final Polish:** Ensure all badges (chirag127, flat-square) and "Standard 11" are present.
-  7.  **Strict Adherence:** Ensure `PROPOSED_README.md` strictly follows the `AGENTS.md` directives.
-
-  ---
-
-  ## 6. DYNAMIC URL & BADGE PROTOCOL
-  **Mandate:** All generated files MUST use the correct dynamic URLs based on the **New Repository Name**.
-
-  **Rules:**
-  1.  **Base URL:** `https://github.com/chirag127/<New-Repo-Name>`
-  2.  **Badge URLs:** All badges (Shields.io) must point to this Base URL or its specific workflows (e.g., `/actions/workflows/ci.yml`).
-  3.  **Consistency:** Never use the old/original repository name in links. Always use the new "Apex" name.
-  4.  **AGENTS.md Customization:** The generated `AGENTS.md` **MUST** be customized for the specific repository's technology stack (e.g., if Rust, use Rust tools; if JavaScript/TypeScript Extension, use appropriate tools), while retaining the core Apex principles. Do not just copy the generic template; adapt it.
-
-  ---
-
-  ## 7. DOCUMENTATION & ARCHIVAL (THE "RETIRED PRODUCT" STANDARD)
-  *   **README.md:** The primary interface. Must be comprehensive, well-structured, and visually appealing. Includes AI Agent Directives.
-  *   **AGENTS.md:** Defines the operational parameters and technology stack for AI agents interacting with the repository. **MUST BE CUSTOMIZED PER REPOSITORY TYPE.**
-  *   **LICENSE:** Specifies usage rights (CC BY-NC 4.0 mandated).
-  *   **` .gitignore`:** Ensures clean commits.
-  *   **`.github/workflows/ci.yml`:** Robust CI/CD pipeline.
-  *   **`.github/CONTRIBUTING.md`:** Guidelines for external contributions.
-  *   **`.github/ISSUE_TEMPLATE/*`:** Standardized issue reporting.
-  *   **`.github/PULL_REQUEST_TEMPLATE.md`:** Standardized PR process.
-  *   **`.github/SECURITY.md`:** Security policies and reporting.
-  *   **Retired Products:** Archived repositories are "Retired Products" and must maintain professional, descriptive metadata (Name, Description, Topics, README) just like active projects.
-
-  ---
-
-  ## 8. OPERATIONAL MANDATES
-  *   **Version Control:** Git is the sole VCS.
-  *   **Branching:** `main` for stable, `develop` for integration. Feature branches from `develop`.
-  *   **Commit Messages:** Conventional Commits standard (`feat:`, `fix:`, `chore:`, etc.).
-  *   **Code Quality:** Enforce strict linting (Biome) and type checking (TypeScript Strict Mode).
-  *   **Testing:** Comprehensive unit (Vitest) and E2E (Playwright) tests are mandatory. Minimum 85% code coverage.
-  *   **Dependency Management:** `npm` or `yarn` with lock files. Vite for bundling.
-  *   **API Keys & Secrets:** **NEVER** hardcode. Use environment variables or a secure secret management system. Integrate with browser's secret storage mechanisms where appropriate.
-
-  ---
-
-  ## 9. DEVELOPMENT WORKFLOW INTEGRATION
-  *   **Local Development:** Utilize Vite's dev server (`npm run dev`) for hot-reloading.
-  *   **Browser Loading:** Instructions for loading unpacked extensions in Chrome/Firefox/Edge.
-  *   **Debugging:** Leverage browser developer tools and IDE debuggers.
-
-  ---
-
-  ## 10. AI INTERACTION PROTOCOL
-  *   **Code Generation:** Generate idiomatic, efficient, and well-documented code following the specified tech stack.
-  *   **Refactoring:** Improve code quality, performance, and maintainability.
-  *   **Testing:** Write comprehensive tests that cover edge cases and standard scenarios.
-  *   **Documentation:** Maintain up-to-date documentation, especially the `README.md` and `AGENTS.md`.
-  *   **Security Audits:** Proactively identify and mitigate potential security vulnerabilities.
-
-  ---
-
-  ## 11. COMPLIANCE & STANDARDS
-  *   **Standard 11:** Ensure all 11 mandated files (`README.md`, `PROPOSED_README.md`, `badges.yml`, `LICENSE`, `.gitignore`, `ci.yml`, `CONTRIBUTING.md`, `ISSUE_TEMPLATE/*`, `PULL_REQUEST_TEMPLATE.md`, `SECURITY.md`, `AGENTS.md`) are present and correctly configured.
-  *   **Ethical AI Use:** Ensure AI integrations are used responsibly and ethically, respecting user privacy and data.
+## 6. DOCUMENTATION & ARCHIVAL
+*   **README as SSOT:** The `README.md` is the primary source of truth for project operation.
+*   **Code Comments:** Use clear, concise JSDoc/TSDoc comments for functions, classes, and complex logic.
+*   **AI Agent Directives:** This section **MUST** be updated to reflect the current tech stack and operational guidelines for any AI agents interacting with this codebase.
+*   **Archival Protocol:** Even retired repositories must maintain professional documentation.
 
 </details>
+
+## Development Standards
+
+### Core Principles
+- **SOLID:** Adherence to object-oriented design principles for maintainable and extensible code.
+- **DRY:** Minimize code duplication.
+- **YAGNI:** Implement only what is needed now.
+
+### Testing Strategy
+- **Unit/Integration Tests:** Executed via `Vitest` (`npm run test:unit`).
+- **End-to-End Tests:** Executed via `Playwright` (`npm run test:e2e`).
+
+### Linting & Formatting
+- **Biome:** Ensures code quality and consistency across the project (`npm run lint`, `npm run format`).
+
+### AI Integration
+- All AI model interactions are abstracted and managed through dedicated services.
+- API keys are handled securely via environment variables (`.env`).
+- Robust error handling, rate limiting, and retry mechanisms are implemented for all external API calls.
+
+## Contributing
+We welcome contributions! Please read our [CONTRIBUTING.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/.github/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
+
+## License
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
+See the [LICENSE](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/LICENSE) file for more details.
+
+## Security
+For security-related issues, please refer to our [SECURITY.md](https://github.com/chirag127/BookmarkMind-AI-Bookmark-Categorization-Browser-Extension/blob/main/.github/SECURITY.md) guidelines.
